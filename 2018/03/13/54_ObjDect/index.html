@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="卷积神经网络,Keras,YOLO,IOU,NMS,tensorflow," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文将介绍一种功能强大的目标检测算法---YOLO算法。详细介绍YOLO算法的工作流程：输入图像经过CNN到编码数据体，再经阈值滤波和非最大值压制（NMS）去除多余的边框，最终得到目标检测结果及坐标。由于YOLO网络训练需要大量带标签数据以及强大计算量，本文使用已经训练好的网络，在Keras框架下，用一个汽车检测的例子展示这种算法的工作机制。">
+<meta name="keywords" content="卷积神经网络,Keras,YOLO,IOU,NMS,tensorflow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="YOLO算法进行目标检测">
+<meta property="og:url" content="http://yoursite.com/2018/03/13/54_ObjDect/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文将介绍一种功能强大的目标检测算法---YOLO算法。详细介绍YOLO算法的工作流程：输入图像经过CNN到编码数据体，再经阈值滤波和非最大值压制（NMS）去除多余的边框，最终得到目标检测结果及坐标。由于YOLO网络训练需要大量带标签数据以及强大计算量，本文使用已经训练好的网络，在Keras框架下，用一个汽车检测的例子展示这种算法的工作机制。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/box_label.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/architecture.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/flatten.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/probability_extraction.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/proba_map.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/anchor_map.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/non-max-suppression.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/iou.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/54_ObjDect/output_31_1.png">
+<meta property="og:image" content="https://i.creativecommons.org/l/by/4.0/88x31.png">
+<meta property="og:updated_time" content="2018-03-13T02:07:46.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="YOLO算法进行目标检测">
+<meta name="twitter:description" content="本文将介绍一种功能强大的目标检测算法---YOLO算法。详细介绍YOLO算法的工作流程：输入图像经过CNN到编码数据体，再经阈值滤波和非最大值压制（NMS）去除多余的边框，最终得到目标检测结果及坐标。由于YOLO网络训练需要大量带标签数据以及强大计算量，本文使用已经训练好的网络，在Keras框架下，用一个汽车检测的例子展示这种算法的工作机制。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/13/54_ObjDect/box_label.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/13/54_ObjDect/"/>
+
+
+
+
+
+  <title>YOLO算法进行目标检测 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/13/54_ObjDect/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">YOLO算法进行目标检测</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-13T10:08:03+08:00">
+                2018-03-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文将介绍一种功能强大的目标检测算法---YOLO算法。详细介绍YOLO算法的工作流程：输入图像经过CNN到编码数据体，再经阈值滤波和非最大值压制（NMS）去除多余的边框，最终得到目标检测结果及坐标。由于YOLO网络训练需要大量带标签数据以及强大计算量，本文使用已经训练好的网络，在Keras框架下，用一个汽车检测的例子展示这种算法的工作机制。 <a id="more"></a></p>
+<h2 id="问题">问题</h2>
+<p>在自动驾驶项目中，一个重要的部分是建立汽车检测系统。为了收集数据，在汽车前面安装摄像头，在汽车行驶过程中，每几秒拍摄道路前方的照片。</p>
+<img src="/2018/03/13/54_ObjDect/box_label.png" style="width:500px;height:250;">
+<caption>
+<center>
+<u> <strong>图 1</strong> </u>: <strong>边框的定义</strong><br>
+</center>
+</caption>
+<p>将这些照片收集起来并对每一辆汽车画上边框。加入你有80个类别需要YOLO算法识别出来，那么类别标签<span class="math inline">\(c\)</span>可以表示成1到80的整数，或者一个80维的向量（one-hot编码，1的位置指示类别，剩余位置为0）。这两种标签方法都会用到，取决于在实际应用中哪一种更加方便。</p>
+<h2 id="yolo算法">YOLO算法</h2>
+<p>YOLO (&quot;You Only Look Once&quot;) 是一种十分流行的算法，原因在于该算法精度很高，而且能够实时处理。“only look once&quot;的意思是这个算法只需要在网络中一次正传就可以做预测。在经过non-max suppression，就可以输出识别的目标以及目标的边界。</p>
+<h3 id="模型的细节">模型的细节</h3>
+<p>输入/输出信息: - <strong>输入</strong>是一批大小为(m, 608, 608, 3)的图像 - <strong>输出</strong>是一些列识别的类和带边界的窗口。每个边界用6个数字<span class="math inline">\((p_c, b_x, b_y, b_h, b_w, c)\)</span>描述. 如果将类标签 <span class="math inline">\(c\)</span> 展成80维的向量, 那么每个边框用85 数字描述.</p>
+<p>本文用 5个 anchor 边框，所以YOLO的架构是: IMAGE (m, 608, 608, 3) -&gt; DEEP CNN -&gt; ENCODING (m, 19, 19, 5, 85).</p>
+<p>YOLO算法的编码架构.</p>
+<img src="/2018/03/13/54_ObjDect/architecture.png" style="width:700px;height:400;">
+<caption>
+<center>
+<u> <strong>图 2</strong> </u>: <strong>YOLO的编码架构</strong><br>
+</center>
+</caption>
+<p>如果目标的中心店落入一个网格上，那么这个网格就负责探测这个目标。</p>
+<p>由于我们使用了5个anchor边框，每个网格（总共19*19个）都编码了5种不同类型的边框，Anchor边框只由它的宽和高定义。</p>
+<p>为简单期间， 编码输出 (19, 19, 5, 85) 最后两个维度做压扁处理，因此最后深度CNN的输出维度是19, 19, 425).</p>
+<img src="/2018/03/13/54_ObjDect/flatten.png" style="width:700px;height:400;">
+<caption>
+<center>
+<u> <strong>图 3</strong> </u>: <strong>Flattening the last two last dimensions</strong><br>
+</center>
+</caption>
+<p>对于每一个网格，计算该网格包含某类目标的概率.</p>
+<img src="/2018/03/13/54_ObjDect/probability_extraction.png" style="width:700px;height:400;">
+<caption>
+<center>
+<u> <strong>图 4</strong> </u>: <strong>寻找每个边框探测的目标类型</strong><br>
+</center>
+</caption>
+<p>下面是一种可视化 YOLO算法预测结果的方法: - 对每个网格（共 19x19个） 寻找概率最大的类别 (包括5个anchor和80个类两个方向).<br>
+- 使用概率最大的类别，对网格进行颜色标定.</p>
+<p>最后生成的图像为:</p>
+<img src="/2018/03/13/54_ObjDect/proba_map.png" style="width:300px;height:300;">
+<caption>
+<center>
+<u> <strong>图 5</strong> </u>: 每个网格根据概率对网格进行颜色标定.<br>
+</center>
+</caption>
+<p>需要注意的是，这只是一种显示方式，并不是YOLO预测的核心部分。</p>
+<p>另一种可视化的方式是将预测的边框都画出来. 如下图所示：</p>
+<img src="/2018/03/13/54_ObjDect/anchor_map.png" style="width:200px;height:200;">
+<caption>
+<center>
+<u> <strong>图 6</strong> </u>: 每个网格提供5种边框. 只需要往神经网络输入一次，就可以预测19x19x5 = 1805个边框! 不同的颜色代表不同的类别. <br>
+</center>
+</caption>
+<p>上面显示的是概率最大的边框，但是仍然很多。可以进一步通过non-max suppression去掉一些. 具体的步骤是:</p>
+<ul>
+<li>去掉概率低的边框 (表示这个边框不是十分确信这是一个目标类)<br>
+</li>
+<li>当多个边框重叠并且表示同一个类时，只选择一个类.</li>
+</ul>
+<h3 id="根据分类概率滤掉一些边框">根据分类概率滤掉一些边框</h3>
+<p>根据分类概率滤掉一些小于阈值的边框。</p>
+<p>模型输出维度为19x19x5x85, 每个边框由 85 个数字描述. 将张量 (19,19,5,85) (或 (19,19,425)) 整成下面的变量:<br>
+- <code>box_confidence</code>: 维度为<span class="math inline">\((19 \times 19, 5, 1)\)</span>的张量，表示每个网格（共19*19个）每种Anchor边框存在目标的置信概率 <span class="math inline">\(p_c\)</span>. - <code>boxes</code>: 维度为 <span class="math inline">\((19 \times 19, 5, 4)\)</span>的张量，表示每个网格每种Anchor边框的形状 <span class="math inline">\((b_x, b_y, b_h, b_w)\)</span>. - <code>box_class_probs</code>: 维度为 <span class="math inline">\((19 \times 19, 5, 80)\)</span>的张量，表示每个网格，每种Anchor边框，每种类别的概率 <span class="math inline">\((c_1, c_2, ... c_{80})\)</span>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> argparse</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">from</span> matplotlib.pyplot <span class="keyword">import</span> imshow</span><br><span class="line"><span class="keyword">import</span> scipy.io</span><br><span class="line"><span class="keyword">import</span> scipy.misc</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> PIL</span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">from</span> keras <span class="keyword">import</span> backend <span class="keyword">as</span> K</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Input, Lambda, Conv2D</span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> load_model, Model</span><br><span class="line"><span class="keyword">from</span> yolo_utils <span class="keyword">import</span> read_classes, read_anchors, generate_colors, preprocess_image, draw_boxes, scale_boxes</span><br><span class="line"><span class="keyword">from</span> yad2k.models.keras_yolo <span class="keyword">import</span> yolo_head, yolo_boxes_to_corners, preprocess_true_boxes, yolo_loss, yolo_body</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br></pre></td></tr></table></figure>
+<pre><code>Using TensorFlow backend.</code></pre>
+<p><strong>注意</strong>：由于将Keras的后台加载为K，意味着调用Keras函数需要K.function(...)</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: yolo_filter_boxes</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">yolo_filter_boxes</span><span class="params">(box_confidence, boxes, box_class_probs, threshold = <span class="number">.6</span>)</span>:</span></span><br><span class="line">    <span class="string">"""Filters YOLO boxes by thresholding on object and class confidence.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    box_confidence -- tensor of shape (19, 19, 5, 1)</span></span><br><span class="line"><span class="string">    boxes -- tensor of shape (19, 19, 5, 4)</span></span><br><span class="line"><span class="string">    box_class_probs -- tensor of shape (19, 19, 5, 80)</span></span><br><span class="line"><span class="string">    threshold -- real value, if [ highest class probability score &lt; threshold], then get rid of the corresponding box</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    scores -- tensor of shape (None,), containing the class probability score for selected boxes</span></span><br><span class="line"><span class="string">    boxes -- tensor of shape (None, 4), containing (b_x, b_y, b_h, b_w) coordinates of selected boxes</span></span><br><span class="line"><span class="string">    classes -- tensor of shape (None,), containing the index of the class detected by the selected boxes</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Note: "None" is here because you don't know the exact number of selected boxes, as it depends on the threshold. </span></span><br><span class="line"><span class="string">    For example, the actual output size of scores would be (10,) if there are 10 boxes.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 1: Compute box scores</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 1 line)</span></span><br><span class="line">    box_scores = box_confidence * box_class_probs <span class="comment"># (19,19,5,80)</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 2: Find the box_classes thanks to the max box_scores, keep track of the corresponding score</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 2 lines)</span></span><br><span class="line">    box_classes = K.argmax(box_scores, axis=<span class="number">-1</span>) <span class="comment"># (19,19,5)</span></span><br><span class="line">    box_class_scores = K.max(box_scores, axis=<span class="number">-1</span>) <span class="comment">#(19,19,5)</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 3: Create a filtering mask based on "box_class_scores" by using "threshold". The mask should have the</span></span><br><span class="line">    <span class="comment"># same dimension as box_class_scores, and be True for the boxes you want to keep (with probability &gt;= threshold)</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 1 line)</span></span><br><span class="line">    filtering_mask = (box_class_scores &gt;= threshold) <span class="comment"># (19,19,5)</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 4: Apply the mask to scores, boxes and classes</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 3 lines)</span></span><br><span class="line">    scores = tf.boolean_mask(box_class_scores, filtering_mask) <span class="comment"># (?)</span></span><br><span class="line">    boxes = tf.boolean_mask(boxes, filtering_mask) <span class="comment"># (?,4)</span></span><br><span class="line">    classes = tf.boolean_mask(box_classes, filtering_mask) <span class="comment">#(?,)</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> scores, boxes, classes</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test_a:</span><br><span class="line">    box_confidence = tf.random_normal([<span class="number">19</span>, <span class="number">19</span>, <span class="number">5</span>, <span class="number">1</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>)</span><br><span class="line">    boxes = tf.random_normal([<span class="number">19</span>, <span class="number">19</span>, <span class="number">5</span>, <span class="number">4</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>)</span><br><span class="line">    box_class_probs = tf.random_normal([<span class="number">19</span>, <span class="number">19</span>, <span class="number">5</span>, <span class="number">80</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>)</span><br><span class="line">    scores, boxes, classes = yolo_filter_boxes(box_confidence, boxes, box_class_probs, threshold = <span class="number">0.5</span>)</span><br><span class="line">    print(<span class="string">"scores[2] = "</span> + str(scores[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"boxes[2] = "</span> + str(boxes[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"classes[2] = "</span> + str(classes[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"scores.shape = "</span> + str(scores.shape))</span><br><span class="line">    print(<span class="string">"boxes.shape = "</span> + str(boxes.shape))</span><br><span class="line">    print(<span class="string">"classes.shape = "</span> + str(classes.shape))</span><br></pre></td></tr></table></figure>
+<pre><code>scores[2] = 10.7506
+boxes[2] = [ 8.42653275  3.27136683 -0.53134358 -4.94137335]
+classes[2] = 7
+scores.shape = (?,)
+boxes.shape = (?, 4)
+classes.shape = (?,)</code></pre>
+<p><strong>注意</strong>：上面的?表示滤掉小概率事件后剩余的存在目标体的网格数量。</p>
+<h3 id="non-max-suppression">Non-max suppression</h3>
+<p>尽管根据分类概率用阈值滤掉了一些边框，但是仍然存在很多重叠的边框。第二种选择合理边框的方法是非最大值压制（NMS）</p>
+<img src="/2018/03/13/54_ObjDect/non-max-suppression.png" style="width:500px;height:400;">
+<caption>
+<center>
+<u> <strong>图 7</strong> </u>:在这个例子中，模型预测出3辆车，但是实际上只有1辆。运行non-max suppression可以从3个边框中选择概率最大的那个。 <br>
+</center>
+</caption>
+Non-max suppression uses the very important function called <strong>&quot;Intersection over Union&quot;</strong>, or IoU. <img src="/2018/03/13/54_ObjDect/iou.png" style="width:500px;height:400;">
+<caption>
+<center>
+<u> <strong>图 8</strong> </u>: &quot;Intersection over Union&quot;的定义. <br>
+</center>
+</caption>
+<p>下面实现IOU函数: - 只在本文中，通过两个角点定义边框(左上角和右下角): (x1, y1, x2, y2) 而不是中心点和高/宽. - 计算一个矩形的面积：高(y2 - y1) × 宽 (x2 - x1) - 同样需要找到两个边框重叠的坐标 (xi1, yi1, xi2, yi2) : - xi1 = 两个边框x1 坐标的最大值<br>
+- yi1 = 两个边框y1 坐标的最大值<br>
+- xi2 = 两个边框x2 坐标的最小值 - yi2 = 两个边框y2 坐标的最小值</p>
+<p>本例中 (0,0) 是图像的左上角, (1,0) 为图像的右上角, (1,1) 为图像的右下角.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: iou</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">iou</span><span class="params">(box1, box2)</span>:</span></span><br><span class="line">    <span class="string">"""Implement the intersection over union (IoU) between box1 and box2</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    box1 -- first box, list object with coordinates (x1, y1, x2, y2)</span></span><br><span class="line"><span class="string">    box2 -- second box, list object with coordinates (x1, y1, x2, y2)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Calculate the (y1, x1, y2, x2) coordinates of the intersection of box1 and box2. Calculate its Area.</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 5 lines)</span></span><br><span class="line">    xi1 = np.max([box1[<span class="number">0</span>],box2[<span class="number">0</span>]])</span><br><span class="line">    yi1 = np.max([box1[<span class="number">1</span>],box2[<span class="number">1</span>]])</span><br><span class="line">    xi2 = np.min([box1[<span class="number">2</span>],box2[<span class="number">2</span>]])</span><br><span class="line">    yi2 = np.min([box1[<span class="number">3</span>],box2[<span class="number">3</span>]])</span><br><span class="line">    inter_area = (xi1-xi2)*(yi1-yi2)</span><br><span class="line">    <span class="comment">### END CODE HERE ###    </span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Calculate the Union area by using Formula: Union(A,B) = A + B - Inter(A,B)</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 3 lines)</span></span><br><span class="line">    box1_area = (box1[<span class="number">2</span>]-box1[<span class="number">0</span>])*(box1[<span class="number">3</span>]-box1[<span class="number">1</span>])</span><br><span class="line">    box2_area = (box2[<span class="number">2</span>]-box2[<span class="number">0</span>])*(box2[<span class="number">3</span>]-box2[<span class="number">1</span>])</span><br><span class="line">    union_area = box1_area + box2_area - inter_area</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># compute the IoU</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 1 line)</span></span><br><span class="line">    iou = inter_area/union_area</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> iou</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">box1 = (<span class="number">2</span>, <span class="number">1</span>, <span class="number">4</span>, <span class="number">3</span>)</span><br><span class="line">box2 = (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>) </span><br><span class="line">print(<span class="string">"iou = "</span> + str(iou(box1, box2)))</span><br></pre></td></tr></table></figure>
+<pre><code>iou = 0.142857142857</code></pre>
+<p>实现NMS的主要步骤：</p>
+<ol style="list-style-type: decimal">
+<li>选择概率最高的边框<br>
+</li>
+<li>计算所有和这个边框重叠程度，移除重叠程度超过iou_threshold的边框<br>
+</li>
+<li>回到第一步迭代，直到没有比当前所选择边框概率更低的边框</li>
+</ol>
+<p>上述过程将会移除所有和选定边框重叠率高的边框，仅仅剩下最优的边框。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: yolo_non_max_suppression</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">yolo_non_max_suppression</span><span class="params">(scores, boxes, classes, max_boxes = <span class="number">10</span>, iou_threshold = <span class="number">0.5</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Applies Non-max suppression (NMS) to set of boxes</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    scores -- tensor of shape (None,), output of yolo_filter_boxes()</span></span><br><span class="line"><span class="string">    boxes -- tensor of shape (None, 4), output of yolo_filter_boxes() that have been scaled to the image size (see later)</span></span><br><span class="line"><span class="string">    classes -- tensor of shape (None,), output of yolo_filter_boxes()</span></span><br><span class="line"><span class="string">    max_boxes -- integer, maximum number of predicted boxes you'd like</span></span><br><span class="line"><span class="string">    iou_threshold -- real value, "intersection over union" threshold used for NMS filtering</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    scores -- tensor of shape (, None), predicted score for each box</span></span><br><span class="line"><span class="string">    boxes -- tensor of shape (4, None), predicted box coordinates</span></span><br><span class="line"><span class="string">    classes -- tensor of shape (, None), predicted class for each box</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Note: The "None" dimension of the output tensors has obviously to be less than max_boxes. Note also that this</span></span><br><span class="line"><span class="string">    function will transpose the shapes of scores, boxes, classes. This is made for convenience.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    max_boxes_tensor = K.variable(max_boxes, dtype=<span class="string">'int32'</span>)     <span class="comment"># tensor to be used in tf.image.non_max_suppression()</span></span><br><span class="line">    K.get_session().run(tf.variables_initializer([max_boxes_tensor])) <span class="comment"># initialize variable max_boxes_tensor</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Use tf.image.non_max_suppression() to get the list of indices corresponding to boxes you keep</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 1 line)</span></span><br><span class="line">    nms_indices = tf.image.non_max_suppression(boxes,scores,max_boxes,iou_threshold)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Use K.gather() to select only nms_indices from scores, boxes and classes</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 3 lines)</span></span><br><span class="line">    scores = K.gather(scores,nms_indices)</span><br><span class="line">    boxes = K.gather(boxes,nms_indices)</span><br><span class="line">    classes = K.gather(classes,nms_indices)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> scores, boxes, classes</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test_b:</span><br><span class="line">    scores = tf.random_normal([<span class="number">54</span>,], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>)</span><br><span class="line">    boxes = tf.random_normal([<span class="number">54</span>, <span class="number">4</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>)</span><br><span class="line">    classes = tf.random_normal([<span class="number">54</span>,], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>)</span><br><span class="line">    scores, boxes, classes = yolo_non_max_suppression(scores, boxes, classes)</span><br><span class="line">    print(<span class="string">"scores[2] = "</span> + str(scores[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"boxes[2] = "</span> + str(boxes[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"classes[2] = "</span> + str(classes[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"scores.shape = "</span> + str(scores.eval().shape))</span><br><span class="line">    print(<span class="string">"boxes.shape = "</span> + str(boxes.eval().shape))</span><br><span class="line">    print(<span class="string">"classes.shape = "</span> + str(classes.eval().shape))</span><br></pre></td></tr></table></figure>
+<pre><code>scores[2] = 6.9384
+boxes[2] = [-5.299932    3.13798141  4.45036697  0.95942086]
+classes[2] = -2.24527
+scores.shape = (10,)
+boxes.shape = (10, 4)
+classes.shape = (10,)</code></pre>
+<h3 id="包装前面的滤波器">包装前面的滤波器</h3>
+<p>深度CNN网络的输出维度为19x19x5x85，利用前面实现的函数（概率阈值和NMS）滤掉一些边框，即得到最终目标识别结果。 and filtering through all the boxes using the functions you've just implemented.</p>
+<p>需要注意的是，边框有两种表示方式，一种是用角点，另一种是中点和高/宽。 YOLO经常要变换这两种方式:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">boxes = yolo_boxes_to_corners(box_xy, box_wh)</span><br></pre></td></tr></table></figure>
+<p>上面将yolo边框坐标 (x,y,w,h) 转换成角点坐标 (x1, y1, x2, y2) 以作为函数 <code>yolo_filter_boxes</code>的输入 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">boxes = scale_boxes(boxes, image_shape)</span><br></pre></td></tr></table></figure></p>
+<p>YOLO网络实在608x608 的图像上训练得到的. 如果想用这个网络在不同大小的图像上测试，比如720x1280 的图像--上面的函数重尺度化边框大小，以画在 720x1280 的图像上.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: yolo_eval</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">yolo_eval</span><span class="params">(yolo_outputs, image_shape = <span class="params">(<span class="number">720.</span>, <span class="number">1280.</span>)</span>, max_boxes=<span class="number">10</span>, score_threshold=<span class="number">.6</span>, iou_threshold=<span class="number">.5</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Converts the output of YOLO encoding (a lot of boxes) to your predicted boxes along with their scores, box coordinates and classes.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    yolo_outputs -- output of the encoding model (for image_shape of (608, 608, 3)), contains 4 tensors:</span></span><br><span class="line"><span class="string">                    box_confidence: tensor of shape (None, 19, 19, 5, 1)</span></span><br><span class="line"><span class="string">                    box_xy: tensor of shape (None, 19, 19, 5, 2)</span></span><br><span class="line"><span class="string">                    box_wh: tensor of shape (None, 19, 19, 5, 2)</span></span><br><span class="line"><span class="string">                    box_class_probs: tensor of shape (None, 19, 19, 5, 80)</span></span><br><span class="line"><span class="string">    image_shape -- tensor of shape (2,) containing the input shape, in this notebook we use (608., 608.) (has to be float32 dtype)</span></span><br><span class="line"><span class="string">    max_boxes -- integer, maximum number of predicted boxes you'd like</span></span><br><span class="line"><span class="string">    score_threshold -- real value, if [ highest class probability score &lt; threshold], then get rid of the corresponding box</span></span><br><span class="line"><span class="string">    iou_threshold -- real value, "intersection over union" threshold used for NMS filtering</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    scores -- tensor of shape (None, ), predicted score for each box</span></span><br><span class="line"><span class="string">    boxes -- tensor of shape (None, 4), predicted box coordinates</span></span><br><span class="line"><span class="string">    classes -- tensor of shape (None,), predicted class for each box</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### </span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Retrieve outputs of the YOLO model (≈1 line)</span></span><br><span class="line">    box_confidence, box_xy, box_wh, box_class_probs = yolo_outputs</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Convert boxes to be ready for filtering functions </span></span><br><span class="line">    boxes = yolo_boxes_to_corners(box_xy, box_wh)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Use one of the functions you've implemented to perform Score-filtering with a threshold of score_threshold (≈1 line)</span></span><br><span class="line">    scores, boxes, classes = yolo_filter_boxes(box_confidence, boxes, box_class_probs, score_threshold)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Scale boxes back to original image shape.</span></span><br><span class="line">    boxes = scale_boxes(boxes, image_shape)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Use one of the functions you've implemented to perform Non-max suppression with a threshold of iou_threshold (≈1 line)</span></span><br><span class="line">    scores, boxes, classes = yolo_non_max_suppression(scores, boxes, classes, max_boxes, iou_threshold)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> scores, boxes, classes</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test_b:</span><br><span class="line">    yolo_outputs = (tf.random_normal([<span class="number">19</span>, <span class="number">19</span>, <span class="number">5</span>, <span class="number">1</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>),</span><br><span class="line">                    tf.random_normal([<span class="number">19</span>, <span class="number">19</span>, <span class="number">5</span>, <span class="number">2</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>),</span><br><span class="line">                    tf.random_normal([<span class="number">19</span>, <span class="number">19</span>, <span class="number">5</span>, <span class="number">2</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>),</span><br><span class="line">                    tf.random_normal([<span class="number">19</span>, <span class="number">19</span>, <span class="number">5</span>, <span class="number">80</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>, seed = <span class="number">1</span>))</span><br><span class="line">    scores, boxes, classes = yolo_eval(yolo_outputs)</span><br><span class="line">    print(<span class="string">"scores[2] = "</span> + str(scores[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"boxes[2] = "</span> + str(boxes[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"classes[2] = "</span> + str(classes[<span class="number">2</span>].eval()))</span><br><span class="line">    print(<span class="string">"scores.shape = "</span> + str(scores.eval().shape))</span><br><span class="line">    print(<span class="string">"boxes.shape = "</span> + str(boxes.eval().shape))</span><br><span class="line">    print(<span class="string">"classes.shape = "</span> + str(classes.eval().shape))</span><br></pre></td></tr></table></figure>
+<pre><code>scores[2] = 138.791
+boxes[2] = [ 1292.32971191  -278.52166748  3876.98925781  -835.56494141]
+classes[2] = 54
+scores.shape = (10,)
+boxes.shape = (10, 4)
+classes.shape = (10,)</code></pre>
+<p>YOLO小结：</p>
+<ul>
+<li>输入图像大小为(608, 608, 3)<br>
+</li>
+<li>输入图像进入CNN之后，输出维度为(19,19,5,85)<br>
+</li>
+<li>将最后两个维度压扁之后，维度为(19, 19, 425):
+<ul>
+<li>输入图像的每个网格对应 425 个数值.</li>
+<li>425 = 5 x 85 表示每个网格包含5中不同的anchor边框.</li>
+<li>85 = 5 + 80 其中5表示 <span class="math inline">\((p_c, b_x, b_y, b_h, b_w)\)</span>, <span class="math inline">\(p_c\)</span>表示存在目标的概率、后面4个数值表示边框坐标，80表示要探测的目标类别数<br>
+</li>
+</ul></li>
+<li>只筛选出一小部分边框:
+<ul>
+<li>概率阈值筛选: 丢掉探测目标概率小于阈值的边框<br>
+</li>
+<li>Non-max suppression: 计算重叠率IOU，避免选择重叠边框<br>
+</li>
+</ul></li>
+<li>输出 YOLO算法的最终结果</li>
+</ul>
+<h2 id="测试已训练的yolo模型">测试已训练的YOLO模型</h2>
+<p>利用已经训练好的YOLO模型，对汽车数据集进行目标探测。和之前一样，首先建立会话，启动计算图</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sess = K.get_session()</span><br></pre></td></tr></table></figure>
+<h3 id="定义类别anchor边框和图像大小">定义类别、anchor边框和图像大小</h3>
+<p>考虑探测80个类别，用5种anchor边框。所有80个类别和5种边框的信息都放在文件 &quot;coco_classes.txt&quot; 和 &quot;yolo_anchors.txt&quot;中. 用下面的命令加载这些数据。</p>
+<p>汽车目标探测数据集的图像大小为720×1280，而YOLO模型处理的图像大小为608*608</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">class_names = read_classes(<span class="string">"model_data/coco_classes.txt"</span>)</span><br><span class="line">anchors = read_anchors(<span class="string">"model_data/yolo_anchors.txt"</span>)</span><br><span class="line">image_shape = (<span class="number">720.</span>, <span class="number">1280.</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="加载已训练好的yolo模型">加载已训练好的YOLO模型</h3>
+<p>训练YOLO模型需要很长时间，也需要很大的标定数据集。本文加载一个已经用Keras训练好的 YOLO 模型——&quot;yolo.h5&quot;. (权值来源于 YOLO 网站, 并被Allan Zelener转化成这种数据类型. 实际上，这些参数对应的是&quot;YOLOv2&quot; 模型, 但是这里还是简单称为&quot;YOLO&quot;模型.).</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yolo_model = load_model(<span class="string">"model_data/yolo.h5"</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>/home/seisinv/anaconda3/envs/tensorflow/lib/python3.5/site-packages/keras/models.py:258: UserWarning: No training configuration found in save file: the model was *not* compiled. Compile it manually.
+  warnings.warn(&#39;No training configuration found in save file: &#39;</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yolo_model.summary()</span><br></pre></td></tr></table></figure>
+<pre><code>____________________________________________________________________________________________________
+Layer (type)                     Output Shape          Param #     Connected to                     
+====================================================================================================
+input_1 (InputLayer)             (None, 608, 608, 3)   0                                            
+____________________________________________________________________________________________________
+conv2d_1 (Conv2D)                (None, 608, 608, 32)  864         input_1[0][0]                    
+____________________________________________________________________________________________________
+batch_normalization_1 (BatchNorm (None, 608, 608, 32)  128         conv2d_1[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_1 (LeakyReLU)        (None, 608, 608, 32)  0           batch_normalization_1[0][0]      
+____________________________________________________________________________________________________
+max_pooling2d_1 (MaxPooling2D)   (None, 304, 304, 32)  0           leaky_re_lu_1[0][0]              
+____________________________________________________________________________________________________
+conv2d_2 (Conv2D)                (None, 304, 304, 64)  18432       max_pooling2d_1[0][0]            
+____________________________________________________________________________________________________
+batch_normalization_2 (BatchNorm (None, 304, 304, 64)  256         conv2d_2[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_2 (LeakyReLU)        (None, 304, 304, 64)  0           batch_normalization_2[0][0]      
+____________________________________________________________________________________________________
+max_pooling2d_2 (MaxPooling2D)   (None, 152, 152, 64)  0           leaky_re_lu_2[0][0]              
+____________________________________________________________________________________________________
+conv2d_3 (Conv2D)                (None, 152, 152, 128) 73728       max_pooling2d_2[0][0]            
+____________________________________________________________________________________________________
+batch_normalization_3 (BatchNorm (None, 152, 152, 128) 512         conv2d_3[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_3 (LeakyReLU)        (None, 152, 152, 128) 0           batch_normalization_3[0][0]      
+____________________________________________________________________________________________________
+conv2d_4 (Conv2D)                (None, 152, 152, 64)  8192        leaky_re_lu_3[0][0]              
+____________________________________________________________________________________________________
+batch_normalization_4 (BatchNorm (None, 152, 152, 64)  256         conv2d_4[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_4 (LeakyReLU)        (None, 152, 152, 64)  0           batch_normalization_4[0][0]      
+____________________________________________________________________________________________________
+conv2d_5 (Conv2D)                (None, 152, 152, 128) 73728       leaky_re_lu_4[0][0]              
+____________________________________________________________________________________________________
+batch_normalization_5 (BatchNorm (None, 152, 152, 128) 512         conv2d_5[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_5 (LeakyReLU)        (None, 152, 152, 128) 0           batch_normalization_5[0][0]      
+____________________________________________________________________________________________________
+max_pooling2d_3 (MaxPooling2D)   (None, 76, 76, 128)   0           leaky_re_lu_5[0][0]              
+____________________________________________________________________________________________________
+conv2d_6 (Conv2D)                (None, 76, 76, 256)   294912      max_pooling2d_3[0][0]            
+____________________________________________________________________________________________________
+batch_normalization_6 (BatchNorm (None, 76, 76, 256)   1024        conv2d_6[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_6 (LeakyReLU)        (None, 76, 76, 256)   0           batch_normalization_6[0][0]      
+____________________________________________________________________________________________________
+conv2d_7 (Conv2D)                (None, 76, 76, 128)   32768       leaky_re_lu_6[0][0]              
+____________________________________________________________________________________________________
+batch_normalization_7 (BatchNorm (None, 76, 76, 128)   512         conv2d_7[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_7 (LeakyReLU)        (None, 76, 76, 128)   0           batch_normalization_7[0][0]      
+____________________________________________________________________________________________________
+conv2d_8 (Conv2D)                (None, 76, 76, 256)   294912      leaky_re_lu_7[0][0]              
+____________________________________________________________________________________________________
+batch_normalization_8 (BatchNorm (None, 76, 76, 256)   1024        conv2d_8[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_8 (LeakyReLU)        (None, 76, 76, 256)   0           batch_normalization_8[0][0]      
+____________________________________________________________________________________________________
+max_pooling2d_4 (MaxPooling2D)   (None, 38, 38, 256)   0           leaky_re_lu_8[0][0]              
+____________________________________________________________________________________________________
+conv2d_9 (Conv2D)                (None, 38, 38, 512)   1179648     max_pooling2d_4[0][0]            
+____________________________________________________________________________________________________
+batch_normalization_9 (BatchNorm (None, 38, 38, 512)   2048        conv2d_9[0][0]                   
+____________________________________________________________________________________________________
+leaky_re_lu_9 (LeakyReLU)        (None, 38, 38, 512)   0           batch_normalization_9[0][0]      
+____________________________________________________________________________________________________
+conv2d_10 (Conv2D)               (None, 38, 38, 256)   131072      leaky_re_lu_9[0][0]              
+____________________________________________________________________________________________________
+batch_normalization_10 (BatchNor (None, 38, 38, 256)   1024        conv2d_10[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_10 (LeakyReLU)       (None, 38, 38, 256)   0           batch_normalization_10[0][0]     
+____________________________________________________________________________________________________
+conv2d_11 (Conv2D)               (None, 38, 38, 512)   1179648     leaky_re_lu_10[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_11 (BatchNor (None, 38, 38, 512)   2048        conv2d_11[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_11 (LeakyReLU)       (None, 38, 38, 512)   0           batch_normalization_11[0][0]     
+____________________________________________________________________________________________________
+conv2d_12 (Conv2D)               (None, 38, 38, 256)   131072      leaky_re_lu_11[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_12 (BatchNor (None, 38, 38, 256)   1024        conv2d_12[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_12 (LeakyReLU)       (None, 38, 38, 256)   0           batch_normalization_12[0][0]     
+____________________________________________________________________________________________________
+conv2d_13 (Conv2D)               (None, 38, 38, 512)   1179648     leaky_re_lu_12[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_13 (BatchNor (None, 38, 38, 512)   2048        conv2d_13[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_13 (LeakyReLU)       (None, 38, 38, 512)   0           batch_normalization_13[0][0]     
+____________________________________________________________________________________________________
+max_pooling2d_5 (MaxPooling2D)   (None, 19, 19, 512)   0           leaky_re_lu_13[0][0]             
+____________________________________________________________________________________________________
+conv2d_14 (Conv2D)               (None, 19, 19, 1024)  4718592     max_pooling2d_5[0][0]            
+____________________________________________________________________________________________________
+batch_normalization_14 (BatchNor (None, 19, 19, 1024)  4096        conv2d_14[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_14 (LeakyReLU)       (None, 19, 19, 1024)  0           batch_normalization_14[0][0]     
+____________________________________________________________________________________________________
+conv2d_15 (Conv2D)               (None, 19, 19, 512)   524288      leaky_re_lu_14[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_15 (BatchNor (None, 19, 19, 512)   2048        conv2d_15[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_15 (LeakyReLU)       (None, 19, 19, 512)   0           batch_normalization_15[0][0]     
+____________________________________________________________________________________________________
+conv2d_16 (Conv2D)               (None, 19, 19, 1024)  4718592     leaky_re_lu_15[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_16 (BatchNor (None, 19, 19, 1024)  4096        conv2d_16[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_16 (LeakyReLU)       (None, 19, 19, 1024)  0           batch_normalization_16[0][0]     
+____________________________________________________________________________________________________
+conv2d_17 (Conv2D)               (None, 19, 19, 512)   524288      leaky_re_lu_16[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_17 (BatchNor (None, 19, 19, 512)   2048        conv2d_17[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_17 (LeakyReLU)       (None, 19, 19, 512)   0           batch_normalization_17[0][0]     
+____________________________________________________________________________________________________
+conv2d_18 (Conv2D)               (None, 19, 19, 1024)  4718592     leaky_re_lu_17[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_18 (BatchNor (None, 19, 19, 1024)  4096        conv2d_18[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_18 (LeakyReLU)       (None, 19, 19, 1024)  0           batch_normalization_18[0][0]     
+____________________________________________________________________________________________________
+conv2d_19 (Conv2D)               (None, 19, 19, 1024)  9437184     leaky_re_lu_18[0][0]             
+____________________________________________________________________________________________________
+batch_normalization_19 (BatchNor (None, 19, 19, 1024)  4096        conv2d_19[0][0]                  
+____________________________________________________________________________________________________
+conv2d_21 (Conv2D)               (None, 38, 38, 64)    32768       leaky_re_lu_13[0][0]             
+____________________________________________________________________________________________________
+leaky_re_lu_19 (LeakyReLU)       (None, 19, 19, 1024)  0           batch_normalization_19[0][0]     
+____________________________________________________________________________________________________
+batch_normalization_21 (BatchNor (None, 38, 38, 64)    256         conv2d_21[0][0]                  
+____________________________________________________________________________________________________
+conv2d_20 (Conv2D)               (None, 19, 19, 1024)  9437184     leaky_re_lu_19[0][0]             
+____________________________________________________________________________________________________
+leaky_re_lu_21 (LeakyReLU)       (None, 38, 38, 64)    0           batch_normalization_21[0][0]     
+____________________________________________________________________________________________________
+batch_normalization_20 (BatchNor (None, 19, 19, 1024)  4096        conv2d_20[0][0]                  
+____________________________________________________________________________________________________
+space_to_depth_x2 (Lambda)       (None, 19, 19, 256)   0           leaky_re_lu_21[0][0]             
+____________________________________________________________________________________________________
+leaky_re_lu_20 (LeakyReLU)       (None, 19, 19, 1024)  0           batch_normalization_20[0][0]     
+____________________________________________________________________________________________________
+concatenate_1 (Concatenate)      (None, 19, 19, 1280)  0           space_to_depth_x2[0][0]          
+                                                                   leaky_re_lu_20[0][0]             
+____________________________________________________________________________________________________
+conv2d_22 (Conv2D)               (None, 19, 19, 1024)  11796480    concatenate_1[0][0]              
+____________________________________________________________________________________________________
+batch_normalization_22 (BatchNor (None, 19, 19, 1024)  4096        conv2d_22[0][0]                  
+____________________________________________________________________________________________________
+leaky_re_lu_22 (LeakyReLU)       (None, 19, 19, 1024)  0           batch_normalization_22[0][0]     
+____________________________________________________________________________________________________
+conv2d_23 (Conv2D)               (None, 19, 19, 425)   435625      leaky_re_lu_22[0][0]             
+====================================================================================================
+Total params: 50,983,561
+Trainable params: 50,962,889
+Non-trainable params: 20,672
+____________________________________________________________________________________________________</code></pre>
+<h3 id="将模型的输出转化成有用的边框张量">将模型的输出转化成有用的边框张量</h3>
+<p>yolo_model的输出维度为(m,19,19,5,85)，需要进一步处理和转换。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yolo_outputs = yolo_head(yolo_model.output, anchors, len(class_names))</span><br></pre></td></tr></table></figure>
+<h3 id="边框滤波">边框滤波</h3>
+<p><code>yolo_outputs</code> 得到的是 <code>yolo_model</code>输出的正确格式. 现在可以执行滤波，选择最优的边框。调用之前实现的 <code>yolo_eval</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">scores, boxes, classes = yolo_eval(yolo_outputs, image_shape)</span><br></pre></td></tr></table></figure>
+<h3 id="在一张图像上执行计算图">在一张图像上执行计算图</h3>
+<p>建立计算图 (<code>sess</code>) 的流程为:</p>
+<ol style="list-style-type: decimal">
+<li><font color="purple"> yolo_model.input </font> 输入 <code>yolo_model</code>. 该模型用来计算输出 <font color="purple"> yolo_model.output </font></li>
+<li><font color="purple"> yolo_model.output </font> 经 <code>yolo_head</code>处理. 输出 <font color="purple"> yolo_outputs </font></li>
+<li><font color="purple"> yolo_outputs </font> 进入滤波函数, <code>yolo_eval</code>. 输出预测结果: <font color="purple"> scores, boxes, classes </font></li>
+</ol>
+<p>使用的函数包括: <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">image, image_data = preprocess_image(<span class="string">"images/"</span> + image_file, model_image_size = (<span class="number">608</span>, <span class="number">608</span>))</span><br></pre></td></tr></table></figure></p>
+<p>输出:</p>
+<ul>
+<li>image: 用于图像画边框的python (PIL) 表示.<br>
+</li>
+<li>image_data: 图像的NUMPY表示. 作为 CNN的输入.</li>
+</ul>
+<p><strong>注意</strong>: 当模型使用 BatchNorm (比如YOLO模型), 需要在字典feed_dict中传递另一个占位符 {K.learning_phase(): 0}.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">predict</span><span class="params">(sess, image_file)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Runs the graph stored in "sess" to predict boxes for "image_file". Prints and plots the preditions.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    sess -- your tensorflow/Keras session containing the YOLO graph</span></span><br><span class="line"><span class="string">    image_file -- name of an image stored in the "images" folder.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    out_scores -- tensor of shape (None, ), scores of the predicted boxes</span></span><br><span class="line"><span class="string">    out_boxes -- tensor of shape (None, 4), coordinates of the predicted boxes</span></span><br><span class="line"><span class="string">    out_classes -- tensor of shape (None, ), class index of the predicted boxes</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Note: "None" actually represents the number of predicted boxes, it varies between 0 and max_boxes. </span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Preprocess your image</span></span><br><span class="line">    image, image_data = preprocess_image(<span class="string">"images/"</span> + image_file, model_image_size = (<span class="number">608</span>, <span class="number">608</span>))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Run the session with the correct tensors and choose the correct placeholders in the feed_dict.</span></span><br><span class="line">    <span class="comment"># You'll need to use feed_dict=&#123;yolo_model.input: ... , K.learning_phase(): 0&#125;)</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 1 line)</span></span><br><span class="line">    out_scores, out_boxes, out_classes = sess.run([scores, boxes, classes], feed_dict=&#123;yolo_model.input: image_data, K.learning_phase(): <span class="number">0</span>&#125;)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Print predictions info</span></span><br><span class="line">    print(<span class="string">'Found &#123;&#125; boxes for &#123;&#125;'</span>.format(len(out_boxes), image_file))</span><br><span class="line">    <span class="comment"># Generate colors for drawing bounding boxes.</span></span><br><span class="line">    colors = generate_colors(class_names)</span><br><span class="line">    <span class="comment"># Draw bounding boxes on the image file</span></span><br><span class="line">    draw_boxes(image, out_scores, out_boxes, out_classes, class_names, colors)</span><br><span class="line">    <span class="comment"># Save the predicted bounding box on the image</span></span><br><span class="line">    image.save(os.path.join(<span class="string">"out"</span>, image_file), quality=<span class="number">90</span>)</span><br><span class="line">    <span class="comment"># Display the results in the notebook</span></span><br><span class="line">    output_image = scipy.misc.imread(os.path.join(<span class="string">"out"</span>, image_file))</span><br><span class="line">    imshow(output_image)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> out_scores, out_boxes, out_classes</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">out_scores, out_boxes, out_classes = predict(sess, <span class="string">"test.jpg"</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>Found 7 boxes for test.jpg
+car 0.60 (925, 285) (1045, 374)
+car 0.66 (706, 279) (786, 350)
+bus 0.67 (5, 266) (220, 407)
+car 0.70 (947, 324) (1280, 705)
+car 0.74 (159, 303) (346, 440)
+car 0.80 (761, 282) (942, 412)
+car 0.89 (367, 300) (745, 648)</code></pre>
+<div class="figure">
+<img src="/2018/03/13/54_ObjDect/output_31_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<h2 id="结论">结论</h2>
+<ul>
+<li>YOLO是当前既快、又准确的目标检测模型<br>
+</li>
+<li>输入图像经过CNN之后，输出<span class="math inline">\(19\times19\times5\times85\)</span>维数据体<br>
+</li>
+<li>输出可看做是19*19网格上每个网格5中不同边框的信息<br>
+</li>
+<li>对所有边框实施非最大值压制，具体包括：<br>
+</li>
+<li>利用阈值过滤掉概率小的目标检测结果</li>
+<li>计算IoU去掉覆盖率高的边框<br>
+</li>
+<li>由于从随机权值开始训练YOLO模型，需要很大的数据集和计算量，本文使用已经训练的模型。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a><br>
+</li>
+<li>Joseph Redmon, Santosh Divvala, Ross Girshick, Ali Farhadi - <a href="https://arxiv.org/abs/1506.02640" target="_blank" rel="noopener">You Only Look Once: Unified, Real-Time Object Detection</a> (2015)</li>
+<li>Joseph Redmon, Ali Farhadi - <a href="https://arxiv.org/abs/1612.08242" target="_blank" rel="noopener">YOLO9000: Better, Faster, Stronger</a> (2016)</li>
+<li>Allan Zelener - <a href="https://github.com/allanzelener/YAD2K" target="_blank" rel="noopener">YAD2K: Yet Another Darknet 2 Keras</a></li>
+<li>The official YOLO website (https://pjreddie.com/darknet/yolo/)</li>
+</ul>
+<p><strong>Car detection dataset</strong>: <a rel="noopener" href="http://creativecommons.org/licenses/by/4.0/" target="_blank"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png"></a><br><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">The Drive.ai Sample Dataset</span> (provided by drive.ai) is licensed under a <a rel="noopener" href="http://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Attribution 4.0 International License</a>. We are especially grateful to Brody Huval, Chih Hu and Rahul Patel for collecting and providing this dataset.</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/卷积神经网络/" rel="tag"># 卷积神经网络</a>
+          
+            <a href="/tags/Keras/" rel="tag"># Keras</a>
+          
+            <a href="/tags/YOLO/" rel="tag"># YOLO</a>
+          
+            <a href="/tags/IOU/" rel="tag"># IOU</a>
+          
+            <a href="/tags/NMS/" rel="tag"># NMS</a>
+          
+            <a href="/tags/tensorflow/" rel="tag"># tensorflow</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/10/53_ResNets/" rel="next" title="剩余网络（ResNets）">
+                <i class="fa fa-chevron-left"></i> 剩余网络（ResNets）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/13/55_FaceNet/" rel="prev" title="人脸识别">
+                人脸识别 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#问题"><span class="nav-number">1.</span> <span class="nav-text">问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#yolo算法"><span class="nav-number">2.</span> <span class="nav-text">YOLO算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#模型的细节"><span class="nav-number">2.1.</span> <span class="nav-text">模型的细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#根据分类概率滤掉一些边框"><span class="nav-number">2.2.</span> <span class="nav-text">根据分类概率滤掉一些边框</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#non-max-suppression"><span class="nav-number">2.3.</span> <span class="nav-text">Non-max suppression</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#包装前面的滤波器"><span class="nav-number">2.4.</span> <span class="nav-text">包装前面的滤波器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试已训练的yolo模型"><span class="nav-number">3.</span> <span class="nav-text">测试已训练的YOLO模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#定义类别anchor边框和图像大小"><span class="nav-number">3.1.</span> <span class="nav-text">定义类别、anchor边框和图像大小</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#加载已训练好的yolo模型"><span class="nav-number">3.2.</span> <span class="nav-text">加载已训练好的YOLO模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#将模型的输出转化成有用的边框张量"><span class="nav-number">3.3.</span> <span class="nav-text">将模型的输出转化成有用的边框张量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#边框滤波"><span class="nav-number">3.4.</span> <span class="nav-text">边框滤波</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在一张图像上执行计算图"><span class="nav-number">3.5.</span> <span class="nav-text">在一张图像上执行计算图</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">4.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

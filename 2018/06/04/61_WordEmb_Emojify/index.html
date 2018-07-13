@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="LSTM,词嵌入,序列到序列模型," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文实现一个将文本转化成表情包的模型。由于使用了词编码模型，尽管使用很少的训练数据，也可以准确的将没有出现的词汇映射到相同的表情包上。本文先从一个简单的模型（Emojifier-V1）出发，介绍词嵌入模型的用法，然后引入LSTM模型，改进为可以利用上下文信息的更加先进的表情包模型。">
+<meta name="keywords" content="LSTM,词嵌入,序列到序列模型">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于词编码模型制作表情包">
+<meta property="og:url" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文实现一个将文本转化成表情包的模型。由于使用了词编码模型，尽管使用很少的训练数据，也可以准确的将没有出现的词汇映射到相同的表情包上。本文先从一个简单的模型（Emojifier-V1）出发，介绍词嵌入模型的用法，然后引入LSTM模型，改进为可以利用上下文信息的更加先进的表情包模型。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/data_set.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/image_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/output_26_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/emojifier-v2.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/embedding1.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/emojifier-v2.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/woebot.png">
+<meta property="og:updated_time" content="2018-06-04T14:13:16.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于词编码模型制作表情包">
+<meta name="twitter:description" content="本文实现一个将文本转化成表情包的模型。由于使用了词编码模型，尽管使用很少的训练数据，也可以准确的将没有出现的词汇映射到相同的表情包上。本文先从一个简单的模型（Emojifier-V1）出发，介绍词嵌入模型的用法，然后引入LSTM模型，改进为可以利用上下文信息的更加先进的表情包模型。">
+<meta name="twitter:image" content="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/data_set.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/"/>
+
+
+
+
+
+  <title>基于词编码模型制作表情包 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/04/61_WordEmb_Emojify/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">基于词编码模型制作表情包</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-04T22:14:16+08:00">
+                2018-06-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文实现一个将文本转化成表情包的模型。由于使用了词编码模型，尽管使用很少的训练数据，也可以准确的将没有出现的词汇映射到相同的表情包上。本文先从一个简单的模型（Emojifier-V1）出发，介绍词嵌入模型的用法，然后引入LSTM模型，改进为可以利用上下文信息的更加先进的表情包模型。 <a id="more"></a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> emo_utils <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> emoji</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br></pre></td></tr></table></figure>
+<h2 id="基础模型emojifier-v1">基础模型：Emojifier-V1</h2>
+<h3 id="emojiset数据集">EMOJISET数据集</h3>
+<p>首先，使用一个小的数据集，建立一个简单的基础模型：<br>
+- X包含127个句子<br>
+- Y包含0到4的整型标签，每个数字对应一个表情</p>
+<img src="/2018/06/04/61_WordEmb_Emojify/data_set.png" style="width:700px;height:300px;">
+<caption>
+<center>
+<strong>图 1</strong>: EMOJISET - 五分类问题. 这里显示了一些句子的例子.
+</center>
+</caption>
+<p>下面加载数据集，并分为训练集（127个样本）和测试集（56个样本）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">X_train, Y_train = read_csv(<span class="string">'data/emoji_data/train_emoji.csv'</span>)</span><br><span class="line">X_test, Y_test = read_csv(<span class="string">'data/emoji_data/tesss.csv'</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">maxLen = len(max(X_train, key=len).split())</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">index = <span class="number">1</span></span><br><span class="line">print(X_train[index], label_to_emoji(Y_train[index]))</span><br></pre></td></tr></table></figure>
+<pre><code>I am proud of your achievements 😄</code></pre>
+<h3 id="emojifier-v1简介">Emojifier-V1简介</h3>
+<p>下面实现基本模型Emojifier-v1：</p>
+<center>
+<img src="/2018/06/04/61_WordEmb_Emojify/image_1.png" style="width:900px;height:300px;">
+<caption>
+<center>
+<strong>图 2</strong>: 基本的模型 (Emojifier-V1).
+</center>
+</caption>
+</center>
+<p>模型的输入是句子（也就是字符串，比如&quot;I love you&quot;）。输出是形状为(1,5)的概率向量，输入argmax层输出最有可能的表情。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Y_oh_train = convert_to_one_hot(Y_train, C = <span class="number">5</span>)</span><br><span class="line">Y_oh_test = convert_to_one_hot(Y_test, C = <span class="number">5</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">index = <span class="number">50</span></span><br><span class="line">print(Y_train[index], <span class="string">"is converted into one hot"</span>, Y_oh_train[index])</span><br></pre></td></tr></table></figure>
+<pre><code>0 is converted into one hot [ 1.  0.  0.  0.  0.]</code></pre>
+<h3 id="实现emojifier-v1">实现Emojifier-V1</h3>
+<p>如图(2)所示，第一步是将输入的句子转化为词向量，然后取平均。这里使用首先训练好的50维GloVe编码模型获取词向量。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">word_to_index, index_to_word, word_to_vec_map = read_glove_vecs(<span class="string">'model_data/glove.6B.50d.txt'</span>)</span><br></pre></td></tr></table></figure>
+<p>加载后得到：</p>
+<ul>
+<li>word_to_index: 单词映射到单词表（400,001个单词，有效的索引范围0-400,000）索引的字典.<br>
+</li>
+<li>index_to_word: 索引映射到单词<br>
+</li>
+<li>word_to_vec_map: 单词映射到GloVe词向量</li>
+</ul>
+<p>运行下面的单元，验证是否有效。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">word = <span class="string">"cucumber"</span></span><br><span class="line">index = <span class="number">289846</span></span><br><span class="line">print(<span class="string">"the index of"</span>, word, <span class="string">"in the vocabulary is"</span>, word_to_index[word])</span><br><span class="line">print(<span class="string">"the"</span>, str(index) + <span class="string">"th word in the vocabulary is"</span>, index_to_word[index])</span><br></pre></td></tr></table></figure>
+<pre><code>the index of cucumber in the vocabulary is 113317
+the 289846th word in the vocabulary is potatos</code></pre>
+<p>下面实现<code>sentence_to_avg()</code>，包括两步：<br>
+1. 将所有的句子转化为小写，然后分割为词序列。参考<code>X.lower()</code>和<code>X.split()</code><br>
+2. 对句子中的每个单词，获取它的GloVe词嵌入表示。然后进行平均</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: sentence_to_avg</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sentence_to_avg</span><span class="params">(sentence, word_to_vec_map)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Converts a sentence (string) into a list of words (strings). Extracts the GloVe representation of each word</span></span><br><span class="line"><span class="string">    and averages its value into a single vector encoding the meaning of the sentence.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    sentence -- string, one training example from X</span></span><br><span class="line"><span class="string">    word_to_vec_map -- dictionary mapping every word in a vocabulary into its 50-dimensional vector representation</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    avg -- average vector encoding information about the sentence, numpy-array of shape (50,)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Step 1: Split sentence into list of lower case words (≈ 1 line)</span></span><br><span class="line">    words = (sentence.lower()).split()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Initialize the average word vector, should have the same shape as your word vectors.</span></span><br><span class="line">    avg = np.zeros((<span class="number">50</span>,))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 2: average the word vectors. You can loop over the words in the list "words".</span></span><br><span class="line">    <span class="keyword">for</span> w <span class="keyword">in</span> words:</span><br><span class="line">        avg += word_to_vec_map[w]</span><br><span class="line">    avg = avg / len(words)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> avg</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">avg = sentence_to_avg(<span class="string">"Morrocan couscous is my favorite dish"</span>, word_to_vec_map)</span><br><span class="line">print(<span class="string">"avg = "</span>, avg)</span><br></pre></td></tr></table></figure>
+<pre><code>avg =  [-0.008005    0.56370833 -0.50427333  0.258865    0.55131103  0.03104983
+ -0.21013718  0.16893933 -0.09590267  0.141784   -0.15708967  0.18525867
+  0.6495785   0.38371117  0.21102167  0.11301667  0.02613967  0.26037767
+  0.05820667 -0.01578167 -0.12078833 -0.02471267  0.4128455   0.5152061
+  0.38756167 -0.898661   -0.535145    0.33501167  0.68806933 -0.2156265
+  1.797155    0.10476933 -0.36775333  0.750785    0.10282583  0.348925
+ -0.27262833  0.66768    -0.10706167 -0.283635    0.59580117  0.28747333
+ -0.3366635   0.23393817  0.34349183  0.178405    0.1166155  -0.076433
+  0.1445417   0.09808667]</code></pre>
+<p>计算句子的词嵌入平均之后，正传，然后计算损失函数，反传更新softmax层的参数。需要实现的公式包括：</p>
+<p><span class="math display">\[ z^{(i)} = W . avg^{(i)} + b\]</span> <span class="math display">\[ a^{(i)} = softmax(z^{(i)})\]</span> <span class="math display">\[ \mathcal{L}^{(i)} = - \sum_{k = 0}^{n_y - 1} Yoh^{(i)}_k * log(a^{(i)}_k)\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: model</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model</span><span class="params">(X, Y, word_to_vec_map, learning_rate = <span class="number">0.01</span>, num_iterations = <span class="number">400</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Model to train word vector representations in numpy.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input data, numpy array of sentences as strings, of shape (m, 1)</span></span><br><span class="line"><span class="string">    Y -- labels, numpy array of integers between 0 and 7, numpy-array of shape (m, 1)</span></span><br><span class="line"><span class="string">    word_to_vec_map -- dictionary mapping every word in a vocabulary into its 50-dimensional vector representation</span></span><br><span class="line"><span class="string">    learning_rate -- learning_rate for the stochastic gradient descent algorithm</span></span><br><span class="line"><span class="string">    num_iterations -- number of iterations</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    pred -- vector of predictions, numpy-array of shape (m, 1)</span></span><br><span class="line"><span class="string">    W -- weight matrix of the softmax layer, of shape (n_y, n_h)</span></span><br><span class="line"><span class="string">    b -- bias of the softmax layer, of shape (n_y,)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    np.random.seed(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Define number of training examples</span></span><br><span class="line">    m = Y.shape[<span class="number">0</span>]                          <span class="comment"># number of training examples</span></span><br><span class="line">    n_y = <span class="number">5</span>                                 <span class="comment"># number of classes  </span></span><br><span class="line">    n_h = <span class="number">50</span>                                <span class="comment"># dimensions of the GloVe vectors </span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize parameters using Xavier initialization</span></span><br><span class="line">    W = np.random.randn(n_y, n_h) / np.sqrt(n_h)</span><br><span class="line">    b = np.zeros((n_y,))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Convert Y to Y_onehot with n_y classes</span></span><br><span class="line">    Y_oh = convert_to_one_hot(Y, C = n_y) </span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Optimization loop</span></span><br><span class="line">    <span class="keyword">for</span> t <span class="keyword">in</span> range(num_iterations):                       <span class="comment"># Loop over the number of iterations</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(m):                                <span class="comment"># Loop over the training examples</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment">### START CODE HERE ### (≈ 4 lines of code)</span></span><br><span class="line">            <span class="comment"># Average the word vectors of the words from the i'th training example</span></span><br><span class="line">            avg = sentence_to_avg(X[i], word_to_vec_map)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Forward propagate the avg through the softmax layer</span></span><br><span class="line">            z = np.dot(W, avg) + b</span><br><span class="line">            a = softmax(z)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Compute cost using the i'th training label's one hot representation and "A" (the output of the softmax)</span></span><br><span class="line">            cost = - np.sum(Y_oh[i] * np.log(a))</span><br><span class="line">            <span class="comment">### END CODE HERE ###</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment"># Compute gradients </span></span><br><span class="line">            dz = a - Y_oh[i]</span><br><span class="line">            dW = np.dot(dz.reshape(n_y,<span class="number">1</span>), avg.reshape(<span class="number">1</span>, n_h))</span><br><span class="line">            db = dz</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Update parameters with Stochastic Gradient Descent</span></span><br><span class="line">            W = W - learning_rate * dW</span><br><span class="line">            b = b - learning_rate * db</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> t % <span class="number">100</span> == <span class="number">0</span>:</span><br><span class="line">            print(<span class="string">"Epoch: "</span> + str(t) + <span class="string">" --- cost = "</span> + str(cost))</span><br><span class="line">            pred = predict(X, Y, W, b, word_to_vec_map)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> pred, W, b</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">print(X_train.shape)</span><br><span class="line">print(Y_train.shape)</span><br><span class="line">print(np.eye(<span class="number">5</span>)[Y_train.reshape(<span class="number">-1</span>)].shape)</span><br><span class="line">print(X_train[<span class="number">0</span>])</span><br><span class="line">print(type(X_train))</span><br><span class="line">Y = np.asarray([<span class="number">5</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">5</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">6</span>, <span class="number">6</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>])</span><br><span class="line">print(Y.shape)</span><br><span class="line"></span><br><span class="line">X = np.asarray([<span class="string">'I am going to the bar tonight'</span>, <span class="string">'I love you'</span>, <span class="string">'miss you my dear'</span>,</span><br><span class="line"> <span class="string">'Lets go party and drinks'</span>,<span class="string">'Congrats on the new job'</span>,<span class="string">'Congratulations'</span>,</span><br><span class="line"> <span class="string">'I am so happy for you'</span>, <span class="string">'Why are you feeling bad'</span>, <span class="string">'What is wrong with you'</span>,</span><br><span class="line"> <span class="string">'You totally deserve this prize'</span>, <span class="string">'Let us go play football'</span>,</span><br><span class="line"> <span class="string">'Are you down for football this afternoon'</span>, <span class="string">'Work hard play harder'</span>,</span><br><span class="line"> <span class="string">'It is suprising how people can be dumb sometimes'</span>,</span><br><span class="line"> <span class="string">'I am very disappointed'</span>,<span class="string">'It is the best day in my life'</span>,</span><br><span class="line"> <span class="string">'I think I will end up alone'</span>,<span class="string">'My life is so boring'</span>,<span class="string">'Good job'</span>,</span><br><span class="line"> <span class="string">'Great so awesome'</span>])</span><br><span class="line"></span><br><span class="line">print(X.shape)</span><br><span class="line">print(np.eye(<span class="number">5</span>)[Y_train.reshape(<span class="number">-1</span>)].shape)</span><br><span class="line">print(type(X_train))</span><br></pre></td></tr></table></figure>
+<pre><code>(132,)
+(132,)
+(132, 5)
+never talk to me again
+&lt;class &#39;numpy.ndarray&#39;&gt;
+(20,)
+(20,)
+(132, 5)
+&lt;class &#39;numpy.ndarray&#39;&gt;</code></pre>
+<p>运行下面的计算单元，训练模型，并更新softmax层参数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pred, W, b = model(X_train, Y_train, word_to_vec_map)</span><br><span class="line">print(pred)</span><br></pre></td></tr></table></figure>
+<pre><code>Epoch: 0 --- cost = 1.95204988128
+Accuracy: 0.348484848485
+Epoch: 100 --- cost = 0.0797181872601
+Accuracy: 0.931818181818
+Epoch: 200 --- cost = 0.0445636924368
+Accuracy: 0.954545454545
+Epoch: 300 --- cost = 0.0343226737879
+Accuracy: 0.969696969697
+[[ 3.]
+ [ 2.]
+ [ 3.]
+ [ 0.]
+ [ 4.]
+ [ 0.]
+ [ 3.]
+ [ 2.]
+ [ 3.]
+ [ 1.]
+ [ 3.]
+ [ 3.]
+ [ 1.]
+ [ 3.]
+ [ 2.]
+ [ 3.]
+ [ 2.]
+ [ 3.]
+ [ 1.]
+ [ 2.]
+ [ 3.]
+ [ 0.]
+ [ 2.]
+ [ 2.]
+ [ 2.]
+ [ 1.]
+ [ 4.]
+ [ 3.]
+ [ 3.]
+ [ 4.]
+ [ 0.]
+ [ 3.]
+ [ 4.]
+ [ 2.]
+ [ 0.]
+ [ 3.]
+ [ 2.]
+ [ 2.]
+ [ 3.]
+ [ 4.]
+ [ 2.]
+ [ 2.]
+ [ 0.]
+ [ 2.]
+ [ 3.]
+ [ 0.]
+ [ 3.]
+ [ 2.]
+ [ 4.]
+ [ 3.]
+ [ 0.]
+ [ 3.]
+ [ 3.]
+ [ 3.]
+ [ 4.]
+ [ 2.]
+ [ 1.]
+ [ 1.]
+ [ 1.]
+ [ 2.]
+ [ 3.]
+ [ 1.]
+ [ 0.]
+ [ 0.]
+ [ 0.]
+ [ 3.]
+ [ 4.]
+ [ 4.]
+ [ 2.]
+ [ 2.]
+ [ 1.]
+ [ 2.]
+ [ 0.]
+ [ 3.]
+ [ 2.]
+ [ 2.]
+ [ 0.]
+ [ 3.]
+ [ 3.]
+ [ 1.]
+ [ 2.]
+ [ 1.]
+ [ 2.]
+ [ 2.]
+ [ 4.]
+ [ 3.]
+ [ 3.]
+ [ 2.]
+ [ 4.]
+ [ 0.]
+ [ 0.]
+ [ 3.]
+ [ 3.]
+ [ 3.]
+ [ 3.]
+ [ 2.]
+ [ 0.]
+ [ 1.]
+ [ 2.]
+ [ 3.]
+ [ 0.]
+ [ 2.]
+ [ 2.]
+ [ 2.]
+ [ 3.]
+ [ 2.]
+ [ 2.]
+ [ 2.]
+ [ 4.]
+ [ 1.]
+ [ 1.]
+ [ 3.]
+ [ 3.]
+ [ 4.]
+ [ 1.]
+ [ 2.]
+ [ 1.]
+ [ 1.]
+ [ 3.]
+ [ 1.]
+ [ 0.]
+ [ 4.]
+ [ 0.]
+ [ 3.]
+ [ 3.]
+ [ 4.]
+ [ 4.]
+ [ 1.]
+ [ 4.]
+ [ 3.]
+ [ 0.]
+ [ 2.]]</code></pre>
+<h3 id="检查测试集的性能">检查测试集的性能</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">print(<span class="string">"Training set:"</span>)</span><br><span class="line">pred_train = predict(X_train, Y_train, W, b, word_to_vec_map)</span><br><span class="line">print(<span class="string">'Test set:'</span>)</span><br><span class="line">pred_test = predict(X_test, Y_test, W, b, word_to_vec_map)</span><br></pre></td></tr></table></figure>
+<pre><code>Training set:
+Accuracy: 0.977272727273
+Test set:
+Accuracy: 0.857142857143</code></pre>
+<p>如果随机猜的话，只有20%的准确率，但是这里只需要127个样本，就可以达到这么好的性能。在训练集中，算法见过类似于&quot;<em>I love you</em>&quot;这样的句子，并标定为 ❤️。而&quot;adore&quot;没有在训练集出现过，下面看看&quot;<em>I adore you</em>.&quot;会出来什么？</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">X_my_sentences = np.array([<span class="string">"i adore you"</span>, <span class="string">"i love you"</span>, <span class="string">"funny lol"</span>, <span class="string">"lets play with a ball"</span>, <span class="string">"food is ready"</span>, <span class="string">"not feeling happy"</span>])</span><br><span class="line">Y_my_labels = np.array([[<span class="number">0</span>], [<span class="number">0</span>], [<span class="number">2</span>], [<span class="number">1</span>], [<span class="number">4</span>],[<span class="number">3</span>]])</span><br><span class="line"></span><br><span class="line">pred = predict(X_my_sentences, Y_my_labels , W, b, word_to_vec_map)</span><br><span class="line">print_predictions(X_my_sentences, pred)</span><br></pre></td></tr></table></figure>
+<pre><code>Accuracy: 0.833333333333
+
+i adore you ❤️
+i love you ❤️
+funny lol 😄
+lets play with a ball ⚾
+food is ready 🍴
+not feeling happy 😄</code></pre>
+<p>结果十分令人惊讶！这是因为&quot;adore&quot;和&quot;love&quot;具有类似的词嵌入，这个算法可以很好地泛化到训练集中没有出现过的单词。</p>
+<p>但是这个算法不能理解&quot;not feeling happy&quot;。这是因为它忽略了词的顺序。</p>
+<p>打印出混淆矩阵可以帮助我们理解哪些类别更难标定。<strong>混淆矩阵</strong>显示的是算法将真实的类别错误的划分为另一个类别的概率。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">print(Y_test.shape)</span><br><span class="line">print(<span class="string">'           '</span>+ label_to_emoji(<span class="number">0</span>)+ <span class="string">'    '</span> + label_to_emoji(<span class="number">1</span>) + <span class="string">'    '</span> +  label_to_emoji(<span class="number">2</span>)+ <span class="string">'    '</span> + label_to_emoji(<span class="number">3</span>)+<span class="string">'   '</span> + label_to_emoji(<span class="number">4</span>))</span><br><span class="line">print(pd.crosstab(Y_test, pred_test.reshape(<span class="number">56</span>,), rownames=[<span class="string">'Actual'</span>], colnames=[<span class="string">'Predicted'</span>], margins=<span class="keyword">True</span>))</span><br><span class="line">plot_confusion_matrix(Y_test, pred_test)</span><br></pre></td></tr></table></figure>
+<pre><code>(56,)
+           ❤️    ⚾    😄    😞   🍴
+Predicted  0.0  1.0  2.0  3.0  4.0  All
+Actual                                 
+0            6    0    0    1    0    7
+1            0    8    0    0    0    8
+2            2    0   16    0    0   18
+3            1    1    2   12    0   16
+4            0    0    1    0    6    7
+All          9    9   19   13    6   56</code></pre>
+<div class="figure">
+<img src="/2018/06/04/61_WordEmb_Emojify/output_26_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<p>从上面的例子可以看出：<br>
+- 尽管只有127个训练样本，但是仍然可以获得比较好的表情模型，主要是因为词向量带来的泛化能力<br>
+- Emojify-V1在形如&quot;This movie is not good and not enjoyable&quot;的句子表现不好，是因为它不能理解词的组合，仅仅是平均所有的词嵌入向量，没有注意词的顺序。下面将介绍一个性能更好的模型</p>
+<h2 id="emojifier-v2使用keras中的lstm层">Emojifier-V2：使用Keras中的LSTM层</h2>
+<p>下面建立一个LSTM模型，它将输入单词序列作为输入。这个模型能够将单词顺序考虑进去。Emojifier-V2也使用预训练好的词嵌入模型，但是将其输入到LSTM层中，预测最有可能的表情。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line">np.random.seed(<span class="number">0</span>)</span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> Model</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Dense, Input, Dropout, LSTM, Activation</span><br><span class="line"><span class="keyword">from</span> keras.layers.embeddings <span class="keyword">import</span> Embedding</span><br><span class="line"><span class="keyword">from</span> keras.preprocessing <span class="keyword">import</span> sequence</span><br><span class="line"><span class="keyword">from</span> keras.initializers <span class="keyword">import</span> glorot_uniform</span><br><span class="line">np.random.seed(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>Using TensorFlow backend.</code></pre>
+<h3 id="模型概述">模型概述</h3>
+下面是Emojifier-v2模型的示意图： <img src="/2018/06/04/61_WordEmb_Emojify/emojifier-v2.png" style="width:700px;height:400px;"> <br>
+<caption>
+<center>
+<strong>图 3</strong>: Emojifier-V2. 两个 LSTM层的 序列分类模型 classifier.
+</center>
+</caption>
+<h3 id="keras和mini-batching">Keras和mini-batching</h3>
+<p>在大多数深度学习框架中，相同的mini-batch中所有的序列长度相同，这样才可以向量化。如果一个句子有3个词，另一个句子有4个词，那么它们的计算量不一样（一个需要3步LSTM、一个需要4步LSTM，无法同时计算。</p>
+<p>最常见的做法是使用补零。具体的，设置最长的序列长度，然后将所有的句子补到这么长。例如，设置最长的序列长度为20，我们可以让每个句子补零，使得每个输入的句子长度都为20.因此，像 &quot;i love you&quot;这样的句子就变成<span class="math inline">\((e_{i}, e_{love}, e_{you}, \vec{0}, \vec{0}, \ldots, \vec{0})\)</span>。而任何长于20个单词的句子则会截断。</p>
+<h3 id="词嵌入层">词嵌入层</h3>
+<p>在Keras中，词嵌入矩阵表示为一个层，并将一些列正实数（单词所对应的下标）映射为固定长度的向量（词嵌入向量）。该矩阵一般是预训练好了的。本文将介绍在Keras中如何创建<a href="https://keras.io/layers/embeddings/" target="_blank" rel="noopener">Embedding()</a>层，并将其初始化为之前加载过的GloVe 50维的词向量。由于我们的训练集很小，因此不会更新词嵌入模型，而是将其固定。但是下面的代码会显示如何训练以及固定词嵌入层。</p>
+<p><code>Embedding()</code>层输入一个整数矩阵，大小为(batch size, max input length)。代表的是句子转化为索引列表。如下图所示：</p>
+<img src="/2018/06/04/61_WordEmb_Emojify/embedding1.png" style="width:700px;height:250px;">
+<caption>
+<center>
+<strong>图 4</strong>: 词嵌入层. 该图显示如何将两个样本如何通过词嵌入层。两个样本都补零到长度为<code>max_len=5</code>。最后的输出为<code>(2,max_len,50)</code>.
+</center>
+</caption>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: sentences_to_indices</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sentences_to_indices</span><span class="params">(X, word_to_index, max_len)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Converts an array of sentences (strings) into an array of indices corresponding to words in the sentences.</span></span><br><span class="line"><span class="string">    The output shape should be such that it can be given to `Embedding()` (described in Figure 4). </span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- array of sentences (strings), of shape (m, 1)</span></span><br><span class="line"><span class="string">    word_to_index -- a dictionary containing the each word mapped to its index</span></span><br><span class="line"><span class="string">    max_len -- maximum number of words in a sentence. You can assume every sentence in X is no longer than this. </span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    X_indices -- array of indices corresponding to words in the sentences from X, of shape (m, max_len)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    m = X.shape[<span class="number">0</span>]                                   <span class="comment"># number of training examples</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Initialize X_indices as a numpy matrix of zeros and the correct shape (≈ 1 line)</span></span><br><span class="line">    X_indices = np.zeros((m, max_len))</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(m):                               <span class="comment"># loop over training examples</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Convert the ith training sentence in lower case and split is into words. You should get a list of words.</span></span><br><span class="line">        sentence_words = X[i].lower().split()</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Initialize j to 0</span></span><br><span class="line">        j = <span class="number">0</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Loop over the words of sentence_words</span></span><br><span class="line">        <span class="keyword">for</span> w <span class="keyword">in</span> sentence_words:</span><br><span class="line">            <span class="comment"># Set the (i,j)th entry of X_indices to the index of the correct word.</span></span><br><span class="line">            X_indices[i, j] = word_to_index[w]</span><br><span class="line">            <span class="comment"># Increment j to j + 1</span></span><br><span class="line">            j = j + <span class="number">1</span></span><br><span class="line">            </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> X_indices</span><br></pre></td></tr></table></figure>
+<p>下面测试<code>sentences_to_indices()</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">X1 = np.array([<span class="string">"funny lol"</span>, <span class="string">"lets play baseball"</span>, <span class="string">"food is ready for you"</span>])</span><br><span class="line">X1_indices = sentences_to_indices(X1,word_to_index, max_len = <span class="number">5</span>)</span><br><span class="line">print(<span class="string">"X1 ="</span>, X1)</span><br><span class="line">print(<span class="string">"X1_indices ="</span>, X1_indices)</span><br></pre></td></tr></table></figure>
+<pre><code>X1 = [&#39;funny lol&#39; &#39;lets play baseball&#39; &#39;food is ready for you&#39;]
+X1_indices = [[ 155345.  225122.       0.       0.       0.]
+ [ 220930.  286375.   69714.       0.       0.]
+ [ 151204.  192973.  302254.  151349.  394475.]]</code></pre>
+<p>下面在Keras中用预训练好的词向量构建<code>Embedding()</code>层。当这些层已经构建了之后，<code>sentences_to_indices()</code>的输出作为词嵌入层的输入，最后返回该句子的词嵌入向量。</p>
+<p>实现<code>pretrained_embedding_layer()</code>函数包括：<br>
+- 以正确的维度零初始化词嵌入矩阵<br>
+- 把所有从<code>word_to_vec_map</code>提取的词嵌入向量填入词嵌入矩阵<br>
+- 定义Keras词嵌入层。使用<a href="https://keras.io/layers/embeddings/" target="_blank" rel="noopener">Embedding()</a>，确保这一层不是可训练层。如果设置<code>trainable = True</code>，那么优化算法会修改词嵌入表示<br>
+- 设置词嵌入权值等于词嵌入矩阵</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: pretrained_embedding_layer</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">pretrained_embedding_layer</span><span class="params">(word_to_vec_map, word_to_index)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Creates a Keras Embedding() layer and loads in pre-trained GloVe 50-dimensional vectors.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    word_to_vec_map -- dictionary mapping words to their GloVe vector representation.</span></span><br><span class="line"><span class="string">    word_to_index -- dictionary mapping from words to their indices in the vocabulary (400,001 words)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    embedding_layer -- pretrained layer Keras instance</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    vocab_len = len(word_to_index) + <span class="number">1</span>                  <span class="comment"># adding 1 to fit Keras embedding (requirement)</span></span><br><span class="line">    emb_dim = word_to_vec_map[<span class="string">"cucumber"</span>].shape[<span class="number">0</span>]      <span class="comment"># define dimensionality of your GloVe word vectors (= 50)</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Initialize the embedding matrix as a numpy array of zeros of shape (vocab_len, dimensions of word vectors = emb_dim)</span></span><br><span class="line">    emb_matrix = np.zeros((vocab_len, emb_dim))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Set each row "index" of the embedding matrix to be the word vector representation of the "index"th word of the vocabulary</span></span><br><span class="line">    <span class="keyword">for</span> word, index <span class="keyword">in</span> word_to_index.items():</span><br><span class="line">        emb_matrix[index, :] = word_to_vec_map[word]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Define Keras embedding layer with the correct output/input sizes, make it trainable. Use Embedding(...). Make sure to set trainable=False. </span></span><br><span class="line">    embedding_layer = Embedding(vocab_len, emb_dim)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Build the embedding layer, it is required before setting the weights of the embedding layer. Do not modify the "None".</span></span><br><span class="line">    embedding_layer.build((<span class="keyword">None</span>,))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Set the weights of the embedding layer to the embedding matrix. Your layer is now pretrained.</span></span><br><span class="line">    embedding_layer.set_weights([emb_matrix])</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> embedding_layer</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">embedding_layer = pretrained_embedding_layer(word_to_vec_map, word_to_index)</span><br><span class="line">print(<span class="string">"weights[0][1][3] ="</span>, embedding_layer.get_weights()[<span class="number">0</span>][<span class="number">1</span>][<span class="number">3</span>])</span><br></pre></td></tr></table></figure>
+<pre><code>weights[0][1][3] = -0.3403</code></pre>
+<h2 id="建立emojifier-v2模型">建立Emojifier-V2模型</h2>
+<p>使用上面建立的词嵌入层，将其输出作为LSTM网络的输入。</p>
+<img src="/2018/06/04/61_WordEmb_Emojify/emojifier-v2.png" style="width:700px;height:400px;"> <br>
+<caption>
+<center>
+<strong>图 3</strong>: Emojifier-v2. 带2层LSTM的LSTM序列分类器.
+</center>
+</caption>
+<p>模型的输入为句子序列，维度为(<code>m</code>, <code>max_len</code>, )，输出为softmax概率向量，维度为(<code>m</code>, <code>C = 5</code>)。需要用到的Keras函数有：</p>
+<p><code>Input(shape = ..., dtype = '...')</code>, <a href="https://keras.io/layers/recurrent/#lstm" target="_blank" rel="noopener">LSTM()</a>, <a href="https://keras.io/layers/core/#dropout" target="_blank" rel="noopener">Dropout()</a>, <a href="https://keras.io/layers/core/#dense" target="_blank" rel="noopener">Dense()</a>, 和 <a href="https://keras.io/activations/" target="_blank" rel="noopener">Activation()</a>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: Emojify_V2</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Emojify_V2</span><span class="params">(input_shape, word_to_vec_map, word_to_index)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Function creating the Emojify-v2 model's graph.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    input_shape -- shape of the input, usually (max_len,)</span></span><br><span class="line"><span class="string">    word_to_vec_map -- dictionary mapping every word in a vocabulary into its 50-dimensional vector representation</span></span><br><span class="line"><span class="string">    word_to_index -- dictionary mapping from words to their indices in the vocabulary (400,001 words)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    model -- a model instance in Keras</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Define sentence_indices as the input of the graph, it should be of shape input_shape and dtype 'int32' (as it contains indices).</span></span><br><span class="line">    sentence_indices = Input(shape=input_shape, dtype=np.int32)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create the embedding layer pretrained with GloVe Vectors (≈1 line)</span></span><br><span class="line">    embedding_layer =  pretrained_embedding_layer(word_to_vec_map, word_to_index)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Propagate sentence_indices through your embedding layer, you get back the embeddings</span></span><br><span class="line">    embeddings = embedding_layer(sentence_indices)   </span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Propagate the embeddings through an LSTM layer with 128-dimensional hidden state</span></span><br><span class="line">    <span class="comment"># Be careful, the returned output should be a batch of sequences.</span></span><br><span class="line">    X = LSTM(<span class="number">128</span>, return_sequences=<span class="keyword">True</span>)(embeddings)</span><br><span class="line">    <span class="comment"># Add dropout with a probability of 0.5</span></span><br><span class="line">    X = Dropout(<span class="number">0.5</span>)(X)</span><br><span class="line">    <span class="comment"># Propagate X trough another LSTM layer with 128-dimensional hidden state</span></span><br><span class="line">    <span class="comment"># Be careful, the returned output should be a single hidden state, not a batch of sequences.</span></span><br><span class="line">    X = LSTM(<span class="number">128</span>)(X)</span><br><span class="line">    <span class="comment"># Add dropout with a probability of 0.5</span></span><br><span class="line">    X = Dropout(<span class="number">0.5</span>)(X)</span><br><span class="line">    <span class="comment"># Propagate X through a Dense layer with softmax activation to get back a batch of 5-dimensional vectors.</span></span><br><span class="line">    X = Dense(<span class="number">5</span>, activation=<span class="string">'softmax'</span>)(X)</span><br><span class="line">    <span class="comment"># Add a softmax activation</span></span><br><span class="line">    X =  Activation(<span class="string">'softmax'</span>)(X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create Model instance which converts sentence_indices into X.</span></span><br><span class="line">    model = Model(sentence_indices, X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> model</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">model = Emojify_V2((maxLen,), word_to_vec_map, word_to_index)</span><br><span class="line">model.summary()</span><br></pre></td></tr></table></figure>
+<pre><code>WARNING:tensorflow:From /home/seisinv/anaconda3/envs/fwi_ai/lib/python3.5/site-packages/keras/backend/tensorflow_backend.py:1190: calling reduce_sum (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+input_1 (InputLayer)         (None, 10)                0         
+_________________________________________________________________
+embedding_2 (Embedding)      (None, 10, 50)            20000050  
+_________________________________________________________________
+lstm_1 (LSTM)                (None, 10, 128)           91648     
+_________________________________________________________________
+dropout_1 (Dropout)          (None, 10, 128)           0         
+_________________________________________________________________
+lstm_2 (LSTM)                (None, 128)               131584    
+_________________________________________________________________
+dropout_2 (Dropout)          (None, 128)               0         
+_________________________________________________________________
+dense_1 (Dense)              (None, 5)                 645       
+_________________________________________________________________
+activation_1 (Activation)    (None, 5)                 0         
+=================================================================
+Total params: 20,223,927
+Trainable params: 20,223,927
+Non-trainable params: 0
+_________________________________________________________________</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model.compile(loss=<span class="string">'categorical_crossentropy'</span>, optimizer=<span class="string">'adam'</span>, metrics=[<span class="string">'accuracy'</span>])</span><br></pre></td></tr></table></figure>
+<pre><code>WARNING:tensorflow:From /home/seisinv/anaconda3/envs/fwi_ai/lib/python3.5/site-packages/keras/backend/tensorflow_backend.py:1297: calling reduce_mean (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">X_train_indices = sentences_to_indices(X_train, word_to_index, maxLen)</span><br><span class="line">Y_train_oh = convert_to_one_hot(Y_train, C = <span class="number">5</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model.fit(X_train_indices, Y_train_oh, epochs = <span class="number">50</span>, batch_size = <span class="number">32</span>, shuffle=<span class="keyword">True</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>Epoch 1/50
+132/132 [==============================] - 5s - loss: 1.6086 - acc: 0.1667     
+Epoch 2/50
+132/132 [==============================] - 1s - loss: 1.5876 - acc: 0.3333     
+Epoch 3/50
+132/132 [==============================] - 1s - loss: 1.5725 - acc: 0.2652     
+Epoch 4/50
+132/132 [==============================] - 1s - loss: 1.5532 - acc: 0.3485     
+Epoch 5/50
+132/132 [==============================] - 1s - loss: 1.5397 - acc: 0.3030     
+Epoch 6/50
+132/132 [==============================] - 1s - loss: 1.5155 - acc: 0.3712     
+Epoch 7/50
+132/132 [==============================] - 1s - loss: 1.5170 - acc: 0.3409     
+Epoch 8/50
+132/132 [==============================] - 1s - loss: 1.4453 - acc: 0.4848     
+Epoch 9/50
+132/132 [==============================] - 1s - loss: 1.4056 - acc: 0.5152     
+Epoch 10/50
+132/132 [==============================] - 1s - loss: 1.3391 - acc: 0.6515     
+Epoch 11/50
+132/132 [==============================] - 1s - loss: 1.2934 - acc: 0.6439     
+Epoch 12/50
+132/132 [==============================] - 1s - loss: 1.2247 - acc: 0.7273     
+Epoch 13/50
+132/132 [==============================] - 1s - loss: 1.1986 - acc: 0.7727     
+Epoch 14/50
+132/132 [==============================] - 1s - loss: 1.1831 - acc: 0.7500     
+Epoch 15/50
+132/132 [==============================] - 1s - loss: 1.1318 - acc: 0.8258     
+Epoch 16/50
+132/132 [==============================] - 1s - loss: 1.1317 - acc: 0.7955     
+Epoch 17/50
+132/132 [==============================] - 1s - loss: 1.0946 - acc: 0.8182     
+Epoch 18/50
+132/132 [==============================] - 1s - loss: 1.0895 - acc: 0.8258     
+Epoch 19/50
+132/132 [==============================] - 1s - loss: 1.0386 - acc: 0.8864     
+Epoch 20/50
+132/132 [==============================] - 1s - loss: 1.0398 - acc: 0.8561     
+Epoch 21/50
+132/132 [==============================] - 2s - loss: 1.0059 - acc: 0.9091     
+Epoch 22/50
+132/132 [==============================] - 2s - loss: 1.0045 - acc: 0.9015     
+Epoch 23/50
+132/132 [==============================] - 2s - loss: 0.9920 - acc: 0.9394     
+Epoch 24/50
+132/132 [==============================] - 2s - loss: 0.9754 - acc: 0.9394     
+Epoch 25/50
+132/132 [==============================] - 2s - loss: 0.9598 - acc: 0.9545     
+Epoch 26/50
+132/132 [==============================] - 2s - loss: 0.9453 - acc: 0.9697     
+Epoch 27/50
+132/132 [==============================] - 2s - loss: 0.9460 - acc: 0.9621     
+Epoch 28/50
+132/132 [==============================] - 2s - loss: 0.9378 - acc: 0.9697     
+Epoch 29/50
+132/132 [==============================] - 2s - loss: 0.9406 - acc: 0.9697     
+Epoch 30/50
+132/132 [==============================] - 2s - loss: 0.9395 - acc: 0.9697     
+Epoch 31/50
+132/132 [==============================] - 2s - loss: 0.9388 - acc: 0.9697     
+Epoch 32/50
+132/132 [==============================] - 2s - loss: 0.9382 - acc: 0.9621     
+Epoch 33/50
+132/132 [==============================] - 2s - loss: 0.9316 - acc: 0.9773     
+Epoch 34/50
+132/132 [==============================] - 2s - loss: 0.9335 - acc: 0.9697     
+Epoch 35/50
+132/132 [==============================] - 2s - loss: 0.9312 - acc: 0.9773     
+Epoch 36/50
+132/132 [==============================] - 2s - loss: 0.9457 - acc: 0.9621     
+Epoch 37/50
+132/132 [==============================] - 2s - loss: 0.9287 - acc: 0.9773     
+Epoch 38/50
+132/132 [==============================] - 2s - loss: 0.9353 - acc: 0.9697     
+Epoch 39/50
+132/132 [==============================] - 2s - loss: 0.9328 - acc: 0.9697     
+Epoch 40/50
+132/132 [==============================] - 2s - loss: 0.9281 - acc: 0.9773     
+Epoch 41/50
+132/132 [==============================] - 2s - loss: 0.9314 - acc: 0.9773     
+Epoch 42/50
+132/132 [==============================] - 2s - loss: 0.9325 - acc: 0.9697     
+Epoch 43/50
+132/132 [==============================] - 1s - loss: 0.9356 - acc: 0.9697     
+Epoch 44/50
+132/132 [==============================] - 1s - loss: 0.9281 - acc: 0.9773     
+Epoch 45/50
+132/132 [==============================] - 1s - loss: 0.9285 - acc: 0.9773     
+Epoch 46/50
+132/132 [==============================] - 1s - loss: 0.9280 - acc: 0.9773     
+Epoch 47/50
+132/132 [==============================] - 1s - loss: 0.9271 - acc: 0.9773     
+Epoch 48/50
+132/132 [==============================] - 1s - loss: 0.9292 - acc: 0.9773     
+Epoch 49/50
+132/132 [==============================] - 1s - loss: 0.9334 - acc: 0.9697     
+Epoch 50/50
+132/132 [==============================] - 1s - loss: 0.9632 - acc: 0.9242     
+
+
+
+
+
+&lt;keras.callbacks.History at 0x7faab0bbad30&gt;</code></pre>
+<p>测试集</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">X_test_indices = sentences_to_indices(X_test, word_to_index, max_len = maxLen)</span><br><span class="line">Y_test_oh = convert_to_one_hot(Y_test, C = <span class="number">5</span>)</span><br><span class="line">loss, acc = model.evaluate(X_test_indices, Y_test_oh)</span><br><span class="line">print()</span><br><span class="line">print(<span class="string">"Test accuracy = "</span>, acc)</span><br></pre></td></tr></table></figure>
+<pre><code>32/56 [================&gt;.............] - ETA: 0s
+Test accuracy =  0.857142848628</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># This code allows you to see the mislabelled examples</span></span><br><span class="line">C = <span class="number">5</span></span><br><span class="line">y_test_oh = np.eye(C)[Y_test.reshape(<span class="number">-1</span>)]</span><br><span class="line">X_test_indices = sentences_to_indices(X_test, word_to_index, maxLen)</span><br><span class="line">pred = model.predict(X_test_indices)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(len(X_test)):</span><br><span class="line">    x = X_test_indices</span><br><span class="line">    num = np.argmax(pred[i])</span><br><span class="line">    <span class="keyword">if</span>(num != Y_test[i]):</span><br><span class="line">        print(<span class="string">'Expected emoji:'</span>+ label_to_emoji(Y_test[i]) + <span class="string">' prediction: '</span>+ X_test[i] + label_to_emoji(num).strip())</span><br></pre></td></tr></table></figure>
+<pre><code>Expected emoji:😄 prediction: he got a very nice raise   😞
+Expected emoji:😄 prediction: she got me a nice present  😞
+Expected emoji:😄 prediction: Stop making this joke ha ha ha 😞
+Expected emoji:😄 prediction: you brighten my day    ❤️
+Expected emoji:😄 prediction: will you be my valentine   ❤️
+Expected emoji:🍴 prediction: I am hungry😞
+Expected emoji:😄 prediction: What you did was awesome   😞
+Expected emoji:😞 prediction: go away    ⚾</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Change the sentence below to see your prediction. Make sure all the words are in the Glove embeddings.  </span></span><br><span class="line">x_test = np.array([<span class="string">'not feeling happy'</span>])</span><br><span class="line">X_test_indices = sentences_to_indices(x_test, word_to_index, maxLen)</span><br><span class="line">print(x_test[<span class="number">0</span>] +<span class="string">' '</span>+  label_to_emoji(np.argmax(model.predict(X_test_indices))))</span><br></pre></td></tr></table></figure>
+<pre><code>not feeling happy 😞</code></pre>
+<p>从上面的例子可以看出，使用LSTM可以部分解决第一个版本的问题，但是对类似于&quot;not happy&quot;这样的句子表现仍然不是很好，这是因为训练集太小，没有太多的负例。</p>
+<h2 id="小结">小结</h2>
+<ul>
+<li>在NLP任务中，如果你的训练集很小，使用词嵌入可以极大地改善算法性能。词嵌入允许你的模型对训练集没有出现过的样例也工作良好。<br>
+</li>
+<li>在Keras中训练序列模型需要注意以下几点：<br>
+-- 为了使用mini-batch，要将序列补零，以使得在mini-batch中所有样例长度相同<br>
+-- <code>Embedding()</code>层可以使用与训练好的模型进行初始化，也可以进一步使用你的数据集进一步训练。但是，如果带标签的训练集很小，通常没有必要再训练词嵌入模型<br>
+-- <code>LSTM()</code>层有一个参数<code>return_sequences</code>，表示是否返回每个隐藏状态还是仅仅返回最后一个<br>
+-- 可以在<code>LSTM</code>层之后使用<code>Dropout()</code>，正则化你的网络</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a><br>
+</li>
+<li><a href="http://woebot.io" target="_blank" rel="noopener">对话机器人</a></li>
+</ul>
+<p><img src="/2018/06/04/61_WordEmb_Emojify/woebot.png" style="width:600px;height:300px;"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/LSTM/" rel="tag"># LSTM</a>
+          
+            <a href="/tags/词嵌入/" rel="tag"># 词嵌入</a>
+          
+            <a href="/tags/序列到序列模型/" rel="tag"># 序列到序列模型</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/04/60_WordEmb/" rel="next" title="基于词编码模型进行词类推和去歧视">
+                <i class="fa fa-chevron-left"></i> 基于词编码模型进行词类推和去歧视
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/04/62_MachineTranslation/" rel="prev" title="神经网络机器翻译机">
+                神经网络机器翻译机 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基础模型emojifier-v1"><span class="nav-number">1.</span> <span class="nav-text">基础模型：Emojifier-V1</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#emojiset数据集"><span class="nav-number">1.1.</span> <span class="nav-text">EMOJISET数据集</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#emojifier-v1简介"><span class="nav-number">1.2.</span> <span class="nav-text">Emojifier-V1简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#实现emojifier-v1"><span class="nav-number">1.3.</span> <span class="nav-text">实现Emojifier-V1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#检查测试集的性能"><span class="nav-number">1.4.</span> <span class="nav-text">检查测试集的性能</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#emojifier-v2使用keras中的lstm层"><span class="nav-number">2.</span> <span class="nav-text">Emojifier-V2：使用Keras中的LSTM层</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#模型概述"><span class="nav-number">2.1.</span> <span class="nav-text">模型概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#keras和mini-batching"><span class="nav-number">2.2.</span> <span class="nav-text">Keras和mini-batching</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#词嵌入层"><span class="nav-number">2.3.</span> <span class="nav-text">词嵌入层</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建立emojifier-v2模型"><span class="nav-number">3.</span> <span class="nav-text">建立Emojifier-V2模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

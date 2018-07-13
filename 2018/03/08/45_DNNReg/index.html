@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="深度神经网络,过拟合,正则化,Dropout," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文介绍一个提高深度神经网络性能的因素——正则化。深度神经网络十分灵活，增加网络深度可以很好地拟合训练数据，但是过拟合是一个很严重的问题，也就是说泛化能力不足。本文介绍两种解决方案：一种是用L2范数对模型参数进行正则化；另一种是用Dropout策略在每次迭代过程中随机丢失一部分神经元。两种方案都可以达到解决过拟合问题的目的。">
+<meta name="keywords" content="深度神经网络,过拟合,正则化,Dropout">
+<meta property="og:type" content="article">
+<meta property="og:title" content="改善深度神经网络的性能（2）：正则化化">
+<meta property="og:url" content="http://yoursite.com/2018/03/08/45_DNNReg/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文介绍一个提高深度神经网络性能的因素——正则化。深度神经网络十分灵活，增加网络深度可以很好地拟合训练数据，但是过拟合是一个很严重的问题，也就是说泛化能力不足。本文介绍两种解决方案：一种是用L2范数对模型参数进行正则化；另一种是用Dropout策略在每次迭代过程中随机丢失一部分神经元。两种方案都可以达到解决过拟合问题的目的。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_4_0.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_7_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_8_0.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_15_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_16_0.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_24_3.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_25_0.png">
+<meta property="og:updated_time" content="2018-03-08T08:39:13.603Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="改善深度神经网络的性能（2）：正则化化">
+<meta name="twitter:description" content="本文介绍一个提高深度神经网络性能的因素——正则化。深度神经网络十分灵活，增加网络深度可以很好地拟合训练数据，但是过拟合是一个很严重的问题，也就是说泛化能力不足。本文介绍两种解决方案：一种是用L2范数对模型参数进行正则化；另一种是用Dropout策略在每次迭代过程中随机丢失一部分神经元。两种方案都可以达到解决过拟合问题的目的。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/08/45_DNNReg/output_4_0.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/08/45_DNNReg/"/>
+
+
+
+
+
+  <title>改善深度神经网络的性能（2）：正则化化 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/08/45_DNNReg/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">改善深度神经网络的性能（2）：正则化化</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-08T16:39:13+08:00">
+                2018-03-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文介绍一个提高深度神经网络性能的因素——正则化。深度神经网络十分灵活，增加网络深度可以很好地拟合训练数据，但是过拟合是一个很严重的问题，也就是说泛化能力不足。本文介绍两种解决方案：一种是用L2范数对模型参数进行正则化；另一种是用Dropout策略在每次迭代过程中随机丢失一部分神经元。两种方案都可以达到解决过拟合问题的目的。 <a id="more"></a></p>
+<h2 id="数据加载">数据加载</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># import packages</span></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">from</span> reg_utils <span class="keyword">import</span> sigmoid, relu, plot_decision_boundary, initialize_parameters, load_2D_dataset, predict_dec</span><br><span class="line"><span class="keyword">from</span> reg_utils <span class="keyword">import</span> compute_cost, predict, forward_propagation, backward_propagation, update_parameters</span><br><span class="line"><span class="keyword">import</span> sklearn</span><br><span class="line"><span class="keyword">import</span> sklearn.datasets</span><br><span class="line"><span class="keyword">import</span> scipy.io</span><br><span class="line"><span class="keyword">from</span> testCases <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br><span class="line">plt.rcParams[<span class="string">'figure.figsize'</span>] = (<span class="number">7.0</span>, <span class="number">4.0</span>) <span class="comment"># set default size of plots</span></span><br><span class="line">plt.rcParams[<span class="string">'image.interpolation'</span>] = <span class="string">'nearest'</span></span><br><span class="line">plt.rcParams[<span class="string">'image.cmap'</span>] = <span class="string">'gray'</span></span><br></pre></td></tr></table></figure>
+<pre><code>/media/seisinv/Data/svn/ai/learn/dl_ng/reg_utils.py:85: SyntaxWarning: assertion is always true, perhaps remove parentheses?
+  assert(parameters[&#39;W&#39; + str(l)].shape == layer_dims[l], layer_dims[l-1])
+/media/seisinv/Data/svn/ai/learn/dl_ng/reg_utils.py:86: SyntaxWarning: assertion is always true, perhaps remove parentheses?
+  assert(parameters[&#39;W&#39; + str(l)].shape == layer_dims[l], 1)</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">train_X, train_Y, test_X, test_Y = load_2D_dataset()</span><br></pre></td></tr></table></figure>
+<div class="figure">
+<img src="/2018/03/08/45_DNNReg/output_4_0.png" alt="png">
+<p class="caption">png</p>
+</div>
+<h2 id="不带正则化的模型">不带正则化的模型</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model</span><span class="params">(X, Y, learning_rate = <span class="number">0.3</span>, num_iterations = <span class="number">30000</span>, print_cost = True, lambd = <span class="number">0</span>, keep_prob = <span class="number">1</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implements a three-layer neural network: LINEAR-&gt;RELU-&gt;LINEAR-&gt;RELU-&gt;LINEAR-&gt;SIGMOID.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input data, of shape (input size, number of examples)</span></span><br><span class="line"><span class="string">    Y -- true "label" vector (1 for blue dot / 0 for red dot), of shape (output size, number of examples)</span></span><br><span class="line"><span class="string">    learning_rate -- learning rate of the optimization</span></span><br><span class="line"><span class="string">    num_iterations -- number of iterations of the optimization loop</span></span><br><span class="line"><span class="string">    print_cost -- If True, print the cost every 10000 iterations</span></span><br><span class="line"><span class="string">    lambd -- regularization hyperparameter, scalar</span></span><br><span class="line"><span class="string">    keep_prob - probability of keeping a neuron active during drop-out, scalar.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- parameters learned by the model. They can then be used to predict.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">        </span><br><span class="line">    grads = &#123;&#125;</span><br><span class="line">    costs = []                            <span class="comment"># to keep track of the cost</span></span><br><span class="line">    m = X.shape[<span class="number">1</span>]                        <span class="comment"># number of examples</span></span><br><span class="line">    layers_dims = [X.shape[<span class="number">0</span>], <span class="number">20</span>, <span class="number">3</span>, <span class="number">1</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize parameters dictionary.</span></span><br><span class="line">    parameters = initialize_parameters(layers_dims)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Loop (gradient descent)</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>, num_iterations):</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Forward propagation: LINEAR -&gt; RELU -&gt; LINEAR -&gt; RELU -&gt; LINEAR -&gt; SIGMOID.</span></span><br><span class="line">        <span class="keyword">if</span> keep_prob == <span class="number">1</span>:</span><br><span class="line">            a3, cache = forward_propagation(X, parameters)</span><br><span class="line">        <span class="keyword">elif</span> keep_prob &lt; <span class="number">1</span>:</span><br><span class="line">            a3, cache = forward_propagation_with_dropout(X, parameters, keep_prob)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Cost function</span></span><br><span class="line">        <span class="keyword">if</span> lambd == <span class="number">0</span>:</span><br><span class="line">            cost = compute_cost(a3, Y)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            cost = compute_cost_with_regularization(a3, Y, parameters, lambd)</span><br><span class="line">            </span><br><span class="line">        <span class="comment"># Backward propagation.</span></span><br><span class="line">        <span class="keyword">assert</span>(lambd==<span class="number">0</span> <span class="keyword">or</span> keep_prob==<span class="number">1</span>)    <span class="comment"># it is possible to use both L2 regularization and dropout, </span></span><br><span class="line">                                            <span class="comment"># but this assignment will only explore one at a time</span></span><br><span class="line">        <span class="keyword">if</span> lambd == <span class="number">0</span> <span class="keyword">and</span> keep_prob == <span class="number">1</span>:</span><br><span class="line">            grads = backward_propagation(X, Y, cache)</span><br><span class="line">        <span class="keyword">elif</span> lambd != <span class="number">0</span>:</span><br><span class="line">            grads = backward_propagation_with_regularization(X, Y, cache, lambd)</span><br><span class="line">        <span class="keyword">elif</span> keep_prob &lt; <span class="number">1</span>:</span><br><span class="line">            grads = backward_propagation_with_dropout(X, Y, cache, keep_prob)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Update parameters.</span></span><br><span class="line">        parameters = update_parameters(parameters, grads, learning_rate)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Print the loss every 10000 iterations</span></span><br><span class="line">        <span class="keyword">if</span> print_cost <span class="keyword">and</span> i % <span class="number">10000</span> == <span class="number">0</span>:</span><br><span class="line">            print(<span class="string">"Cost after iteration &#123;&#125;: &#123;&#125;"</span>.format(i, cost))</span><br><span class="line">        <span class="keyword">if</span> print_cost <span class="keyword">and</span> i % <span class="number">1000</span> == <span class="number">0</span>:</span><br><span class="line">            costs.append(cost)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># plot the cost</span></span><br><span class="line">    plt.plot(costs)</span><br><span class="line">    plt.ylabel(<span class="string">'cost'</span>)</span><br><span class="line">    plt.xlabel(<span class="string">'iterations (x1,000)'</span>)</span><br><span class="line">    plt.title(<span class="string">"Learning rate ="</span> + str(learning_rate))</span><br><span class="line">    plt.show()</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">parameters = model(train_X, train_Y)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"On the training set:"</span>)</span><br><span class="line">predictions_train = predict(train_X, train_Y, parameters)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"On the test set:"</span>)</span><br><span class="line">predictions_test = predict(test_X, test_Y, parameters)</span><br></pre></td></tr></table></figure>
+<pre><code>Cost after iteration 0: 0.6557412523481002
+Cost after iteration 10000: 0.16329987525724216
+Cost after iteration 20000: 0.13851642423255986</code></pre>
+<div class="figure">
+<img src="/2018/03/08/45_DNNReg/output_7_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<pre><code>On the training set:
+Accuracy: 0.947867298578
+On the test set:
+Accuracy: 0.915</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">plt.title(<span class="string">"Model without regularization"</span>)</span><br><span class="line">axes = plt.gca()</span><br><span class="line">axes.set_xlim([<span class="number">-0.75</span>,<span class="number">0.40</span>])</span><br><span class="line">axes.set_ylim([<span class="number">-0.75</span>,<span class="number">0.65</span>])</span><br><span class="line">plot_decision_boundary(<span class="keyword">lambda</span> x: predict_dec(parameters, x.T), train_X, train_Y)</span><br></pre></td></tr></table></figure>
+<div class="figure">
+<img src="/2018/03/08/45_DNNReg/output_8_0.png" alt="png">
+<p class="caption">png</p>
+</div>
+<p><strong>小结</strong>：不带正则化的模型对训练数据<strong>过拟合</strong>，不仅拟合了正常的数据点，也拟合了噪音。</p>
+<h2 id="l2正则化">L2正则化</h2>
+<p>避免过拟合的常规做法是做L2正则化。代价函数从： <span class="math display">\[J = -\frac{1}{m} \sum\limits_{i = 1}^{m} \large{(}\small  y^{(i)}\log\left(a^{[L](i)}\right) + (1-y^{(i)})\log\left(1- a^{[L](i)}\right) \large{)} \tag{1}\]</span> 变为: <span class="math display">\[J_{regularized} = \small \underbrace{-\frac{1}{m} \sum\limits_{i = 1}^{m} \large{(}\small y^{(i)}\log\left(a^{[L](i)}\right) + (1-y^{(i)})\log\left(1- a^{[L](i)}\right) \large{)} }_\text{cross-entropy cost} + \underbrace{\frac{1}{m} \frac{\lambda}{2} \sum\limits_l\sum\limits_k\sum\limits_j W_{k,j}^{[l]2} }_\text{L2 regularization cost} \tag{2}\]</span></p>
+<p>梯度增加一项： <span class="math display">\[\frac{d}{dW} ( \frac{1}{2}\frac{\lambda}{m}  W^2) = \frac{\lambda}{m} W\]</span></p>
+<p>对应的算法也称为&quot;weight decay&quot;梯度下降法</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: compute_cost_with_regularization</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute_cost_with_regularization</span><span class="params">(A3, Y, parameters, lambd)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement the cost function with L2 regularization. See formula (2) above.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    A3 -- post-activation, output of forward propagation, of shape (output size, number of examples)</span></span><br><span class="line"><span class="string">    Y -- "true" labels vector, of shape (output size, number of examples)</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing parameters of the model</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    cost - value of the regularized loss function (formula (2))</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    m = Y.shape[<span class="number">1</span>]</span><br><span class="line">    W1 = parameters[<span class="string">"W1"</span>]</span><br><span class="line">    W2 = parameters[<span class="string">"W2"</span>]</span><br><span class="line">    W3 = parameters[<span class="string">"W3"</span>]</span><br><span class="line">    </span><br><span class="line">    cross_entropy_cost = compute_cost(A3, Y) <span class="comment"># This gives you the cross-entropy part of the cost</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 1 line)</span></span><br><span class="line">    L2_regularization_cost = (<span class="number">1.</span> / m)*(lambd / <span class="number">2</span>) * (np.sum(np.square(W1)) + np.sum(np.square(W2)) + np.sum(np.square(W3)))</span><br><span class="line">    </span><br><span class="line">    cost = cross_entropy_cost + L2_regularization_cost</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> cost</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">A3, Y_assess, parameters = compute_cost_with_regularization_test_case()</span><br><span class="line"></span><br><span class="line">print(<span class="string">"cost = "</span> + str(compute_cost_with_regularization(A3, Y_assess, parameters, lambd = <span class="number">0.1</span>)))</span><br></pre></td></tr></table></figure>
+<pre><code>cost = 1.78648594516</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: backward_propagation_with_regularization</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">backward_propagation_with_regularization</span><span class="params">(X, Y, cache, lambd)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implements the backward propagation of our baseline model to which we added an L2 regularization.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input dataset, of shape (input size, number of examples)</span></span><br><span class="line"><span class="string">    Y -- "true" labels vector, of shape (output size, number of examples)</span></span><br><span class="line"><span class="string">    cache -- cache output from forward_propagation()</span></span><br><span class="line"><span class="string">    lambd -- regularization hyperparameter, scalar</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    gradients -- A dictionary with the gradients with respect to each parameter, activation and pre-activation variables</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    m = X.shape[<span class="number">1</span>]</span><br><span class="line">    (Z1, A1, W1, b1, Z2, A2, W2, b2, Z3, A3, W3, b3) = cache</span><br><span class="line">    </span><br><span class="line">    dZ3 = A3 - Y</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 1 line)</span></span><br><span class="line">    dW3 = <span class="number">1.</span>/m * (np.dot(dZ3, A2.T) + lambd * W3)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    db3 = <span class="number">1.</span>/m * np.sum(dZ3, axis=<span class="number">1</span>, keepdims = <span class="keyword">True</span>)</span><br><span class="line">    </span><br><span class="line">    dA2 = np.dot(W3.T, dZ3)</span><br><span class="line">    dZ2 = np.multiply(dA2, np.int64(A2 &gt; <span class="number">0</span>))</span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 1 line)</span></span><br><span class="line">    dW2 = <span class="number">1.</span>/m * (np.dot(dZ2, A1.T) + lambd * W2 )</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    db2 = <span class="number">1.</span>/m * np.sum(dZ2, axis=<span class="number">1</span>, keepdims = <span class="keyword">True</span>)</span><br><span class="line">    </span><br><span class="line">    dA1 = np.dot(W2.T, dZ2)</span><br><span class="line">    dZ1 = np.multiply(dA1, np.int64(A1 &gt; <span class="number">0</span>))</span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 1 line)</span></span><br><span class="line">    dW1 = <span class="number">1.</span>/m * (np.dot(dZ1, X.T) + lambd * W1 )</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    db1 = <span class="number">1.</span>/m * np.sum(dZ1, axis=<span class="number">1</span>, keepdims = <span class="keyword">True</span>)</span><br><span class="line">    </span><br><span class="line">    gradients = &#123;<span class="string">"dZ3"</span>: dZ3, <span class="string">"dW3"</span>: dW3, <span class="string">"db3"</span>: db3,<span class="string">"dA2"</span>: dA2,</span><br><span class="line">                 <span class="string">"dZ2"</span>: dZ2, <span class="string">"dW2"</span>: dW2, <span class="string">"db2"</span>: db2, <span class="string">"dA1"</span>: dA1, </span><br><span class="line">                 <span class="string">"dZ1"</span>: dZ1, <span class="string">"dW1"</span>: dW1, <span class="string">"db1"</span>: db1&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> gradients</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">X_assess, Y_assess, cache = backward_propagation_with_regularization_test_case()</span><br><span class="line"></span><br><span class="line">grads = backward_propagation_with_regularization(X_assess, Y_assess, cache, lambd = <span class="number">0.7</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dW1 = "</span>+ str(grads[<span class="string">"dW1"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dW2 = "</span>+ str(grads[<span class="string">"dW2"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dW3 = "</span>+ str(grads[<span class="string">"dW3"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>dW1 = [[-0.25604646  0.12298827 -0.28297129]
+ [-0.17706303  0.34536094 -0.4410571 ]]
+dW2 = [[ 0.79276486  0.85133918]
+ [-0.0957219  -0.01720463]
+ [-0.13100772 -0.03750433]]
+dW3 = [[-1.77691347 -0.11832879 -0.09397446]]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">parameters = model(train_X, train_Y, lambd = <span class="number">0.7</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"On the train set:"</span>)</span><br><span class="line">predictions_train = predict(train_X, train_Y, parameters)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"On the test set:"</span>)</span><br><span class="line">predictions_test = predict(test_X, test_Y, parameters)</span><br></pre></td></tr></table></figure>
+<pre><code>Cost after iteration 0: 0.6974484493131264
+Cost after iteration 10000: 0.2684918873282239
+Cost after iteration 20000: 0.26809163371273015</code></pre>
+<div class="figure">
+<img src="/2018/03/08/45_DNNReg/output_15_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<pre><code>On the train set:
+Accuracy: 0.938388625592
+On the test set:
+Accuracy: 0.93</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">plt.title(<span class="string">"Model with L2-regularization"</span>)</span><br><span class="line">axes = plt.gca()</span><br><span class="line">axes.set_xlim([<span class="number">-0.75</span>,<span class="number">0.40</span>])</span><br><span class="line">axes.set_ylim([<span class="number">-0.75</span>,<span class="number">0.65</span>])</span><br><span class="line">plot_decision_boundary(<span class="keyword">lambda</span> x: predict_dec(parameters, x.T), train_X, train_Y)</span><br></pre></td></tr></table></figure>
+<div class="figure">
+<img src="/2018/03/08/45_DNNReg/output_16_0.png" alt="png">
+<p class="caption">png</p>
+</div>
+<p><strong>小结</strong>:</p>
+<ol style="list-style-type: decimal">
+<li>模型不再过拟合数据，泛化精度得到提升<br>
+</li>
+<li><span class="math inline">\(\lambda\)</span>是一个超参，需要使用dev数据集进行调整<br>
+</li>
+<li>L2正则化使得决策边界更加平滑。当<span class="math inline">\(\lambda\)</span>太大，也有可能使得决策边界过平滑，导致模型偏差太大<br>
+</li>
+<li>L2正则化基于假设：小权值的模型比大权值模型更简单。因此通过在代价函数中压制权值的平方和，达到驱使权值变小的目的，最终产生一个平滑的模型（也即：当输入发生变化时，输出变化更加缓慢。</li>
+</ol>
+<h2 id="dropout">Dropout</h2>
+<p>Dropout是深度学习中特有的一种正则化手段。该方法在每次迭代过程中随机关闭一些神经元。</p>
+<!--
+To understand drop-out, consider this conversation with a friend:
+- Friend: "Why do you need all these neurons to train your network and classify images?". 
+- You: "Because each neuron contains a weight and can learn specific features/details/shape of an image. The more neurons I have, the more featurse my model learns!"
+- Friend: "I see, but are you sure that your neurons are learning different features and not all the same features?"
+- You: "Good point... Neurons in the same layer actually don't talk to each other. It should be definitly possible that they learn the same image features/shapes/forms/details... which would be redundant. There should be a solution."
+!-->
+<center>
+<video width="620" height="440" src="images/dropout1_kiank.mp4" type="video/mp4" controls>
+</video>
+</center>
+<br>
+<caption>
+<center>
+<u> 图 2 </u>: 在第2个隐藏层实施Drop-out. <br> 在每次迭代过程中, 以<span class="math inline">\(1 - keep\_prob\)</span>的概率关闭 (也即令它为0) 一层中这个神经元或者以<span class="math inline">\(keep\_prob\)</span>的概率保留这个神经元(这里为50%). 丢失的神经元在这次迭代中既不会对正传、也不会对反传产生影响.
+</center>
+</caption>
+<center>
+<video width="620" height="440" src="images/dropout2_kiank.mp4" type="video/mp4" controls>
+</video>
+</center>
+<caption>
+<center>
+<u> 图 3 </u>: 在第1层和第3层实施Drop-out. <br> 第<span class="math inline">\(1\)</span>层: 关闭40%的神经元. 第3层: 关闭20%的神经元.
+</center>
+</caption>
+<p><strong>Drop-out的基本思想</strong>是：只有一部分神经元训练模型，使得输出不过度依赖于任何特征，也就使得权值分布均匀，起到压缩权值的作用，类似于L2正则化。</p>
+<h3 id="带dropout的正传播过程">带dropout的正传播过程</h3>
+<p>本文采用3层神经网络，并对第1和第2个隐藏层实施dropout操作。具体分为以下4步：</p>
+<ol style="list-style-type: decimal">
+<li>利用函数<code>np.random.rand()</code>生成矩阵 <span class="math inline">\(D^{[1]}\)</span> ，其维度和<span class="math inline">\(A^{[1]}\)</span>相同.<br>
+</li>
+<li>通过阈值，使矩阵<span class="math inline">\(D^{[1]}\)</span> 中的元素<code>1-keep_prob</code>的概率为0，<code>keep_prob</code>的概率为1.<br>
+</li>
+<li>令 <span class="math inline">\(A^{[1]}\)</span> 为 <span class="math inline">\(A^{[1]} * D^{[1]}\)</span>.<br>
+</li>
+<li>将 <span class="math inline">\(A^{[1]}\)</span> 除以 <code>keep_prob</code>. 这样做的目的是为了保证drop-out之后的输出和没有drop-out的输出具有相同的期望。该方法也成为inverted dropout</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: forward_propagation_with_dropout</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">forward_propagation_with_dropout</span><span class="params">(X, parameters, keep_prob = <span class="number">0.5</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implements the forward propagation: LINEAR -&gt; RELU + DROPOUT -&gt; LINEAR -&gt; RELU + DROPOUT -&gt; LINEAR -&gt; SIGMOID.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input dataset, of shape (2, number of examples)</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters "W1", "b1", "W2", "b2", "W3", "b3":</span></span><br><span class="line"><span class="string">                    W1 -- weight matrix of shape (20, 2)</span></span><br><span class="line"><span class="string">                    b1 -- bias vector of shape (20, 1)</span></span><br><span class="line"><span class="string">                    W2 -- weight matrix of shape (3, 20)</span></span><br><span class="line"><span class="string">                    b2 -- bias vector of shape (3, 1)</span></span><br><span class="line"><span class="string">                    W3 -- weight matrix of shape (1, 3)</span></span><br><span class="line"><span class="string">                    b3 -- bias vector of shape (1, 1)</span></span><br><span class="line"><span class="string">    keep_prob - probability of keeping a neuron active during drop-out, scalar</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    A3 -- last activation value, output of the forward propagation, of shape (1,1)</span></span><br><span class="line"><span class="string">    cache -- tuple, information stored for computing the backward propagation</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    np.random.seed(<span class="number">1</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># retrieve parameters</span></span><br><span class="line">    W1 = parameters[<span class="string">"W1"</span>]</span><br><span class="line">    b1 = parameters[<span class="string">"b1"</span>]</span><br><span class="line">    W2 = parameters[<span class="string">"W2"</span>]</span><br><span class="line">    b2 = parameters[<span class="string">"b2"</span>]</span><br><span class="line">    W3 = parameters[<span class="string">"W3"</span>]</span><br><span class="line">    b3 = parameters[<span class="string">"b3"</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># LINEAR -&gt; RELU -&gt; LINEAR -&gt; RELU -&gt; LINEAR -&gt; SIGMOID</span></span><br><span class="line">    Z1 = np.dot(W1, X) + b1</span><br><span class="line">    A1 = relu(Z1)</span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 4 lines)         # Steps 1-4 below correspond to the Steps 1-4 described above. </span></span><br><span class="line">    D1 = np.random.rand(A1.shape[<span class="number">0</span>], A1.shape[<span class="number">1</span>])                                        <span class="comment"># Step 1: initialize matrix D1 = np.random.rand(..., ...)</span></span><br><span class="line">    D1 = D1 &lt; keep_prob                                         <span class="comment"># Step 2: convert entries of D1 to 0 or 1 (using keep_prob as the threshold)</span></span><br><span class="line">    A1 = np.multiply(A1, D1)                                         <span class="comment"># Step 3: shut down some neurons of A1</span></span><br><span class="line">    A1 /= keep_prob                                        <span class="comment"># Step 4: scale the value of neurons that haven't been shut down</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    Z2 = np.dot(W2, A1) + b2</span><br><span class="line">    A2 = relu(Z2)</span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 4 lines)</span></span><br><span class="line">    D2 = np.random.rand(A2.shape[<span class="number">0</span>], A2.shape[<span class="number">1</span>])                                         <span class="comment"># Step 1: initialize matrix D2 = np.random.rand(..., ...)</span></span><br><span class="line">    D2 = D2 &lt; keep_prob                                         <span class="comment"># Step 2: convert entries of D2 to 0 or 1 (using keep_prob as the threshold)</span></span><br><span class="line">    A2 = np.multiply(A2, D2)                                         <span class="comment"># Step 3: shut down some neurons of A2</span></span><br><span class="line">    A2 /= keep_prob                                         <span class="comment"># Step 4: scale the value of neurons that haven't been shut down</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    Z3 = np.dot(W3, A2) + b3</span><br><span class="line">    A3 = sigmoid(Z3)</span><br><span class="line">    </span><br><span class="line">    cache = (Z1, D1, A1, W1, b1, Z2, D2, A2, W2, b2, Z3, A3, W3, b3)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> A3, cache</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">X_assess, parameters = forward_propagation_with_dropout_test_case()</span><br><span class="line"></span><br><span class="line">A3, cache = forward_propagation_with_dropout(X_assess, parameters, keep_prob = <span class="number">0.7</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"A3 = "</span> + str(A3))</span><br></pre></td></tr></table></figure>
+<pre><code>A3 = [[ 0.36974721  0.00305176  0.04565099  0.49683389  0.36974721]]</code></pre>
+<h3 id="带dropout的反传播过程">带dropout的反传播过程</h3>
+<p>使用寄存中的<span class="math inline">\(D^{[1]}\)</span> and <span class="math inline">\(D^{[2]}\)</span> 矩阵，应用以下2步实施反传播：</p>
+<ol style="list-style-type: decimal">
+<li>之前在正传过程中对<code>A1</code>应用 <span class="math inline">\(D^{[1]}\)</span>. 因此反传过程中也需要对<code>dA1</code>应用<span class="math inline">\(D^{[1]}\)</span>关闭相同的神经元。<br>
+</li>
+<li>之前在正传过程中将 <code>A1</code> 除以 <code>keep_prob</code>，因此在反传过程中，也需要再次对<code>dA1</code> 除以 <code>keep_prob</code> (数值解释是：如果 <span class="math inline">\(A^{[1]}\)</span> 除以 <code>keep_prob</code>, 那么他的导数<span class="math inline">\(dA^{[1]}\)</span>也应该除以<code>keep_prob</code>).</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: backward_propagation_with_dropout</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">backward_propagation_with_dropout</span><span class="params">(X, Y, cache, keep_prob)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implements the backward propagation of our baseline model to which we added dropout.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input dataset, of shape (2, number of examples)</span></span><br><span class="line"><span class="string">    Y -- "true" labels vector, of shape (output size, number of examples)</span></span><br><span class="line"><span class="string">    cache -- cache output from forward_propagation_with_dropout()</span></span><br><span class="line"><span class="string">    keep_prob - probability of keeping a neuron active during drop-out, scalar</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    gradients -- A dictionary with the gradients with respect to each parameter, activation and pre-activation variables</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    m = X.shape[<span class="number">1</span>]</span><br><span class="line">    (Z1, D1, A1, W1, b1, Z2, D2, A2, W2, b2, Z3, A3, W3, b3) = cache</span><br><span class="line">    </span><br><span class="line">    dZ3 = A3 - Y</span><br><span class="line">    dW3 = <span class="number">1.</span>/m * np.dot(dZ3, A2.T)</span><br><span class="line">    db3 = <span class="number">1.</span>/m * np.sum(dZ3, axis=<span class="number">1</span>, keepdims = <span class="keyword">True</span>)</span><br><span class="line">    dA2 = np.dot(W3.T, dZ3)</span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">    dA2 = np.multiply(dA2, D2)              <span class="comment"># Step 1: Apply mask D2 to shut down the same neurons as during the forward propagation</span></span><br><span class="line">    dA2 /= keep_prob              <span class="comment"># Step 2: Scale the value of neurons that haven't been shut down</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    dZ2 = np.multiply(dA2, np.int64(A2 &gt; <span class="number">0</span>))</span><br><span class="line">    dW2 = <span class="number">1.</span>/m * np.dot(dZ2, A1.T)</span><br><span class="line">    db2 = <span class="number">1.</span>/m * np.sum(dZ2, axis=<span class="number">1</span>, keepdims = <span class="keyword">True</span>)</span><br><span class="line">    </span><br><span class="line">    dA1 = np.dot(W2.T, dZ2)</span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">    dA1 = np.multiply(dA1, D1)             <span class="comment"># Step 1: Apply mask D1 to shut down the same neurons as during the forward propagation</span></span><br><span class="line">    dA1 /= keep_prob            <span class="comment"># Step 2: Scale the value of neurons that haven't been shut down</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    dZ1 = np.multiply(dA1, np.int64(A1 &gt; <span class="number">0</span>))</span><br><span class="line">    dW1 = <span class="number">1.</span>/m * np.dot(dZ1, X.T)</span><br><span class="line">    db1 = <span class="number">1.</span>/m * np.sum(dZ1, axis=<span class="number">1</span>, keepdims = <span class="keyword">True</span>)</span><br><span class="line">    </span><br><span class="line">    gradients = &#123;<span class="string">"dZ3"</span>: dZ3, <span class="string">"dW3"</span>: dW3, <span class="string">"db3"</span>: db3,<span class="string">"dA2"</span>: dA2,</span><br><span class="line">                 <span class="string">"dZ2"</span>: dZ2, <span class="string">"dW2"</span>: dW2, <span class="string">"db2"</span>: db2, <span class="string">"dA1"</span>: dA1, </span><br><span class="line">                 <span class="string">"dZ1"</span>: dZ1, <span class="string">"dW1"</span>: dW1, <span class="string">"db1"</span>: db1&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> gradients</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">X_assess, Y_assess, cache = backward_propagation_with_dropout_test_case()</span><br><span class="line"></span><br><span class="line">gradients = backward_propagation_with_dropout(X_assess, Y_assess, cache, keep_prob = <span class="number">0.8</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dA1 = "</span> + str(gradients[<span class="string">"dA1"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dA2 = "</span> + str(gradients[<span class="string">"dA2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>dA1 = [[ 0.36544439  0.         -0.00188233  0.         -0.17408748]
+ [ 0.65515713  0.         -0.00337459  0.         -0.        ]]
+dA2 = [[ 0.58180856  0.         -0.00299679  0.         -0.27715731]
+ [ 0.          0.53159854 -0.          0.53159854 -0.34089673]
+ [ 0.          0.         -0.00292733  0.         -0.        ]]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">parameters = model(train_X, train_Y, keep_prob = <span class="number">0.86</span>, learning_rate = <span class="number">0.3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> (<span class="string">"On the train set:"</span>)</span><br><span class="line">predictions_train = predict(train_X, train_Y, parameters)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"On the test set:"</span>)</span><br><span class="line">predictions_test = predict(test_X, test_Y, parameters)</span><br></pre></td></tr></table></figure>
+<pre><code>Cost after iteration 0: 0.6543912405149825
+
+
+/media/seisinv/Data/svn/ai/learn/dl_ng/reg_utils.py:236: RuntimeWarning: divide by zero encountered in log
+  logprobs = np.multiply(-np.log(a3),Y) + np.multiply(-np.log(1 - a3), 1 - Y)
+/media/seisinv/Data/svn/ai/learn/dl_ng/reg_utils.py:236: RuntimeWarning: invalid value encountered in multiply
+  logprobs = np.multiply(-np.log(a3),Y) + np.multiply(-np.log(1 - a3), 1 - Y)
+
+
+Cost after iteration 10000: 0.06101698657490559
+Cost after iteration 20000: 0.060582435798513114</code></pre>
+<div class="figure">
+<img src="/2018/03/08/45_DNNReg/output_24_3.png" alt="png">
+<p class="caption">png</p>
+</div>
+<pre><code>On the train set:
+Accuracy: 0.928909952607
+On the test set:
+Accuracy: 0.95</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">plt.title(<span class="string">"Model with dropout"</span>)</span><br><span class="line">axes = plt.gca()</span><br><span class="line">axes.set_xlim([<span class="number">-0.75</span>,<span class="number">0.40</span>])</span><br><span class="line">axes.set_ylim([<span class="number">-0.75</span>,<span class="number">0.65</span>])</span><br><span class="line">plot_decision_boundary(<span class="keyword">lambda</span> x: predict_dec(parameters, x.T), train_X, train_Y)</span><br></pre></td></tr></table></figure>
+<div class="figure">
+<img src="/2018/03/08/45_DNNReg/output_25_0.png" alt="png">
+<p class="caption">png</p>
+</div>
+<p><strong>小结</strong>:</p>
+<ol style="list-style-type: decimal">
+<li>通过dropout操作，模型泛化性能得到大幅提升<br>
+</li>
+<li>一个<strong>常见错误</strong>是在训练和测试时都实施dropout操作，实际上，只需要在训练中使用</li>
+</ol>
+<h2 id="结论">结论</h2>
+<ol style="list-style-type: decimal">
+<li>正则化可以降低过拟合<br>
+</li>
+<li>正则化使得权系数变得更小<br>
+</li>
+<li>L2正则化和dropout是两种非常有效的正则化手段</li>
+</ol>
+<p>三种模型的结果对比</p>
+<table>
+<pre><code>&lt;tr&gt;
+    &lt;td&gt;
+    **model**
+    &lt;/td&gt;
+    &lt;td&gt;
+    **train accuracy**
+    &lt;/td&gt;
+    &lt;td&gt;
+    **test accuracy**
+    &lt;/td&gt;
+
+&lt;/tr&gt;
+    &lt;td&gt;
+    3-layer NN without regularization
+    &lt;/td&gt;
+    &lt;td&gt;
+    95%
+    &lt;/td&gt;
+    &lt;td&gt;
+    91.5%
+    &lt;/td&gt;
+&lt;tr&gt;
+    &lt;td&gt;
+    3-layer NN with L2-regularization
+    &lt;/td&gt;
+    &lt;td&gt;
+    94%
+    &lt;/td&gt;
+    &lt;td&gt;
+    93%
+    &lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+    &lt;td&gt;
+    3-layer NN with dropout
+    &lt;/td&gt;
+    &lt;td&gt;
+    93%
+    &lt;/td&gt;
+    &lt;td&gt;
+    95%
+    &lt;/td&gt;
+&lt;/tr&gt;</code></pre>
+</table>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/深度神经网络/" rel="tag"># 深度神经网络</a>
+          
+            <a href="/tags/过拟合/" rel="tag"># 过拟合</a>
+          
+            <a href="/tags/正则化/" rel="tag"># 正则化</a>
+          
+            <a href="/tags/Dropout/" rel="tag"># Dropout</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/08/44_DNNInit/" rel="next" title="改善深度神经网络的性能（1）：参数初始化">
+                <i class="fa fa-chevron-left"></i> 改善深度神经网络的性能（1）：参数初始化
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/08/46_GradChk/" rel="prev" title="梯度验证">
+                梯度验证 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据加载"><span class="nav-number">1.</span> <span class="nav-text">数据加载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#不带正则化的模型"><span class="nav-number">2.</span> <span class="nav-text">不带正则化的模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#l2正则化"><span class="nav-number">3.</span> <span class="nav-text">L2正则化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dropout"><span class="nav-number">4.</span> <span class="nav-text">Dropout</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#带dropout的正传播过程"><span class="nav-number">4.1.</span> <span class="nav-text">带dropout的正传播过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#带dropout的反传播过程"><span class="nav-number">4.2.</span> <span class="nav-text">带dropout的反传播过程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">5.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

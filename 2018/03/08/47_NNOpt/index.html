@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="梯度下降,深度神经网络,Mini-Batch梯度下降,动量,Adam," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="在深度神经网络中采用一些先进的优化算法，不仅可以加速学习速度，还有可能获得更好的结果。本文介绍深度神经网络中最常用的三种优化算法：Mini-batch梯度下降法、动量法、Adam方法，并对一个简单数据集进行测试，对比三种方法的效果。">
+<meta name="keywords" content="梯度下降,深度神经网络,Mini-Batch梯度下降,动量,Adam">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度神经网络中的优化算法">
+<meta property="og:url" content="http://yoursite.com/2018/03/08/47_NNOpt/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="在深度神经网络中采用一些先进的优化算法，不仅可以加速学习速度，还有可能获得更好的结果。本文介绍深度神经网络中最常用的三种优化算法：Mini-batch梯度下降法、动量法、Adam方法，并对一个简单数据集进行测试，对比三种方法的效果。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/cost.jpg">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/kiank_sgd.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/kiank_minibatch.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/kiank_shuffle.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/kiank_partition.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/opt_momentum.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/output_27_0.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/output_30_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/output_30_3.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/output_32_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/output_32_3.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/output_34_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/47_NNOpt/output_34_3.png">
+<meta property="og:updated_time" content="2018-03-08T13:27:04.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深度神经网络中的优化算法">
+<meta name="twitter:description" content="在深度神经网络中采用一些先进的优化算法，不仅可以加速学习速度，还有可能获得更好的结果。本文介绍深度神经网络中最常用的三种优化算法：Mini-batch梯度下降法、动量法、Adam方法，并对一个简单数据集进行测试，对比三种方法的效果。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/08/47_NNOpt/cost.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/08/47_NNOpt/"/>
+
+
+
+
+
+  <title>深度神经网络中的优化算法 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/08/47_NNOpt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">深度神经网络中的优化算法</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-08T21:27:22+08:00">
+                2018-03-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在深度神经网络中采用一些先进的优化算法，不仅可以加速学习速度，还有可能获得更好的结果。本文介绍深度神经网络中最常用的三种优化算法：Mini-batch梯度下降法、动量法、Adam方法，并对一个简单数据集进行测试，对比三种方法的效果。 <a id="more"></a></p>
+梯度下降法类似于以最快的方式寻找代价函数这座山的最低点: <img src="/2018/03/08/47_NNOpt/cost.jpg" style="width:650px;height:300px;">
+<caption>
+<center>
+<u> <strong>图 1</strong> </u>: <strong>最小化代价函数类似于在山谷中寻找最低点</strong><br> 训练的每一步都是根据一定的方向更新参数，以可能走向最低的点.
+</center>
+</caption>
+<p><strong>标记</strong>: $ = $ <code>da</code> 对任意的 <code>a</code>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">import</span> scipy.io</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">import</span> sklearn</span><br><span class="line"><span class="keyword">import</span> sklearn.datasets</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> opt_utils <span class="keyword">import</span> load_params_and_grads, initialize_parameters, forward_propagation, backward_propagation</span><br><span class="line"><span class="keyword">from</span> opt_utils <span class="keyword">import</span> compute_cost, predict, predict_dec, plot_decision_boundary, load_dataset</span><br><span class="line"><span class="keyword">from</span> testCases <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br><span class="line">plt.rcParams[<span class="string">'figure.figsize'</span>] = (<span class="number">7.0</span>, <span class="number">4.0</span>) <span class="comment"># set default size of plots</span></span><br><span class="line">plt.rcParams[<span class="string">'image.interpolation'</span>] = <span class="string">'nearest'</span></span><br><span class="line">plt.rcParams[<span class="string">'image.cmap'</span>] = <span class="string">'gray'</span></span><br></pre></td></tr></table></figure>
+<pre><code>/media/seisinv/Data/svn/ai/learn/dl_ng/opt_utils.py:76: SyntaxWarning: assertion is always true, perhaps remove parentheses?
+  assert(parameters[&#39;W&#39; + str(l)].shape == layer_dims[l], layer_dims[l-1])
+/media/seisinv/Data/svn/ai/learn/dl_ng/opt_utils.py:77: SyntaxWarning: assertion is always true, perhaps remove parentheses?
+  assert(parameters[&#39;W&#39; + str(l)].shape == layer_dims[l], 1)</code></pre>
+<h2 id="梯度下降法">梯度下降法</h2>
+<p>机器学习中最简单的优化方法是梯度下降法 (GD). 在每一步计算梯度过程中，如果使用所有m个样本, 该方法也称为 <strong>Batch Gradient Descent</strong>.</p>
+<p><strong>梯度下降准则</strong>: 对 <span class="math inline">\(l = 1, ..., L\)</span>: <span class="math display">\[ W^{[l]} = W^{[l]} - \alpha \text{ } dW^{[l]} \tag{1}\]</span> <span class="math display">\[ b^{[l]} = b^{[l]} - \alpha \text{ } db^{[l]} \tag{2}\]</span></p>
+<p>其中L 为层数， <span class="math inline">\(\alpha\)</span> 为学习率. 所有的参数存储在字典 <code>parameters</code> 中。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: update_parameters_with_gd</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">update_parameters_with_gd</span><span class="params">(parameters, grads, learning_rate)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Update parameters using one step of gradient descent</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters to be updated:</span></span><br><span class="line"><span class="string">                    parameters['W' + str(l)] = Wl</span></span><br><span class="line"><span class="string">                    parameters['b' + str(l)] = bl</span></span><br><span class="line"><span class="string">    grads -- python dictionary containing your gradients to update each parameters:</span></span><br><span class="line"><span class="string">                    grads['dW' + str(l)] = dWl</span></span><br><span class="line"><span class="string">                    grads['db' + str(l)] = dbl</span></span><br><span class="line"><span class="string">    learning_rate -- the learning rate, scalar.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your updated parameters </span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    L = len(parameters) // <span class="number">2</span> <span class="comment"># number of layers in the neural networks</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Update rule for each parameter</span></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(L):</span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        parameters[<span class="string">"W"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">"W"</span> + str(l+<span class="number">1</span>)] - learning_rate*grads[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">        parameters[<span class="string">"b"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">"b"</span> + str(l+<span class="number">1</span>)] - learning_rate*grads[<span class="string">'db'</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">parameters, grads, learning_rate = update_parameters_with_gd_test_case()</span><br><span class="line"></span><br><span class="line">parameters = update_parameters_with_gd(parameters, grads, learning_rate)</span><br><span class="line">print(<span class="string">"W1 = "</span> + str(parameters[<span class="string">"W1"</span>]))</span><br><span class="line">print(<span class="string">"b1 = "</span> + str(parameters[<span class="string">"b1"</span>]))</span><br><span class="line">print(<span class="string">"W2 = "</span> + str(parameters[<span class="string">"W2"</span>]))</span><br><span class="line">print(<span class="string">"b2 = "</span> + str(parameters[<span class="string">"b2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>W1 = [[ 1.63535156 -0.62320365 -0.53718766]
+ [-1.07799357  0.85639907 -2.29470142]]
+b1 = [[ 1.74604067]
+ [-0.75184921]]
+W2 = [[ 0.32171798 -0.25467393  1.46902454]
+ [-2.05617317 -0.31554548 -0.3756023 ]
+ [ 1.1404819  -1.09976462 -0.1612551 ]]
+b2 = [[-0.88020257]
+ [ 0.02561572]
+ [ 0.57539477]]</code></pre>
+<p>另一个变种是<strong>随机梯度下降法</strong>，相当于min-batch=1个样本的mini-batch GD方法。</p>
+<ul>
+<li><strong>(Batch) Gradient Descent</strong>:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">X = data_input</span><br><span class="line">Y = labels</span><br><span class="line">parameters = initialize_parameters(layers_dims)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>, num_iterations):</span><br><span class="line">    <span class="comment"># Forward propagation</span></span><br><span class="line">    a, caches = forward_propagation(X, parameters)</span><br><span class="line">    <span class="comment"># Compute cost.</span></span><br><span class="line">    cost = compute_cost(a, Y)</span><br><span class="line">    <span class="comment"># Backward propagation.</span></span><br><span class="line">    grads = backward_propagation(a, caches, parameters)</span><br><span class="line">    <span class="comment"># Update parameters.</span></span><br><span class="line">    parameters = update_parameters(parameters, grads)</span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>Stochastic Gradient Descent</strong>:</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">X = data_input</span><br><span class="line">Y = labels</span><br><span class="line">parameters = initialize_parameters(layers_dims)</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>, num_iterations):</span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> range(<span class="number">0</span>, m):</span><br><span class="line">        <span class="comment"># Forward propagation</span></span><br><span class="line">        a, caches = forward_propagation(X[:,j], parameters)</span><br><span class="line">        <span class="comment"># Compute cost</span></span><br><span class="line">        cost = compute_cost(a, Y[:,j])</span><br><span class="line">        <span class="comment"># Backward propagation</span></span><br><span class="line">        grads = backward_propagation(a, caches, parameters)</span><br><span class="line">        <span class="comment"># Update parameters.</span></span><br><span class="line">        parameters = update_parameters(parameters, grads)</span><br></pre></td></tr></table></figure>
+<p>在随机梯度下降法中，每次更新梯度只用一个训练样本，当训练集很大时，SGD会更快，但是参数更新过程会十分震荡，而不会平滑收敛。</p>
+<img src="/2018/03/08/47_NNOpt/kiank_sgd.png" style="width:750px;height:250px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>Figure 1</strong> </font></u><font color="purple"> : <strong>SGD vs GD</strong><br> &quot;+&quot; 表示代价函数的最低点. SGD 震荡剧烈直到收敛. 但是，由于 SGD只用一个样本而不是所有样本计算梯度，因此它的每一步要远快于GD.
+</font></center>
+</caption>
+<p>SGD实现过程有3个循环: 1. 迭代循环Over the number of iterations 2. <span class="math inline">\(m\)</span>个样本循环 3. 层数循环 (以更新所有参数, 从 <span class="math inline">\((W^{[1]},b^{[1]})\)</span> 到 <span class="math inline">\((W^{[L]},b^{[L]})\)</span>)</p>
+<p>相比较而言，Mini-batch gradient descent 每一步使用一部分样本. 不需要对每个样本循环，而是对每个batch循环. 这样不仅减少震荡，而且可以利用python的向量化特点，加快收敛速度。</p>
+<img src="/2018/03/08/47_NNOpt/kiank_minibatch.png" style="width:750px;height:250px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>Figure 2</strong> </font></u>: <font color="purple"> <strong>SGD vs Mini-Batch GD</strong><br> &quot;+&quot; 表示代价函数的最低点. 利用 mini-batches 往往是最快的优化方式.
+</font></center>
+</caption>
+<p><font color="blue"> <strong>小结</strong>: - gradient descent, mini-batch gradient descent and stochastic gradient descent的差异在于每次模型更新所用的样本个数. - mini-batch需要不停调整. - 使用合理的 mini-batch 大小, mini-batch方法往往由于gradient descent 和 stochastic gradient descent 方法(尤其是当训练集很大的情况).</font></p>
+<h2 id="mini-batch-梯度下降法">Mini-Batch 梯度下降法</h2>
+<p>从训练集(X, Y)建立mini-batches可以分两步:</p>
+<ul>
+<li><strong>Shuffle</strong>: 建立训练集的 shuffled 版本，如下图所示. X 和 Y 每一列代表一个训练样本. 注意是同时对X 和 Y进行随机 shuffling. 这样才能保证shuffling 之后X的第 <span class="math inline">\(i^{th}\)</span>X 和Y的 <span class="math inline">\(i^{th}\)</span> 仍然是对应起来的. shuffling 使得样本是随机分割成不同的mini-batches.</li>
+</ul>
+<p><img src="/2018/03/08/47_NNOpt/kiank_shuffle.png" style="width:550px;height:300px;"></p>
+<ul>
+<li><strong>Partition</strong>: 将shuffled之后的(X, Y) 分割成大小为 <code>mini_batch_size</code> (here 64)的mini-batches. 注意训练样本不一定可以整除 <code>mini_batch_size</code>. 最后的mini-batche可能比较小, 当它小于完整的 <code>mini_batch_size</code>时:</li>
+</ul>
+<p><img src="/2018/03/08/47_NNOpt/kiank_partition.png" style="width:550px;height:300px;"></p>
+<p>实现了Shuffle之后，选择第1和第2个mini-batches的代码为: <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">first_mini_batch_X = shuffled_X[:, <span class="number">0</span> : mini_batch_size]</span><br><span class="line">second_mini_batch_X = shuffled_X[:, mini_batch_size : <span class="number">2</span> * mini_batch_size]</span><br><span class="line">...</span><br></pre></td></tr></table></figure></p>
+<p>注意到最后的min-batch可能小于<code>mini_batch_size=64</code>. 令 <span class="math inline">\(\lfloor s \rfloor\)</span> 表示 对<span class="math inline">\(s\)</span> 不大于它的整数 (也就是python中的 <code>math.floor(s)</code>). 如果总样本数不是<code>mini_batch_size=64</code>的乘积，那么会有 <span class="math inline">\(\lfloor \frac{m}{mini\_batch\_size}\rfloor\)</span> 个64 样本的mini-batch, 而最后的mini-batch 大小为 (<span class="math inline">\(m-mini_\_batch_\_size \times \lfloor \frac{m}{mini\_batch\_size}\rfloor\)</span>).</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: random_mini_batches</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">random_mini_batches</span><span class="params">(X, Y, mini_batch_size = <span class="number">64</span>, seed = <span class="number">0</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Creates a list of random minibatches from (X, Y)</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input data, of shape (input size, number of examples)</span></span><br><span class="line"><span class="string">    Y -- true "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)</span></span><br><span class="line"><span class="string">    mini_batch_size -- size of the mini-batches, integer</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    mini_batches -- list of synchronous (mini_batch_X, mini_batch_Y)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    np.random.seed(seed)            <span class="comment"># To make your "random" minibatches the same as ours</span></span><br><span class="line">    m = X.shape[<span class="number">1</span>]                  <span class="comment"># number of training examples</span></span><br><span class="line">    mini_batches = []</span><br><span class="line">        </span><br><span class="line">    <span class="comment"># Step 1: Shuffle (X, Y)</span></span><br><span class="line">    permutation = list(np.random.permutation(m))</span><br><span class="line">    shuffled_X = X[:, permutation]</span><br><span class="line">    shuffled_Y = Y[:, permutation].reshape((<span class="number">1</span>,m))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Step 2: Partition (shuffled_X, shuffled_Y). Minus the end case.</span></span><br><span class="line">    num_complete_minibatches = math.floor(m/mini_batch_size) <span class="comment"># number of mini batches of size mini_batch_size in your partitionning</span></span><br><span class="line">    <span class="keyword">for</span> k <span class="keyword">in</span> range(<span class="number">0</span>, num_complete_minibatches):</span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        mini_batch_X = shuffled_X[:, k*mini_batch_size : (k+<span class="number">1</span>)*mini_batch_size]</span><br><span class="line">        mini_batch_Y = shuffled_Y[:, k*mini_batch_size : (k+<span class="number">1</span>)*mini_batch_size]</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        mini_batch = (mini_batch_X, mini_batch_Y)</span><br><span class="line">        mini_batches.append(mini_batch)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Handling the end case (last mini-batch &lt; mini_batch_size)</span></span><br><span class="line">    <span class="keyword">if</span> m % mini_batch_size != <span class="number">0</span>:</span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        mini_batch_X = shuffled_X[:, num_complete_minibatches*mini_batch_size:]</span><br><span class="line">        mini_batch_Y = shuffled_Y[:, num_complete_minibatches*mini_batch_size:]</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        mini_batch = (mini_batch_X, mini_batch_Y)</span><br><span class="line">        mini_batches.append(mini_batch)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> mini_batches</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">X_assess, Y_assess, mini_batch_size = random_mini_batches_test_case()</span><br><span class="line">mini_batches = random_mini_batches(X_assess, Y_assess, mini_batch_size)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> (<span class="string">"shape of the 1st mini_batch_X: "</span> + str(mini_batches[<span class="number">0</span>][<span class="number">0</span>].shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"shape of the 2nd mini_batch_X: "</span> + str(mini_batches[<span class="number">1</span>][<span class="number">0</span>].shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"shape of the 3rd mini_batch_X: "</span> + str(mini_batches[<span class="number">2</span>][<span class="number">0</span>].shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"shape of the 1st mini_batch_Y: "</span> + str(mini_batches[<span class="number">0</span>][<span class="number">1</span>].shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"shape of the 2nd mini_batch_Y: "</span> + str(mini_batches[<span class="number">1</span>][<span class="number">1</span>].shape)) </span><br><span class="line"><span class="keyword">print</span> (<span class="string">"shape of the 3rd mini_batch_Y: "</span> + str(mini_batches[<span class="number">2</span>][<span class="number">1</span>].shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"mini batch sanity check: "</span> + str(mini_batches[<span class="number">0</span>][<span class="number">0</span>][<span class="number">0</span>][<span class="number">0</span>:<span class="number">3</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>shape of the 1st mini_batch_X: (12288, 64)
+shape of the 2nd mini_batch_X: (12288, 64)
+shape of the 3rd mini_batch_X: (12288, 20)
+shape of the 1st mini_batch_Y: (1, 64)
+shape of the 2nd mini_batch_Y: (1, 64)
+shape of the 3rd mini_batch_Y: (1, 20)
+mini batch sanity check: [ 0.90085595 -0.7612069   0.2344157 ]</code></pre>
+<p><strong>小结</strong>:</p>
+<ol style="list-style-type: decimal">
+<li>Shuffling 和 Partitioning 是生成min-batch的两步<br>
+</li>
+<li>2的次方往往选做min-batch的大小，如16,32,64,128d.</li>
+</ol>
+<h2 id="动量">动量</h2>
+<p>由于mini-batch梯度下降法每次参数更新都仅仅用了一部分数据，因此更新方向会有一些震荡。采用动量可以减少这种震荡。</p>
+<p>动量策略考虑了以前的梯度信息以对更新量进行平滑处理。之前的梯度方向会存在变量 <span class="math inline">\(v\)</span>中。更准确的说，<span class="math inline">\(v\)</span>是之前梯度的指数加权平均。也可以把<span class="math inline">\(v\)</span>看做球往山下滚的速度，新计算的梯度作为动量修正<span class="math inline">\(v\)</span>.</p>
+<img src="/2018/03/08/47_NNOpt/opt_momentum.png" style="width:400px;height:250px;">
+<caption>
+<center>
+<u><font color="purple"><strong>图 3</strong></font></u><font color="purple">: 红线表示带动量的mini-batch梯度下降法更新方向，蓝色点表示梯度方向. 与直接使用梯度方向不同，这种方法让梯度影响<span class="math inline">\(v\)</span>, 然后沿着<span class="math inline">\(v\)</span>的方向更新.<br> <font color="black">
+</font></font></center>
+<p><strong>动量</strong>更新, 循环 <span class="math inline">\(l = 1, ..., L\)</span>:</p>
+<p><span class="math display">\[ \begin{cases}
+v_{dW^{[l]}} = \beta v_{dW^{[l]}} + (1 - \beta) dW^{[l]} \\
+W^{[l]} = W^{[l]} - \alpha v_{dW^{[l]}}
+\end{cases}\tag{3}\]</span></p>
+<p><span class="math display">\[\begin{cases}
+v_{db^{[l]}} = \beta v_{db^{[l]}} + (1 - \beta) db^{[l]} \\
+b^{[l]} = b^{[l]} - \alpha v_{db^{[l]}} 
+\end{cases}\tag{4}\]</span></p>
+<p>其中 L 为层数, <span class="math inline">\(\beta\)</span> 为动量， <span class="math inline">\(\alpha\)</span>为学习率.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: initialize_velocity</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">initialize_velocity</span><span class="params">(parameters)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Initializes the velocity as a python dictionary with:</span></span><br><span class="line"><span class="string">                - keys: "dW1", "db1", ..., "dWL", "dbL" </span></span><br><span class="line"><span class="string">                - values: numpy arrays of zeros of the same shape as the corresponding gradients/parameters.</span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters.</span></span><br><span class="line"><span class="string">                    parameters['W' + str(l)] = Wl</span></span><br><span class="line"><span class="string">                    parameters['b' + str(l)] = bl</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    v -- python dictionary containing the current velocity.</span></span><br><span class="line"><span class="string">                    v['dW' + str(l)] = velocity of dWl</span></span><br><span class="line"><span class="string">                    v['db' + str(l)] = velocity of dbl</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    L = len(parameters) // <span class="number">2</span> <span class="comment"># number of layers in the neural networks</span></span><br><span class="line">    v = &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize velocity</span></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(L):</span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        v[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = np.zeros(parameters[<span class="string">'W'</span>+str(l+<span class="number">1</span>)].shape)</span><br><span class="line">        v[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = np.zeros(parameters[<span class="string">'b'</span>+str(l+<span class="number">1</span>)].shape)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> v</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">parameters = initialize_velocity_test_case()</span><br><span class="line"></span><br><span class="line">v = initialize_velocity(parameters)</span><br><span class="line">print(<span class="string">"v[\"dW1\"] = "</span> + str(v[<span class="string">"dW1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db1\"] = "</span> + str(v[<span class="string">"db1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"dW2\"] = "</span> + str(v[<span class="string">"dW2"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db2\"] = "</span> + str(v[<span class="string">"db2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>v[&quot;dW1&quot;] = [[ 0.  0.  0.]
+ [ 0.  0.  0.]]
+v[&quot;db1&quot;] = [[ 0.]
+ [ 0.]]
+v[&quot;dW2&quot;] = [[ 0.  0.  0.]
+ [ 0.  0.  0.]
+ [ 0.  0.  0.]]
+v[&quot;db2&quot;] = [[ 0.]
+ [ 0.]
+ [ 0.]]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: update_parameters_with_momentum</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">update_parameters_with_momentum</span><span class="params">(parameters, grads, v, beta, learning_rate)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Update parameters using Momentum</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters:</span></span><br><span class="line"><span class="string">                    parameters['W' + str(l)] = Wl</span></span><br><span class="line"><span class="string">                    parameters['b' + str(l)] = bl</span></span><br><span class="line"><span class="string">    grads -- python dictionary containing your gradients for each parameters:</span></span><br><span class="line"><span class="string">                    grads['dW' + str(l)] = dWl</span></span><br><span class="line"><span class="string">                    grads['db' + str(l)] = dbl</span></span><br><span class="line"><span class="string">    v -- python dictionary containing the current velocity:</span></span><br><span class="line"><span class="string">                    v['dW' + str(l)] = ...</span></span><br><span class="line"><span class="string">                    v['db' + str(l)] = ...</span></span><br><span class="line"><span class="string">    beta -- the momentum hyperparameter, scalar</span></span><br><span class="line"><span class="string">    learning_rate -- the learning rate, scalar</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your updated parameters </span></span><br><span class="line"><span class="string">    v -- python dictionary containing your updated velocities</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    L = len(parameters) // <span class="number">2</span> <span class="comment"># number of layers in the neural networks</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Momentum update for each parameter</span></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(L):</span><br><span class="line">        </span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 4 lines)</span></span><br><span class="line">        <span class="comment"># compute velocities</span></span><br><span class="line">        v[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = beta * v[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)] + (<span class="number">1</span>-beta)*(grads[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)])</span><br><span class="line">        v[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = beta * v[<span class="string">'db'</span> + str(l+<span class="number">1</span>)] + (<span class="number">1</span>-beta)*(grads[<span class="string">'db'</span> + str(l+<span class="number">1</span>)])</span><br><span class="line">        <span class="comment"># update parameters</span></span><br><span class="line">        parameters[<span class="string">"W"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">'W'</span> + str(l+<span class="number">1</span>)] - learning_rate * v[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">        parameters[<span class="string">"b"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">'b'</span> + str(l+<span class="number">1</span>)] - learning_rate * v[<span class="string">'db'</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> parameters, v</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">parameters, grads, v = update_parameters_with_momentum_test_case()</span><br><span class="line"></span><br><span class="line">parameters, v = update_parameters_with_momentum(parameters, grads, v, beta = <span class="number">0.9</span>, learning_rate = <span class="number">0.01</span>)</span><br><span class="line">print(<span class="string">"W1 = "</span> + str(parameters[<span class="string">"W1"</span>]))</span><br><span class="line">print(<span class="string">"b1 = "</span> + str(parameters[<span class="string">"b1"</span>]))</span><br><span class="line">print(<span class="string">"W2 = "</span> + str(parameters[<span class="string">"W2"</span>]))</span><br><span class="line">print(<span class="string">"b2 = "</span> + str(parameters[<span class="string">"b2"</span>]))</span><br><span class="line">print(<span class="string">"v[\"dW1\"] = "</span> + str(v[<span class="string">"dW1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db1\"] = "</span> + str(v[<span class="string">"db1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"dW2\"] = "</span> + str(v[<span class="string">"dW2"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db2\"] = "</span> + str(v[<span class="string">"db2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>W1 = [[ 1.62544598 -0.61290114 -0.52907334]
+ [-1.07347112  0.86450677 -2.30085497]]
+b1 = [[ 1.74493465]
+ [-0.76027113]]
+W2 = [[ 0.31930698 -0.24990073  1.4627996 ]
+ [-2.05974396 -0.32173003 -0.38320915]
+ [ 1.13444069 -1.0998786  -0.1713109 ]]
+b2 = [[-0.87809283]
+ [ 0.04055394]
+ [ 0.58207317]]
+v[&quot;dW1&quot;] = [[-0.11006192  0.11447237  0.09015907]
+ [ 0.05024943  0.09008559 -0.06837279]]
+v[&quot;db1&quot;] = [[-0.01228902]
+ [-0.09357694]]
+v[&quot;dW2&quot;] = [[-0.02678881  0.05303555 -0.06916608]
+ [-0.03967535 -0.06871727 -0.08452056]
+ [-0.06712461 -0.00126646 -0.11173103]]
+v[&quot;db2&quot;] = [[ 0.02344157]
+ [ 0.16598022]
+ [ 0.07420442]]</code></pre>
+<p><strong>如何选择<span class="math inline">\(\beta\)</span></strong>:</p>
+<ul>
+<li><span class="math inline">\(\beta\)</span>越大，则考虑更多以前的梯度，更新越平滑，如果过大，会导平滑掉有效更新量<br>
+</li>
+<li><span class="math inline">\(\beta\)</span>常见的取值范围从0.8到0.999，如果不想调这个参数，<span class="math inline">\(\beta=0.9\)</span>往往是一个合理的选择</li>
+</ul>
+<p><strong>小结</strong>:</p>
+<ul>
+<li>动量方法考虑之前的梯度信息，以平滑梯度下降法的搜索方向，可以应用在batch GD, mini-batch GD和随机GD方法中<br>
+</li>
+<li>增加了一个超级参数<span class="math inline">\(\beta\)</span>需要调整</li>
+</ul>
+<h2 id="adam方法">Adam方法</h2>
+<p>Adam方法是神经网络中最有效的优化算法，它结合了RMSProp和动量两种方法的思想。</p>
+<p><strong>Adam 工作原理</strong> 1. 计算之前梯度的指数加权平均，并保存在变量<span class="math inline">\(v\)</span>中 (偏差校正前) 和 <span class="math inline">\(v^{corrected}\)</span> (偏差校正后). 2. 计算之前梯度平方的指数加权平均，并保存在变量<span class="math inline">\(s\)</span>中 (偏差校正前) 和 <span class="math inline">\(s^{corrected}\)</span> (偏差校正后). 3. 结合步骤 &quot;1&quot; 和 &quot;2&quot;得到新的更新方向，对模型进行更新.</p>
+<p>更新准则是, 循环 <span class="math inline">\(l = 1, ..., L\)</span>:</p>
+<p><span class="math display">\[\begin{cases}
+v_{dW^{[l]}} = \beta_1 v_{dW^{[l]}} + (1 - \beta_1) \frac{\partial \mathcal{J} }{ \partial W^{[l]} } \\
+v^{corrected}_{dW^{[l]}} = \frac{v_{dW^{[l]}}}{1 - (\beta_1)^t} \\
+s_{dW^{[l]}} = \beta_2 s_{dW^{[l]}} + (1 - \beta_2) (\frac{\partial \mathcal{J} }{\partial W^{[l]} })^2 \\
+s^{corrected}_{dW^{[l]}} = \frac{s_{dW^{[l]}}}{1 - (\beta_1)^t} \\
+W^{[l]} = W^{[l]} - \alpha \frac{v^{corrected}_{dW^{[l]}}}{\sqrt{s^{corrected}_{dW^{[l]}}} + \varepsilon}
+\end{cases}\]</span> 其中: - t 计算Adam的步数<br>
+- L 层数<br>
+- <span class="math inline">\(\beta_1\)</span> 和 <span class="math inline">\(\beta_2\)</span> 为控制两个指数加权平均的超参<br>
+- <span class="math inline">\(\alpha\)</span> 为学习率<br>
+- <span class="math inline">\(\varepsilon\)</span> 避免除0的小值</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: initialize_adam</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">initialize_adam</span><span class="params">(parameters)</span> :</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Initializes v and s as two python dictionaries with:</span></span><br><span class="line"><span class="string">                - keys: "dW1", "db1", ..., "dWL", "dbL" </span></span><br><span class="line"><span class="string">                - values: numpy arrays of zeros of the same shape as the corresponding gradients/parameters.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters.</span></span><br><span class="line"><span class="string">                    parameters["W" + str(l)] = Wl</span></span><br><span class="line"><span class="string">                    parameters["b" + str(l)] = bl</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    v -- python dictionary that will contain the exponentially weighted average of the gradient.</span></span><br><span class="line"><span class="string">                    v["dW" + str(l)] = ...</span></span><br><span class="line"><span class="string">                    v["db" + str(l)] = ...</span></span><br><span class="line"><span class="string">    s -- python dictionary that will contain the exponentially weighted average of the squared gradient.</span></span><br><span class="line"><span class="string">                    s["dW" + str(l)] = ...</span></span><br><span class="line"><span class="string">                    s["db" + str(l)] = ...</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    L = len(parameters) // <span class="number">2</span> <span class="comment"># number of layers in the neural networks</span></span><br><span class="line">    v = &#123;&#125;</span><br><span class="line">    s = &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize v, s. Input: "parameters". Outputs: "v, s".</span></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(L):</span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 4 lines)</span></span><br><span class="line">        v[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = np.zeros(parameters[<span class="string">'W'</span> + str(l+<span class="number">1</span>)].shape)</span><br><span class="line">        v[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = np.zeros(parameters[<span class="string">'b'</span> + str(l+<span class="number">1</span>)].shape)</span><br><span class="line">        s[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = np.zeros(parameters[<span class="string">'W'</span> + str(l+<span class="number">1</span>)].shape)</span><br><span class="line">        s[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = np.zeros(parameters[<span class="string">'b'</span> + str(l+<span class="number">1</span>)].shape)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> v, s</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">parameters = initialize_adam_test_case()</span><br><span class="line"></span><br><span class="line">v, s = initialize_adam(parameters)</span><br><span class="line">print(<span class="string">"v[\"dW1\"] = "</span> + str(v[<span class="string">"dW1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db1\"] = "</span> + str(v[<span class="string">"db1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"dW2\"] = "</span> + str(v[<span class="string">"dW2"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db2\"] = "</span> + str(v[<span class="string">"db2"</span>]))</span><br><span class="line">print(<span class="string">"s[\"dW1\"] = "</span> + str(s[<span class="string">"dW1"</span>]))</span><br><span class="line">print(<span class="string">"s[\"db1\"] = "</span> + str(s[<span class="string">"db1"</span>]))</span><br><span class="line">print(<span class="string">"s[\"dW2\"] = "</span> + str(s[<span class="string">"dW2"</span>]))</span><br><span class="line">print(<span class="string">"s[\"db2\"] = "</span> + str(s[<span class="string">"db2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>v[&quot;dW1&quot;] = [[ 0.  0.  0.]
+ [ 0.  0.  0.]]
+v[&quot;db1&quot;] = [[ 0.]
+ [ 0.]]
+v[&quot;dW2&quot;] = [[ 0.  0.  0.]
+ [ 0.  0.  0.]
+ [ 0.  0.  0.]]
+v[&quot;db2&quot;] = [[ 0.]
+ [ 0.]
+ [ 0.]]
+s[&quot;dW1&quot;] = [[ 0.  0.  0.]
+ [ 0.  0.  0.]]
+s[&quot;db1&quot;] = [[ 0.]
+ [ 0.]]
+s[&quot;dW2&quot;] = [[ 0.  0.  0.]
+ [ 0.  0.  0.]
+ [ 0.  0.  0.]]
+s[&quot;db2&quot;] = [[ 0.]
+ [ 0.]
+ [ 0.]]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: update_parameters_with_adam</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">update_parameters_with_adam</span><span class="params">(parameters, grads, v, s, t, learning_rate = <span class="number">0.01</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">                                beta1 = <span class="number">0.9</span>, beta2 = <span class="number">0.999</span>,  epsilon = <span class="number">1e-8</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Update parameters using Adam</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters:</span></span><br><span class="line"><span class="string">                    parameters['W' + str(l)] = Wl</span></span><br><span class="line"><span class="string">                    parameters['b' + str(l)] = bl</span></span><br><span class="line"><span class="string">    grads -- python dictionary containing your gradients for each parameters:</span></span><br><span class="line"><span class="string">                    grads['dW' + str(l)] = dWl</span></span><br><span class="line"><span class="string">                    grads['db' + str(l)] = dbl</span></span><br><span class="line"><span class="string">    v -- Adam variable, moving average of the first gradient, python dictionary</span></span><br><span class="line"><span class="string">    s -- Adam variable, moving average of the squared gradient, python dictionary</span></span><br><span class="line"><span class="string">    learning_rate -- the learning rate, scalar.</span></span><br><span class="line"><span class="string">    beta1 -- Exponential decay hyperparameter for the first moment estimates </span></span><br><span class="line"><span class="string">    beta2 -- Exponential decay hyperparameter for the second moment estimates </span></span><br><span class="line"><span class="string">    epsilon -- hyperparameter preventing division by zero in Adam updates</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your updated parameters </span></span><br><span class="line"><span class="string">    v -- Adam variable, moving average of the first gradient, python dictionary</span></span><br><span class="line"><span class="string">    s -- Adam variable, moving average of the squared gradient, python dictionary</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    L = len(parameters) // <span class="number">2</span>                 <span class="comment"># number of layers in the neural networks</span></span><br><span class="line">    v_corrected = &#123;&#125;                         <span class="comment"># Initializing first moment estimate, python dictionary</span></span><br><span class="line">    s_corrected = &#123;&#125;                         <span class="comment"># Initializing second moment estimate, python dictionary</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Perform Adam update on all parameters</span></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(L):</span><br><span class="line">        <span class="comment"># Moving average of the gradients. Inputs: "v, grads, beta1". Output: "v".</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        v[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = beta1 * v[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)] + (<span class="number">1</span>-beta1) * grads[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">        v[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = beta1 * v[<span class="string">'db'</span> + str(l+<span class="number">1</span>)] + (<span class="number">1</span>-beta1) * grads[<span class="string">'db'</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Compute bias-corrected first moment estimate. Inputs: "v, beta1, t". Output: "v_corrected".</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        v_corrected[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = v[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)] / (<span class="number">1</span> - np.power(beta1, t))</span><br><span class="line">        v_corrected[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = v[<span class="string">'db'</span> + str(l+<span class="number">1</span>)] / (<span class="number">1</span> - np.power(beta1, t))</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Moving average of the squared gradients. Inputs: "s, grads, beta2". Output: "s".</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        s[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = beta2 * s[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)] + (<span class="number">1</span>-beta2) * np.power(grads[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)], <span class="number">2</span>)</span><br><span class="line">        s[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = beta2 * s[<span class="string">'db'</span> + str(l+<span class="number">1</span>)] + (<span class="number">1</span>-beta2) * np.power(grads[<span class="string">'db'</span> + str(l+<span class="number">1</span>)], <span class="number">2</span>)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Compute bias-corrected second raw moment estimate. Inputs: "s, beta2, t". Output: "s_corrected".</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        s_corrected[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)] = s[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)] / (<span class="number">1</span> - np.power(beta2, t))</span><br><span class="line">        s_corrected[<span class="string">"db"</span> + str(l+<span class="number">1</span>)] = s[<span class="string">'db'</span> + str(l+<span class="number">1</span>)] / (<span class="number">1</span> - np.power(beta2, t))</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Update parameters. Inputs: "parameters, learning_rate, v_corrected, s_corrected, epsilon". Output: "parameters".</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">        parameters[<span class="string">"W"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">'W'</span> + str(l+<span class="number">1</span>)] - learning_rate * v_corrected[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)] / np.sqrt(s_corrected[<span class="string">'dW'</span> + str(l+<span class="number">1</span>)] + epsilon)</span><br><span class="line">        parameters[<span class="string">"b"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">'b'</span> + str(l+<span class="number">1</span>)] - learning_rate * v_corrected[<span class="string">'db'</span> + str(l+<span class="number">1</span>)] / np.sqrt(s_corrected[<span class="string">'db'</span> + str(l+<span class="number">1</span>)] + epsilon)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> parameters, v, s</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">parameters, grads, v, s = update_parameters_with_adam_test_case()</span><br><span class="line">parameters, v, s  = update_parameters_with_adam(parameters, grads, v, s, t = <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">print(<span class="string">"W1 = "</span> + str(parameters[<span class="string">"W1"</span>]))</span><br><span class="line">print(<span class="string">"b1 = "</span> + str(parameters[<span class="string">"b1"</span>]))</span><br><span class="line">print(<span class="string">"W2 = "</span> + str(parameters[<span class="string">"W2"</span>]))</span><br><span class="line">print(<span class="string">"b2 = "</span> + str(parameters[<span class="string">"b2"</span>]))</span><br><span class="line">print(<span class="string">"v[\"dW1\"] = "</span> + str(v[<span class="string">"dW1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db1\"] = "</span> + str(v[<span class="string">"db1"</span>]))</span><br><span class="line">print(<span class="string">"v[\"dW2\"] = "</span> + str(v[<span class="string">"dW2"</span>]))</span><br><span class="line">print(<span class="string">"v[\"db2\"] = "</span> + str(v[<span class="string">"db2"</span>]))</span><br><span class="line">print(<span class="string">"s[\"dW1\"] = "</span> + str(s[<span class="string">"dW1"</span>]))</span><br><span class="line">print(<span class="string">"s[\"db1\"] = "</span> + str(s[<span class="string">"db1"</span>]))</span><br><span class="line">print(<span class="string">"s[\"dW2\"] = "</span> + str(s[<span class="string">"dW2"</span>]))</span><br><span class="line">print(<span class="string">"s[\"db2\"] = "</span> + str(s[<span class="string">"db2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>W1 = [[ 1.63178673 -0.61919778 -0.53561312]
+ [-1.08040999  0.85796626 -2.29409733]]
+b1 = [[ 1.75225313]
+ [-0.75376553]]
+W2 = [[ 0.32648046 -0.25681174  1.46954931]
+ [-2.05269934 -0.31497584 -0.37661299]
+ [ 1.14121081 -1.09245036 -0.16498684]]
+b2 = [[-0.88529978]
+ [ 0.03477238]
+ [ 0.57537385]]
+v[&quot;dW1&quot;] = [[-0.11006192  0.11447237  0.09015907]
+ [ 0.05024943  0.09008559 -0.06837279]]
+v[&quot;db1&quot;] = [[-0.01228902]
+ [-0.09357694]]
+v[&quot;dW2&quot;] = [[-0.02678881  0.05303555 -0.06916608]
+ [-0.03967535 -0.06871727 -0.08452056]
+ [-0.06712461 -0.00126646 -0.11173103]]
+v[&quot;db2&quot;] = [[ 0.02344157]
+ [ 0.16598022]
+ [ 0.07420442]]
+s[&quot;dW1&quot;] = [[ 0.00121136  0.00131039  0.00081287]
+ [ 0.0002525   0.00081154  0.00046748]]
+s[&quot;db1&quot;] = [[  1.51020075e-05]
+ [  8.75664434e-04]]
+s[&quot;dW2&quot;] = [[  7.17640232e-05   2.81276921e-04   4.78394595e-04]
+ [  1.57413361e-04   4.72206320e-04   7.14372576e-04]
+ [  4.50571368e-04   1.60392066e-07   1.24838242e-03]]
+s[&quot;db2&quot;] = [[  5.49507194e-05]
+ [  2.75494327e-03]
+ [  5.50629536e-04]]</code></pre>
+<h2 id="测试不同的优化算法">测试不同的优化算法</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">train_X, train_Y = load_dataset()</span><br></pre></td></tr></table></figure>
+<div class="figure">
+<img src="/2018/03/08/47_NNOpt/output_27_0.png" alt="png">
+<p class="caption">png</p>
+</div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model</span><span class="params">(X, Y, layers_dims, optimizer, learning_rate = <span class="number">0.0007</span>, mini_batch_size = <span class="number">64</span>, beta = <span class="number">0.9</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">          beta1 = <span class="number">0.9</span>, beta2 = <span class="number">0.999</span>,  epsilon = <span class="number">1e-8</span>, num_epochs = <span class="number">10000</span>, print_cost = True)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    3-layer neural network model which can be run in different optimizer modes.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input data, of shape (2, number of examples)</span></span><br><span class="line"><span class="string">    Y -- true "label" vector (1 for blue dot / 0 for red dot), of shape (1, number of examples)</span></span><br><span class="line"><span class="string">    layers_dims -- python list, containing the size of each layer</span></span><br><span class="line"><span class="string">    learning_rate -- the learning rate, scalar.</span></span><br><span class="line"><span class="string">    mini_batch_size -- the size of a mini batch</span></span><br><span class="line"><span class="string">    beta -- Momentum hyperparameter</span></span><br><span class="line"><span class="string">    beta1 -- Exponential decay hyperparameter for the past gradients estimates </span></span><br><span class="line"><span class="string">    beta2 -- Exponential decay hyperparameter for the past squared gradients estimates </span></span><br><span class="line"><span class="string">    epsilon -- hyperparameter preventing division by zero in Adam updates</span></span><br><span class="line"><span class="string">    num_epochs -- number of epochs</span></span><br><span class="line"><span class="string">    print_cost -- True to print the cost every 1000 epochs</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your updated parameters </span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    L = len(layers_dims)             <span class="comment"># number of layers in the neural networks</span></span><br><span class="line">    costs = []                       <span class="comment"># to keep track of the cost</span></span><br><span class="line">    t = <span class="number">0</span>                            <span class="comment"># initializing the counter required for Adam update</span></span><br><span class="line">    seed = <span class="number">10</span>                        <span class="comment"># For grading purposes, so that your "random" minibatches are the same as ours</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize parameters</span></span><br><span class="line">    parameters = initialize_parameters(layers_dims)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Initialize the optimizer</span></span><br><span class="line">    <span class="keyword">if</span> optimizer == <span class="string">"gd"</span>:</span><br><span class="line">        <span class="keyword">pass</span> <span class="comment"># no initialization required for gradient descent</span></span><br><span class="line">    <span class="keyword">elif</span> optimizer == <span class="string">"momentum"</span>:</span><br><span class="line">        v = initialize_velocity(parameters)</span><br><span class="line">    <span class="keyword">elif</span> optimizer == <span class="string">"adam"</span>:</span><br><span class="line">        v, s = initialize_adam(parameters)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Optimization loop</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(num_epochs):</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Define the random minibatches. We increment the seed to reshuffle differently the dataset after each epoch</span></span><br><span class="line">        seed = seed + <span class="number">1</span></span><br><span class="line">        minibatches = random_mini_batches(X, Y, mini_batch_size, seed)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> minibatch <span class="keyword">in</span> minibatches:</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Select a minibatch</span></span><br><span class="line">            (minibatch_X, minibatch_Y) = minibatch</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Forward propagation</span></span><br><span class="line">            a3, caches = forward_propagation(minibatch_X, parameters)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Compute cost</span></span><br><span class="line">            cost = compute_cost(a3, minibatch_Y)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Backward propagation</span></span><br><span class="line">            grads = backward_propagation(minibatch_X, minibatch_Y, caches)</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Update parameters</span></span><br><span class="line">            <span class="keyword">if</span> optimizer == <span class="string">"gd"</span>:</span><br><span class="line">                parameters = update_parameters_with_gd(parameters, grads, learning_rate)</span><br><span class="line">            <span class="keyword">elif</span> optimizer == <span class="string">"momentum"</span>:</span><br><span class="line">                parameters, v = update_parameters_with_momentum(parameters, grads, v, beta, learning_rate)</span><br><span class="line">            <span class="keyword">elif</span> optimizer == <span class="string">"adam"</span>:</span><br><span class="line">                t = t + <span class="number">1</span> <span class="comment"># Adam counter</span></span><br><span class="line">                parameters, v, s = update_parameters_with_adam(parameters, grads, v, s,</span><br><span class="line">                                                               t, learning_rate, beta1, beta2,  epsilon)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Print the cost every 1000 epoch</span></span><br><span class="line">        <span class="keyword">if</span> print_cost <span class="keyword">and</span> i % <span class="number">1000</span> == <span class="number">0</span>:</span><br><span class="line">            <span class="keyword">print</span> (<span class="string">"Cost after epoch %i: %f"</span> %(i, cost))</span><br><span class="line">        <span class="keyword">if</span> print_cost <span class="keyword">and</span> i % <span class="number">100</span> == <span class="number">0</span>:</span><br><span class="line">            costs.append(cost)</span><br><span class="line">                </span><br><span class="line">    <span class="comment"># plot the cost</span></span><br><span class="line">    plt.plot(costs)</span><br><span class="line">    plt.ylabel(<span class="string">'cost'</span>)</span><br><span class="line">    plt.xlabel(<span class="string">'epochs (per 100)'</span>)</span><br><span class="line">    plt.title(<span class="string">"Learning rate = "</span> + str(learning_rate))</span><br><span class="line">    plt.show()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<h3 id="mini-batch梯度下降法">Mini-batch梯度下降法</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># train 3-layer model</span></span><br><span class="line">layers_dims = [train_X.shape[<span class="number">0</span>], <span class="number">5</span>, <span class="number">2</span>, <span class="number">1</span>]</span><br><span class="line">parameters = model(train_X, train_Y, layers_dims, optimizer = <span class="string">"gd"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Predict</span></span><br><span class="line">predictions = predict(train_X, train_Y, parameters)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Plot decision boundary</span></span><br><span class="line">plt.title(<span class="string">"Model with Gradient Descent optimization"</span>)</span><br><span class="line">axes = plt.gca()</span><br><span class="line">axes.set_xlim([<span class="number">-1.5</span>,<span class="number">2.5</span>])</span><br><span class="line">axes.set_ylim([<span class="number">-1</span>,<span class="number">1.5</span>])</span><br><span class="line">plot_decision_boundary(<span class="keyword">lambda</span> x: predict_dec(parameters, x.T), train_X, train_Y)</span><br></pre></td></tr></table></figure>
+<pre><code>Cost after epoch 0: 0.690736
+Cost after epoch 1000: 0.685273
+Cost after epoch 2000: 0.647072
+Cost after epoch 3000: 0.619525
+Cost after epoch 4000: 0.576584
+Cost after epoch 5000: 0.607243
+Cost after epoch 6000: 0.529403
+Cost after epoch 7000: 0.460768
+Cost after epoch 8000: 0.465586
+Cost after epoch 9000: 0.464518</code></pre>
+<div class="figure">
+<img src="/2018/03/08/47_NNOpt/output_30_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<pre><code>Accuracy: 0.796666666667</code></pre>
+<div class="figure">
+<img src="/2018/03/08/47_NNOpt/output_30_3.png" alt="png">
+<p class="caption">png</p>
+</div>
+<h3 id="带动量的mini-batch梯度下降法">带动量的Mini-batch梯度下降法</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># train 3-layer model</span></span><br><span class="line">layers_dims = [train_X.shape[<span class="number">0</span>], <span class="number">5</span>, <span class="number">2</span>, <span class="number">1</span>]</span><br><span class="line">parameters = model(train_X, train_Y, layers_dims, beta = <span class="number">0.9</span>, optimizer = <span class="string">"momentum"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Predict</span></span><br><span class="line">predictions = predict(train_X, train_Y, parameters)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Plot decision boundary</span></span><br><span class="line">plt.title(<span class="string">"Model with Momentum optimization"</span>)</span><br><span class="line">axes = plt.gca()</span><br><span class="line">axes.set_xlim([<span class="number">-1.5</span>,<span class="number">2.5</span>])</span><br><span class="line">axes.set_ylim([<span class="number">-1</span>,<span class="number">1.5</span>])</span><br><span class="line">plot_decision_boundary(<span class="keyword">lambda</span> x: predict_dec(parameters, x.T), train_X, train_Y)</span><br></pre></td></tr></table></figure>
+<pre><code>Cost after epoch 0: 0.690741
+Cost after epoch 1000: 0.685341
+Cost after epoch 2000: 0.647145
+Cost after epoch 3000: 0.619594
+Cost after epoch 4000: 0.576665
+Cost after epoch 5000: 0.607324
+Cost after epoch 6000: 0.529476
+Cost after epoch 7000: 0.460936
+Cost after epoch 8000: 0.465780
+Cost after epoch 9000: 0.464740</code></pre>
+<div class="figure">
+<img src="/2018/03/08/47_NNOpt/output_32_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<pre><code>Accuracy: 0.796666666667</code></pre>
+<div class="figure">
+<img src="/2018/03/08/47_NNOpt/output_32_3.png" alt="png">
+<p class="caption">png</p>
+</div>
+<h3 id="adam模式下的mini-batch梯度下降法">Adam模式下的Mini-batch梯度下降法</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># train 3-layer model</span></span><br><span class="line">layers_dims = [train_X.shape[<span class="number">0</span>], <span class="number">5</span>, <span class="number">2</span>, <span class="number">1</span>]</span><br><span class="line">parameters = model(train_X, train_Y, layers_dims, optimizer = <span class="string">"adam"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Predict</span></span><br><span class="line">predictions = predict(train_X, train_Y, parameters)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Plot decision boundary</span></span><br><span class="line">plt.title(<span class="string">"Model with Adam optimization"</span>)</span><br><span class="line">axes = plt.gca()</span><br><span class="line">axes.set_xlim([<span class="number">-1.5</span>,<span class="number">2.5</span>])</span><br><span class="line">axes.set_ylim([<span class="number">-1</span>,<span class="number">1.5</span>])</span><br><span class="line">plot_decision_boundary(<span class="keyword">lambda</span> x: predict_dec(parameters, x.T), train_X, train_Y)</span><br></pre></td></tr></table></figure>
+<pre><code>Cost after epoch 0: 0.690552
+Cost after epoch 1000: 0.185501
+Cost after epoch 2000: 0.150830
+Cost after epoch 3000: 0.074454
+Cost after epoch 4000: 0.125959
+Cost after epoch 5000: 0.104344
+Cost after epoch 6000: 0.100676
+Cost after epoch 7000: 0.031652
+Cost after epoch 8000: 0.111973
+Cost after epoch 9000: 0.197940</code></pre>
+<div class="figure">
+<img src="/2018/03/08/47_NNOpt/output_34_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<pre><code>Accuracy: 0.94</code></pre>
+<div class="figure">
+<img src="/2018/03/08/47_NNOpt/output_34_3.png" alt="png">
+<p class="caption">png</p>
+</div>
+<h2 id="结论">结论</h2>
+<ol style="list-style-type: decimal">
+<li>动量法往往有帮助，但是对于小的学习率和简单数据集，影响几乎可以忽略。<br>
+</li>
+<li>代价函数的剧烈波动来自于对优化算法来说，一些minibatch更加复制。<br>
+</li>
+<li>Adam方法明显优于min-batch梯度下降法和动量法，但是如果给予足够的迭代次数，所有三种方法的结果会类似。但是，Adam方法收敛速度快得多。<br>
+</li>
+<li>Adam方法的优点包括：仅需要很小的内存；往往不需要调参就可以工作很好（学习率除外）。</li>
+</ol>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a></li>
+</ul>
+</caption>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/梯度下降/" rel="tag"># 梯度下降</a>
+          
+            <a href="/tags/深度神经网络/" rel="tag"># 深度神经网络</a>
+          
+            <a href="/tags/Mini-Batch梯度下降/" rel="tag"># Mini-Batch梯度下降</a>
+          
+            <a href="/tags/动量/" rel="tag"># 动量</a>
+          
+            <a href="/tags/Adam/" rel="tag"># Adam</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/08/46_GradChk/" rel="next" title="梯度验证">
+                <i class="fa fa-chevron-left"></i> 梯度验证
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/09/48-TFTutorial/" rel="prev" title="Tensorflow简单教程">
+                Tensorflow简单教程 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#梯度下降法"><span class="nav-number">1.</span> <span class="nav-text">梯度下降法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mini-batch-梯度下降法"><span class="nav-number">2.</span> <span class="nav-text">Mini-Batch 梯度下降法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动量"><span class="nav-number">3.</span> <span class="nav-text">动量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#adam方法"><span class="nav-number">4.</span> <span class="nav-text">Adam方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试不同的优化算法"><span class="nav-number">5.</span> <span class="nav-text">测试不同的优化算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mini-batch梯度下降法"><span class="nav-number">5.1.</span> <span class="nav-text">Mini-batch梯度下降法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#带动量的mini-batch梯度下降法"><span class="nav-number">5.2.</span> <span class="nav-text">带动量的Mini-batch梯度下降法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#adam模式下的mini-batch梯度下降法"><span class="nav-number">5.3.</span> <span class="nav-text">Adam模式下的Mini-batch梯度下降法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">6.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="TFRecord格式,队列,多线程,数据集," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文介绍如何使用Tensorflow进行多线程预处理。首先介绍TFRecord格式，并介绍如何利用队列框架进行多线程数据预处理，最后介绍Tensorflow 1.3版之后推荐使用的数据集（Dataset）API。">
+<meta name="keywords" content="TFRecord格式,队列,多线程,数据集">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tensorflow数据格式及多线程处理">
+<meta property="og:url" content="http://yoursite.com/2018/05/27/74_tensorflow_data_prep/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文介绍如何使用Tensorflow进行多线程预处理。首先介绍TFRecord格式，并介绍如何利用队列框架进行多线程数据预处理，最后介绍Tensorflow 1.3版之后推荐使用的数据集（Dataset）API。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-05-27T01:01:25.072Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tensorflow数据格式及多线程处理">
+<meta name="twitter:description" content="本文介绍如何使用Tensorflow进行多线程预处理。首先介绍TFRecord格式，并介绍如何利用队列框架进行多线程数据预处理，最后介绍Tensorflow 1.3版之后推荐使用的数据集（Dataset）API。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/05/27/74_tensorflow_data_prep/"/>
+
+
+
+
+
+  <title>Tensorflow数据格式及多线程处理 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/27/74_tensorflow_data_prep/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Tensorflow数据格式及多线程处理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-05-27T09:01:25+08:00">
+                2018-05-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Tensorflow/" itemprop="url" rel="index">
+                    <span itemprop="name">Tensorflow</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文介绍如何使用Tensorflow进行多线程预处理。首先介绍<strong>TFRecord</strong>格式，并介绍如何利用<strong>队列</strong>框架进行<strong>多线程</strong>数据预处理，最后介绍Tensorflow 1.3版之后推荐使用的<strong>数据集（Dataset）</strong>API。 <a id="more"></a></p>
+<h2 id="tfrecord文件">TFRecord文件</h2>
+<h3 id="介绍">介绍</h3>
+<p>TFRecord文件中的数据都是通过tf.train.Example Protocol Buffer的格式存储的。下面是tf.train.Example的定义</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">message Example &#123;</span><br><span class="line">    Features feature = 1;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">meassage Features &#123;</span><br><span class="line">    map&lt;string, Feature&gt; feature =1;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">message Feature &#123;</span><br><span class="line">    oneof kind &#123;</span><br><span class="line">        BytesList bytes_list = 1;</span><br><span class="line">        FloatList float_list = 2;</span><br><span class="line">        Int64List int64_list = 3;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>从上面的定义可以看出，tf.train.Example的数据结构比较简单，包含一个从属性名称到取值的字典，其中属性名称为字符串，取值可以为字符串、实数列表、整数列表。</p>
+<h3 id="样例">样例</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">from</span> tensorflow.examples.tutorials.mnist <span class="keyword">import</span> input_data</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_int64_feature</span><span class="params">(value)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    生成整数型的属性</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">return</span> tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_bytes_feature</span><span class="params">(value)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    生成字符串型的属性</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">return</span> tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))</span><br><span class="line"></span><br><span class="line">mnist = input_data.read_data_sets(<span class="string">'/media/seisinv/Data/04_data/MNIST_data'</span>,dtype=tf.uint8, one_hot=<span class="keyword">True</span>)</span><br><span class="line"></span><br><span class="line">images = mnist.train.images</span><br><span class="line">labels = mnist.train.labels</span><br><span class="line"></span><br><span class="line">pixels = images.shape[<span class="number">1</span>]</span><br><span class="line">num_examples = mnist.train.num_examples</span><br><span class="line"></span><br><span class="line"><span class="comment"># 输出TFRecord文件</span></span><br><span class="line">filename = <span class="string">'/media/seisinv/Data/04_data/ai/test/output.tfrecords'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建writer写TFRecord文件</span></span><br><span class="line">writer = tf.python_io.TFRecordWriter(filename)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> index <span class="keyword">in</span> range(num_examples):</span><br><span class="line">    <span class="comment"># 将图像矩阵转化成一个字符串</span></span><br><span class="line">    image_raw = images[index].tostring()</span><br><span class="line">    <span class="comment"># 将一个样例转化成Example Protocol Buffer，并将所有信息写入这个数据结构中</span></span><br><span class="line">    example = tf.train.Example(features=tf.train.Features(feature=&#123;</span><br><span class="line">        <span class="string">'pixels'</span>: _int64_feature(pixels),</span><br><span class="line">        <span class="string">'label'</span>: _int64_feature(np.argmax(labels[index])),</span><br><span class="line">        <span class="string">'image_raw'</span>: _bytes_feature(image_raw)</span><br><span class="line">    &#125;))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 将一个Examples写入TFRecord文件</span></span><br><span class="line">    writer.write(example.SerializeToString())</span><br><span class="line">    </span><br><span class="line"><span class="comment"># 关闭文件</span></span><br><span class="line">writer.close()</span><br></pre></td></tr></table></figure>
+<pre><code>Extracting /media/seisinv/Data/04_data/MNIST_data/train-images-idx3-ubyte.gz
+Extracting /media/seisinv/Data/04_data/MNIST_data/train-labels-idx1-ubyte.gz
+Extracting /media/seisinv/Data/04_data/MNIST_data/t10k-images-idx3-ubyte.gz
+Extracting /media/seisinv/Data/04_data/MNIST_data/t10k-labels-idx1-ubyte.gz</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建reader读取TFRecord文件</span></span><br><span class="line">reader = tf.TFRecordReader()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建队列维护输入文件列表</span></span><br><span class="line">filename_queue = tf.train.string_input_producer([<span class="string">'/media/seisinv/Data/04_data/ai/test/output.tfrecords'</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从文件中读取一个样例，也可以使用read_up_to函数一次性读取多个样例</span></span><br><span class="line">_, serialized_example = reader.read(filename_queue)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析读入的一个样例。如果需要解析多个样例，可以使用parse_example函数</span></span><br><span class="line">features = tf.parse_single_example(serialized_example,</span><br><span class="line">                                  features = &#123;</span><br><span class="line">                                      <span class="string">'image_raw'</span>: tf.FixedLenFeature([], tf.string),</span><br><span class="line">                                      <span class="string">'pixels'</span>: tf.FixedLenFeature([], tf.int64),</span><br><span class="line">                                      <span class="string">'label'</span>: tf.FixedLenFeature([], tf.int64)</span><br><span class="line">                                  &#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># tf.decode_raw可以将字符串解析成图像对应的像素数组</span></span><br><span class="line">image = tf.decode_raw(features[<span class="string">'image_raw'</span>], tf.uint8)</span><br><span class="line">label = tf.cast(features[<span class="string">'label'</span>], tf.int32)</span><br><span class="line">pixels = tf.cast(features[<span class="string">'pixels'</span>], tf.int32)</span><br><span class="line"></span><br><span class="line">sess = tf.Session()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动多线程处理输入数据</span></span><br><span class="line">coord = tf.train.Coordinator()</span><br><span class="line">threads = tf.train.start_queue_runners(sess=sess, coord=coord)</span><br><span class="line"><span class="comment"># 每次运行可读取TFRecord文件中的一个样例，当所有样例都读完之后，程序会从头读取</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):</span><br><span class="line">    print(sess.run([image, label, pixels]))</span><br></pre></td></tr></table></figure>
+<pre><code>[array([  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  97,
+        96,  77, 118,  61,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,  90, 138, 235, 235, 235, 235, 235,
+       235, 251, 251, 248, 254, 245, 235, 190,  21,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0, 140, 251, 254, 254, 254, 254,
+       254, 254, 254, 254, 254, 254, 254, 254, 254, 254, 189,  23,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0, 226, 254, 208, 199,
+       199, 199, 199, 139,  61,  61,  61,  61,  61, 128, 222, 254, 254,
+       189,  21,   0,   0,   0,   0,   0,   0,   0,   0,   0,  38,  82,
+        13,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  34,
+       213, 254, 254, 115,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,  84, 254, 254, 234,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,  84, 254, 254, 234,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0, 106, 157, 254, 254, 243,  51,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,  25, 117, 228, 228, 228, 253, 254, 254, 254, 254, 240,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,  68, 119, 220, 254, 254, 254, 254, 254, 254, 254, 254,
+       254, 142,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,  37, 187, 253, 254, 254, 254, 223, 206, 206,  75,  68,
+       215, 254, 254, 117,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0, 113, 219, 254, 242, 227, 115,  89,  31,   0,   0,
+         0,   0, 200, 254, 241,  41,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0, 169, 254, 176,  62,   0,   0,   0,   0,
+         0,   0,   0,  48, 231, 254, 234,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,  18, 124,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,  84, 254, 254, 166,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0, 139, 254, 238,  57,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0, 210, 250, 254, 168,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 242, 254, 239,
+        57,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  89, 251,
+       241,  86,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   5,
+       206, 246, 157,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   4, 117,  69,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0], dtype=uint8), 7, 784]
+[array([  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  31, 132, 254,
+       253, 254, 213,  82,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  21, 142, 233,
+       252, 253, 252, 253, 252, 223,  20,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 123, 254,
+       253, 254, 253, 224, 203, 203, 223, 255, 213,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       203, 253, 252, 253, 212,  20,   0,   0,  61, 253, 252,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,  41, 243, 224, 203, 183,  41, 152,  30,   0,   0, 255, 253,
+       102,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,  40,  20,   0,   0, 102, 253,  50,   0,  82,
+       253, 252,  20,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  82, 214,  31,
+       113, 233, 254, 233,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,  62, 102,  82,  41,
+       253, 232, 253, 252, 233,  50,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 152, 253,
+       254, 253, 254, 253, 254, 233, 123,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+       152, 252, 253, 252, 253, 252, 192,  50,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,  62, 183, 203, 243, 254, 253,  62,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,  40, 172, 252, 203,  20,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,  21,   0,   0,   0,   0,   0,   0,   0,   0,   0, 183, 254,
+       112,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,  62, 203, 163,   0,   0,   0,   0,   0,   0,   0,   0,
+        61, 253, 151,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,  21, 214, 192,   0,   0,   0,   0,   0,   0,   0,
+         0,  11, 213, 254, 151,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0, 102, 253, 151,   0,   0,   0,   0,   0,
+         0,   0,  41, 213, 252, 253, 111,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,  41, 255, 213,  92,  51,   0,
+         0,  31,  92, 173, 253, 254, 253, 142,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 172, 252, 253,
+       252, 203, 203, 233, 252, 253, 252, 253, 130,  20,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  21,
+       203, 255, 253, 254, 253, 254, 253, 244, 203,  82,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,  20, 151, 151, 253, 171, 151, 151,  40,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+         0,   0,   0,   0], dtype=uint8), 3, 784]</code></pre>
+<h2 id="多线程数据处理框架">多线程数据处理框架</h2>
+<h3 id="队列和多线程">队列和多线程</h3>
+<p>在Tensorflow中，队列和变量类似，都是计算图上有状态的节点，其他的计算节点可以修改它们的状态。</p>
+<ul>
+<li>对于变量，可以通过赋值操作修改变量的取值。<br>
+</li>
+<li>对于队列，修改队列的操作主要有Enqueue, EnqueueMany和Dequeue</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建一个先进先出的队列，指定最多可以保存两个元素，类型为整型</span></span><br><span class="line">q = tf.FIFOQueue(<span class="number">2</span>, <span class="string">'int32'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化队列中的元素，和变量初始化类似，使用队列之前都需要明确的调用初始化过程</span></span><br><span class="line">init = q.enqueue_many(([<span class="number">0</span>,<span class="number">10</span>],))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 取出队列第一个元素，并赋值到变量x中</span></span><br><span class="line">x = q.dequeue()</span><br><span class="line"></span><br><span class="line">y = x + <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 将加1后的值加入到队列中</span></span><br><span class="line">q_inc = q.enqueue([y])</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    init.run()</span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> range(<span class="number">5</span>):</span><br><span class="line">        v, _ = sess.run([x, q_inc])</span><br><span class="line">        print(v)</span><br></pre></td></tr></table></figure>
+<pre><code>0
+10
+1
+11
+2</code></pre>
+<p>Tensorflow中还提供了两种队列，FIFOQueue和RandomShufferQueue，第一种实现的是先进先出队列，后一种会将队列中的元素打乱，每次出队列操作得到的是从当前队列所有元素中随机选择的一个。</p>
+<p>在Tensorflow中，队列不仅是一种<strong>数据结构</strong>，而且是<strong>异步计算张量取值</strong>的一个重要机制。比如多个线程同事向一个队列写元素或者读元素。</p>
+<p>Tensorflow中提供了tf.Coordinator和tf.QueueRunner两个类实现多线程协同的功能。tf.Coordinator类主要用于协同多个线程一起停止，并提供了<em>should_stop</em>, <em>request_stop</em>和<em>join</em>三个函数。用法如下：</p>
+<ul>
+<li>在启动线程之前，首先需要声明一个tf.Coordinator类<br>
+</li>
+<li>将这个类传入每个创建的线程，启动的线程需要一直查询should_stophanshu，当该函数返回为True时，当前线程需要退出<br>
+</li>
+<li>每个启动的线程都可以通过request_stop函数通知其他的线程退出<br>
+</li>
+<li>当某个线程调用request_stop函数之后，should_stop函数的返回值将被设置为True，这样其他的线程就会同时终止。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> threading</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">MyLoop</span><span class="params">(coord, workder_id)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    在一个线程中运行的程序，每隔1秒判断是否需要停止并打印自己的ID</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> coord.should_stop():</span><br><span class="line">        <span class="keyword">if</span> np.random.rand() &lt; <span class="number">0.1</span>:</span><br><span class="line">            print(<span class="string">"Stoping from id: %d\n"</span>%workder_id)</span><br><span class="line">            coord.request_stop()</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            print(<span class="string">"Working on id:%d\n"</span>%workder_id)</span><br><span class="line">        time.sleep(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 声明tf.train.Coordinator类，协同多个线程</span></span><br><span class="line">coord = tf.train.Coordinator()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 声明创建2个线程</span></span><br><span class="line">threads = [</span><br><span class="line">    threading.Thread(target=MyLoop, args=(coord, i, )) <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>)</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动所有线程</span></span><br><span class="line"><span class="keyword">for</span> t <span class="keyword">in</span> threads: t.start()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 等待所有线程退出</span></span><br><span class="line">coord.join(threads)</span><br></pre></td></tr></table></figure>
+<pre><code>Working on id:0
+
+Working on id:1
+
+Working on id:0
+
+Working on id:1
+
+Working on id:0
+Stoping from id: 1</code></pre>
+<p>tf.QueueRunner主要用于启动多个线程来操作同一个队列，启动的这些线程可以通过上面介绍的tf.Coordinator类来统一管理。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 声明一个队列，共100个元素，类型为实数</span></span><br><span class="line">queue = tf.FIFOQueue(<span class="number">100</span>,<span class="string">'float'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义队列入队操作</span></span><br><span class="line">enqueue_op = queue.enqueue([tf.random_normal([<span class="number">1</span>])])</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建多个线程运行队列的入队操作，参数1指被操作的队列，参数2表示启动2个线程，每个线程运行enqueue_op操作</span></span><br><span class="line">qr = tf.train.QueueRunner(queue, [enqueue_op]*<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 将定义过的tf.train.QueueRunner加入默认的tf.GraphKeys.QUEUE_RUNNERS集合</span></span><br><span class="line">tf.train.add_queue_runner(qr)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义出队操作</span></span><br><span class="line">out_tensor = queue.dequeue()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    coord = tf.train.Coordinator()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 启动所有线程</span></span><br><span class="line">    threads = tf.train.start_queue_runners(sess=sess, coord=coord)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 获取队列中的取值</span></span><br><span class="line">    <span class="keyword">for</span> _ <span class="keyword">in</span> range(<span class="number">2</span>): print(sess.run(out_tensor)[<span class="number">0</span>])</span><br><span class="line">        </span><br><span class="line">    <span class="comment"># 停止所有线程</span></span><br><span class="line">    coord.request_stop()</span><br><span class="line">    coord.join(threads)</span><br></pre></td></tr></table></figure>
+<pre><code>1.43469
+-0.598175</code></pre>
+<h3 id="输入文件队列">输入文件队列</h3>
+<p>虽然可以将多个训练样本放入一个TFRecord中，但是当训练数据量很大时，将数据分成多个TFRecord文件可以提高处理效率。Tensorflow提供了tf.train.match_filenames_once函数获取符合正则化表达式的所有文件列表，并通过tf.train.string_input_producer函数进行管理。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 模拟海量数据情况下，将数据写入不同的文件</span></span><br><span class="line">num_shards = <span class="number">2</span> <span class="comment">#总共2个文件</span></span><br><span class="line">instances_per_shard = <span class="number">2</span> <span class="comment">#每个文件2个数据样本</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(num_shards):</span><br><span class="line">    filename = (<span class="string">'/media/seisinv/Data/04_data/ai/test/data.tfrecords_%.5d-of-%.5d'</span> %(i, num_shards))</span><br><span class="line">    writer = tf.python_io.TFRecordWriter(filename)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> range(instances_per_shard):</span><br><span class="line">        <span class="comment"># Example类中仅仅保留两个简单的信息</span></span><br><span class="line">        example = tf.train.Example(features = tf.train.Features(feature=&#123;</span><br><span class="line">            <span class="string">'i'</span>: _int64_feature(i),</span><br><span class="line">            <span class="string">'j'</span>: _int64_feature(j)</span><br><span class="line">        &#125;))</span><br><span class="line">        writer.write(example.SerializeToString())</span><br><span class="line">    writer.close()</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 获取文件列表</span></span><br><span class="line">files = tf.train.match_filenames_once(<span class="string">'/media/seisinv/Data/04_data/ai/test/data.tfrecords_*'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建输入队列，shuffer参数控制是否随机打乱读取文件的顺序，在实际过程中，一般设置为True</span></span><br><span class="line">filename_queue = tf.train.string_input_producer(files, shuffle=<span class="keyword">False</span>)</span><br><span class="line"><span class="comment"># filename_queue = tf.train.string_input_producer(files, shuffle=False, num_epochs=1)</span></span><br><span class="line"></span><br><span class="line">reader = tf.TFRecordReader()</span><br><span class="line">_, serialized_example = reader.read(filename_queue)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析一个样本</span></span><br><span class="line">features = tf.parse_single_example(serialized_example,</span><br><span class="line">                                  features=&#123;</span><br><span class="line">                                      <span class="string">'i'</span>: tf.FixedLenFeature([], tf.int64),</span><br><span class="line">                                      <span class="string">'j'</span>: tf.FixedLenFeature([], tf.int64)</span><br><span class="line">                                  &#125;)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    tf.local_variables_initializer().run()</span><br><span class="line">    print(sess.run(files))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 协同不同的线程</span></span><br><span class="line">    coord = tf.train.Coordinator()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 启动所有的线程</span></span><br><span class="line">    threads = tf.train.start_queue_runners(sess=sess, coord=coord)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">6</span>):</span><br><span class="line">        print(sess.run([features[<span class="string">'i'</span>], features[<span class="string">'j'</span>]]))</span><br><span class="line">    coord.request_stop()</span><br><span class="line">    coord.join(threads)</span><br></pre></td></tr></table></figure>
+<pre><code>[b&#39;/media/seisinv/Data/04_data/ai/test/data.tfrecords_00000-of-00002&#39;
+ b&#39;/media/seisinv/Data/04_data/ai/test/data.tfrecords_00001-of-00002&#39;]
+[0, 0]
+[0, 1]
+[1, 0]
+[1, 1]
+[0, 0]
+[0, 1]</code></pre>
+<p>在上面的例子中，由于没有打乱文件列表的顺序，因为会依次读取样本数据中每个样本的信息，而且当所有样本都被读取之后，程序会<strong>自动从头开始</strong>。如果限制<strong>num_epochs</strong>为1，那么程序将会报错。</p>
+<h3 id="组合训练数据">组合训练数据</h3>
+<p>当得到单个样本之后，可以通过tf.train.batch和tf.train.shuffle_batch函数以队列的形式生成一个batch。入队操作是生成一个样本，出队操作得到一个batch的样本。两者唯一的区别在于是否会将数据顺序打乱。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取文件列表</span></span><br><span class="line">files = tf.train.match_filenames_once(<span class="string">'/media/seisinv/Data/04_data/ai/test/data.tfrecords_*'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建输入队列，shuffer参数控制是否随机打乱读取文件的顺序，在实际过程中，一般设置为True</span></span><br><span class="line">filename_queue = tf.train.string_input_producer(files, shuffle=<span class="keyword">False</span>)</span><br><span class="line"><span class="comment"># filename_queue = tf.train.string_input_producer(files, shuffle=False, num_epochs=1)</span></span><br><span class="line"></span><br><span class="line">reader = tf.TFRecordReader()</span><br><span class="line">_, serialized_example = reader.read(filename_queue)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 解析一个样本</span></span><br><span class="line">features = tf.parse_single_example(serialized_example,</span><br><span class="line">                                  features=&#123;</span><br><span class="line">                                      <span class="string">'i'</span>: tf.FixedLenFeature([], tf.int64),</span><br><span class="line">                                      <span class="string">'j'</span>: tf.FixedLenFeature([], tf.int64)</span><br><span class="line">                                  &#125;)</span><br><span class="line"></span><br><span class="line">example, label = features[<span class="string">'i'</span>], features[<span class="string">'j'</span>]</span><br><span class="line"></span><br><span class="line">batch_size = <span class="number">3</span> <span class="comment"># batch大小</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置队列大小</span></span><br><span class="line">capacity = <span class="number">1000</span> + <span class="number">3</span> * batch_size</span><br><span class="line"></span><br><span class="line">example_batch, label_batch = tf.train.batch([example, label], </span><br><span class="line">                                            batch_size=batch_size, capacity=capacity)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    tf.local_variables_initializer().run()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 协同并启动所的线程</span></span><br><span class="line">    coord = tf.train.Coordinator()</span><br><span class="line">    threads = tf.train.start_queue_runners(sess=sess, coord=coord)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 实际问题中，这里一般是神经网络的输入</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">2</span>):</span><br><span class="line">        cur_example_batch, cur_label_batch = sess.run([example_batch, label_batch])</span><br><span class="line">        print(cur_example_batch, cur_label_batch)</span><br><span class="line">        </span><br><span class="line">    coord.request_stop()</span><br><span class="line">    coord.join()</span><br></pre></td></tr></table></figure>
+<pre><code>[0 0 1] [0 1 0]
+[1 0 0] [1 0 1]</code></pre>
+<p>tf.train.shuffle_batch的用法和tf.train.batch类似，区别有二：</p>
+<ul>
+<li>输出的样本顺序会被打乱<br>
+</li>
+<li>增加一个参数min_after_dequeue，限制出队时样本的最少个数。这是因为当队列中元素太少时，随机打乱顺序的作用不大，只有当样本多于一定数量时，才开始随机出队</li>
+</ul>
+<p>tf.train.batch、tf.train.shuffle_batch、tf.train.shuffle_batch_join都可以通过num_threads<strong>指定多个线程执行入队操作（包括数据读取和预处理）</strong>。区别在于：</p>
+<ul>
+<li>tf.train.shuffle_batch函数多个线程会同时读取一个文件的不同样本并进行预处理。如果一个文件中的样例比较相似（比如属于同一类），那么神经网络的训练效果可能会受到影响，因此尽量<strong>将同一个TFRecord文件中的样本随机打乱</strong>。<br>
+</li>
+<li>tf.train.shuffle_batch_join函数多个线程处理不同文件中的不同样本，不同线程会读取不同文件，具体来说，是将tf.train.string_input_producer函数生成的文件队列<strong>平均分配</strong>到不同的线程上。但是，如果读取数据的线程数比总文件数还大，那么多个线程可能会读取同一个文件中相近部分的数据。而且多个线程读取多个文件可能导致过多的硬盘寻址，从而使得读取效率降低。</li>
+</ul>
+<p><strong>总结</strong>具体的多线程文件读入和预处理步骤包括：</p>
+<ul>
+<li>输入文件列表，通过tf.train.string_input_producer函数生成输入文件队列（可以随机打乱）<br>
+</li>
+<li>通过tf.train.batch或其他2个函数进行多线程入队操作（包括数据读入和预处理）<br>
+</li>
+<li>生成样本batch，执行训练或者测试过程</li>
+</ul>
+<h2 id="数据集dataset">数据集（Dataset)</h2>
+<p>前面介绍了，通过<strong>队列</strong>进行多线程输入和预处理。从Tensorflow 1.3开始，数据集被正式推荐为输入数据的首选框架。下面介绍数据集的基本用法。</p>
+<h3 id="基本用法">基本用法</h3>
+<p>在数据集框架中，每个数据集代表一个数据来源，可能是一个张量、TFRecord文件、或者文本文件。由于训练数据通常都很大，无法全部写入内存中，因此从数据集中读取数据时需要使用一个迭代器按顺序读取，这点和队列相似，并且数据集也是计算图上的一个节点。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">input_data = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从一个数组创建数据集</span></span><br><span class="line">dataset = tf.data.Dataset.from_tensor_slices(input_data)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义迭代器遍历数据集</span></span><br><span class="line">iterator = dataset.make_one_shot_iterator()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 返回一个输入数据的张量，类似于队列中的dequeue()</span></span><br><span class="line">x = iterator.get_next()</span><br><span class="line"></span><br><span class="line">y = x*x</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(len(input_data)):</span><br><span class="line">        print(sess.run(y))</span><br></pre></td></tr></table></figure>
+<pre><code>1
+4
+9
+16
+25</code></pre>
+<p>利用数据集读取数据的<strong>步骤</strong>包括：</p>
+<ul>
+<li>创建数据集<br>
+</li>
+<li>定义遍历器<br>
+</li>
+<li>使用get_next读取数据张量</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">input_files = [<span class="string">"/media/seisinv/Data/04_data/ai/test/test1.txt"</span>,<span class="string">"/media/seisinv/Data/04_data/ai/test/test2.txt"</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从文本文件创建数据集，假定每行表示一个训练样本</span></span><br><span class="line">dataset = tf.data.TextLineDataset(input_files)</span><br><span class="line"></span><br><span class="line">iterator = dataset.make_one_shot_iterator()</span><br><span class="line"></span><br><span class="line">x = iterator.get_next()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">3</span>):</span><br><span class="line">        print(sess.run(x))</span><br></pre></td></tr></table></figure>
+<pre><code>b&#39;1\t2&#39;
+b&#39;3\t4&#39;
+b&#39;5\t6&#39;</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">parser</span><span class="params">(record)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    解析一个TFRecord的方法</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    features = tf.parse_single_example(record,</span><br><span class="line">                                      features = &#123;</span><br><span class="line">                                          <span class="string">'i'</span>: tf.FixedLenFeature([], tf.int64),</span><br><span class="line">                                          <span class="string">'j'</span>: tf.FixedLenFeature([], tf.int64)</span><br><span class="line">                                      &#125;)</span><br><span class="line">    <span class="keyword">return</span> features[<span class="string">'i'</span>], features[<span class="string">'j'</span>]</span><br><span class="line"></span><br><span class="line">input_files = [<span class="string">'/media/seisinv/Data/04_data/ai/test/data.tfrecords_00000-of-00002'</span>,<span class="string">'/media/seisinv/Data/04_data/ai/test/data.tfrecords_00001-of-00002'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从TFRecord文件创建数据集</span></span><br><span class="line">dataset = tf.data.TFRecordDataset(input_files)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 调用map函数对数据集中的每条数据应用parser操作，当然可以将parser换成其他的预处理操作。</span></span><br><span class="line">dataset = dataset.map(parser)</span><br><span class="line"></span><br><span class="line">iterator = dataset.make_one_shot_iterator()</span><br><span class="line"></span><br><span class="line">feat1, feat2 = iterator.get_next()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">4</span>):</span><br><span class="line">        print(sess.run([feat1, feat2]))</span><br></pre></td></tr></table></figure>
+<pre><code>[0, 0]
+[0, 1]
+[1, 0]
+[1, 1]</code></pre>
+<p>除了简单地使用one_shot_iterator(需要事先确定所欲的参数)来遍历数据外，还可以使用placeholder来初始化数据集，initializable_iterator初始化迭代器。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">input_files = tf.placeholder(tf.string)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 从TFRecord文件创建数据集</span></span><br><span class="line">dataset = tf.data.TFRecordDataset(input_files)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 调用map函数对数据集中的每条数据应用parser操作，当然可以将parser换成其他的预处理操作。</span></span><br><span class="line">dataset = dataset.map(parser, num_parallel_calls=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 可以不需要事先知道所有参数，对迭代器初始化</span></span><br><span class="line">iterator = dataset.make_initializable_iterator()</span><br><span class="line"></span><br><span class="line">feat1, feat2 = iterator.get_next()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    sess.run(iterator.initializer,</span><br><span class="line">            feed_dict=&#123;input_files: [<span class="string">'/media/seisinv/Data/04_data/ai/test/data.tfrecords_00000-of-00002'</span>,<span class="string">'/media/seisinv/Data/04_data/ai/test/data.tfrecords_00001-of-00002'</span>]&#125;)</span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            print(sess.run([feat1, feat2]))</span><br><span class="line">        <span class="keyword">except</span> tf.errors.OutOfRangeError:</span><br><span class="line">            <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
+<pre><code>[0, 0]
+[0, 1]
+[1, 0]
+[1, 1]</code></pre>
+<h3 id="数据集的高层封装">数据集的高层封装</h3>
+<p>在上一节介绍的队列框架中，预处理，shuffle，batch等操作有的在队列上进行，有的在图片张量上进行，整个处理流程在处理队列和张量的代码中来回切换。而在数据集中，所有的操作都是在数据集上进行，代码结构简洁、干净。</p>
+<p>通过map方法可以封装更加复杂的预处理流程，比如： <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dataset = dataset.map(lambda x: preprocess(x, image_size, image_size, None))</span><br></pre></td></tr></table></figure></p>
+<p>在数据集框架中，shuffle和batch操作由两个方法独立实现： <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dataset = dataset.shuffle(buffer_size) # 和前面的min_after_dequeue相似</span><br><span class="line">dataset = dataset.batch(batch_size)</span><br></pre></td></tr></table></figure></p>
+<p>数据集框架还提供了很多其他的函数，具体的参考Tensorflow相关文档。</p>
+<h2 id="结论">结论</h2>
+<p>本文主要介绍Tensorflow所支持的多线程输入及预处理框架，包括：<br>
+- TFRecord格式可以将不同类型的数据统一管理，其数据结构可以简单理解为一种复杂的字典结构<br>
+- 队列框架支持从生成文件列表队列到batch组合队列，中间支持多线程并行预处理样本集<br>
+- 数据集框架是目前Tensorflow推荐的高层输入和预处理框架，该框架提供了随机打乱、样本batch、数据复制等高层操作。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>郑泽宇、梁博文和顾思宇，Tensorflow: 实战Google深度学习框架（第二版）</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/TFRecord格式/" rel="tag"># TFRecord格式</a>
+          
+            <a href="/tags/队列/" rel="tag"># 队列</a>
+          
+            <a href="/tags/多线程/" rel="tag"># 多线程</a>
+          
+            <a href="/tags/数据集/" rel="tag"># 数据集</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/05/27/73_transfer_learning/" rel="next" title="Tensorflow实现迁移学习">
+                <i class="fa fa-chevron-left"></i> Tensorflow实现迁移学习
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/05/27/71_tf_reuse/" rel="prev" title="Tensorflow模型的持久化">
+                Tensorflow模型的持久化 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#tfrecord文件"><span class="nav-number">1.</span> <span class="nav-text">TFRecord文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#介绍"><span class="nav-number">1.1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#样例"><span class="nav-number">1.2.</span> <span class="nav-text">样例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#多线程数据处理框架"><span class="nav-number">2.</span> <span class="nav-text">多线程数据处理框架</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#队列和多线程"><span class="nav-number">2.1.</span> <span class="nav-text">队列和多线程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#输入文件队列"><span class="nav-number">2.2.</span> <span class="nav-text">输入文件队列</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#组合训练数据"><span class="nav-number">2.3.</span> <span class="nav-text">组合训练数据</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数据集dataset"><span class="nav-number">3.</span> <span class="nav-text">数据集（Dataset)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本用法"><span class="nav-number">3.1.</span> <span class="nav-text">基本用法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据集的高层封装"><span class="nav-number">3.2.</span> <span class="nav-text">数据集的高层封装</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">4.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

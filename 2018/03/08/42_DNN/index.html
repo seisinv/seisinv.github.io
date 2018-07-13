@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="梯度下降,激活函数,深度神经网络," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="深度神经网络是指多于一个隐藏层的神经网络。本文将详细介绍深度神经网络的基本原理及实现。涉及到模型的初始化、梯度的计算、激活函数的求导等内容。">
+<meta name="keywords" content="梯度下降,激活函数,深度神经网络">
+<meta property="og:type" content="article">
+<meta property="og:title" content="搭建深度神经网络">
+<meta property="og:url" content="http://yoursite.com/2018/03/08/42_DNN/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="深度神经网络是指多于一个隐藏层的神经网络。本文将详细介绍深度神经网络的基本原理及实现。涉及到模型的初始化、梯度的计算、激活函数的求导等内容。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/42_DNN/final%20outline.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/42_DNN/model_architecture_kiank.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/08/42_DNN/backprop_kiank.png">
+<meta property="og:updated_time" content="2018-03-08T03:12:02.301Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="搭建深度神经网络">
+<meta name="twitter:description" content="深度神经网络是指多于一个隐藏层的神经网络。本文将详细介绍深度神经网络的基本原理及实现。涉及到模型的初始化、梯度的计算、激活函数的求导等内容。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/08/42_DNN/final%20outline.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/08/42_DNN/"/>
+
+
+
+
+
+  <title>搭建深度神经网络 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/08/42_DNN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">搭建深度神经网络</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-08T11:12:02+08:00">
+                2018-03-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>深度神经网络是指多于一个隐藏层的神经网络。本文将详细介绍深度神经网络的基本原理及实现。涉及到模型的初始化、梯度的计算、激活函数的求导等内容。 <a id="more"></a></p>
+<p><strong>符号</strong> - 上标 <span class="math inline">\([l]\)</span> 代表第 <span class="math inline">\(l\)</span> 层的数值. - 例如: <span class="math inline">\(a^{[L]}\)</span> 表示第 <span class="math inline">\(L\)</span> 层激活函数的输出. <span class="math inline">\(W^{[L]}\)</span> 和 <span class="math inline">\(b^{[L]}\)</span> 表示第 <span class="math inline">\(L\)</span> 层的参数. - 上标 <span class="math inline">\((i)\)</span> 表示第 <span class="math inline">\(i\)</span> 样本. - 例如: <span class="math inline">\(x^{(i)}\)</span> 表示第 <span class="math inline">\(i\)</span> 训练样本. - 下标 <span class="math inline">\(i\)</span> 表示向量的第 <span class="math inline">\(i\)</span> 个元素. - 例如: <span class="math inline">\(a^{[l]}_i\)</span> 表示第<span class="math inline">\(l\)</span>层第<span class="math inline">\(i\)</span>个神经元的输出.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> h5py</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">from</span> testCases_v2 <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> dnn_utils_v2 <span class="keyword">import</span> sigmoid, sigmoid_backward, relu, relu_backward</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br><span class="line">plt.rcParams[<span class="string">'figure.figsize'</span>] = (<span class="number">5.0</span>, <span class="number">4.0</span>) <span class="comment"># set default size of plots</span></span><br><span class="line">plt.rcParams[<span class="string">'image.interpolation'</span>] = <span class="string">'nearest'</span></span><br><span class="line">plt.rcParams[<span class="string">'image.cmap'</span>] = <span class="string">'gray'</span></span><br><span class="line"></span><br><span class="line">%load_ext autoreload</span><br><span class="line">%autoreload <span class="number">2</span></span><br><span class="line"></span><br><span class="line">np.random.seed(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="网络结构">网络结构</h2>
+<p>为建立神经网络，需要实现几个子函数，它们具体的功能包括：</p>
+<ul>
+<li>初始化模型参数.</li>
+<li>实现正传模块（下图紫色部分）Implement the forward propagation module (shown in purple in the figure below).
+<ul>
+<li>实现正传中的<strong>线性</strong>部分(得到 <span class="math inline">\(Z^{[l]}\)</span>).</li>
+<li>实现<strong>激活函数</strong>(relu/sigmoid).</li>
+<li>结合前面两步形成一个新的正传函数[LINEAR-&gt;ACTIVATION].</li>
+<li>将 [LINEAR-&gt;RELU] 正传函数重复 L-1 次 (从第 1 层到 L-1层) 并在最后一层添加 [LINEAR-&gt;SIGMOID] (第 <span class="math inline">\(L\)</span>层). 那样就形成了 L_model_forward 函数.</li>
+</ul></li>
+<li>计算损失函数.</li>
+<li>实现反传模块 (下图红色部分).
+<ul>
+<li>计算反传中的<strong>线性</strong>部分.</li>
+<li>实现<strong>激活函数</strong>的梯度(relu_backward/sigmoid_backward)</li>
+<li>结合签名两步实现一个新的反传函数 [LINEAR-&gt;ACTIVATION].</li>
+<li>将 [LINEAR-&gt;RELU] 反传 L-1 次并在最后一层加入[LINEAR-&gt;SIGMOID] 反传过程，那样形成了一个新的L_model_backward 函数</li>
+</ul></li>
+<li>更新模型.</li>
+</ul>
+<img src="/2018/03/08/42_DNN/final outline.png" style="width:600px;height:500px;">
+<caption>
+<center>
+<strong>Figure 1</strong>
+</center>
+</caption>
+<p><br></p>
+<p><strong>注意</strong> 在一个正传函数中，都有对应的反传函数，因此每一步都需要寄存一些值，用于计算梯度。</p>
+<h2 id="初始化">初始化</h2>
+<p>分别介绍两层和多层网络的参数初始化</p>
+<h3 id="两层网络">两层网络</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: initialize_parameters</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">initialize_parameters</span><span class="params">(n_x, n_h, n_y)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Argument:</span></span><br><span class="line"><span class="string">    n_x -- size of the input layer</span></span><br><span class="line"><span class="string">    n_h -- size of the hidden layer</span></span><br><span class="line"><span class="string">    n_y -- size of the output layer</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters:</span></span><br><span class="line"><span class="string">                    W1 -- weight matrix of shape (n_h, n_x)</span></span><br><span class="line"><span class="string">                    b1 -- bias vector of shape (n_h, 1)</span></span><br><span class="line"><span class="string">                    W2 -- weight matrix of shape (n_y, n_h)</span></span><br><span class="line"><span class="string">                    b2 -- bias vector of shape (n_y, 1)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    np.random.seed(<span class="number">1</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 4 lines of code)</span></span><br><span class="line">    W1 = np.random.randn(n_h, n_x) * <span class="number">0.01</span></span><br><span class="line">    b1 = np.zeros((n_h, <span class="number">1</span>))</span><br><span class="line">    W2 = np.random.randn(n_y, n_h) * <span class="number">0.01</span></span><br><span class="line">    b2 = np.zeros((n_y, <span class="number">1</span>))</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">assert</span>(W1.shape == (n_h, n_x))</span><br><span class="line">    <span class="keyword">assert</span>(b1.shape == (n_h, <span class="number">1</span>))</span><br><span class="line">    <span class="keyword">assert</span>(W2.shape == (n_y, n_h))</span><br><span class="line">    <span class="keyword">assert</span>(b2.shape == (n_y, <span class="number">1</span>))</span><br><span class="line">    </span><br><span class="line">    parameters = &#123;<span class="string">"W1"</span>: W1,</span><br><span class="line">                  <span class="string">"b1"</span>: b1,</span><br><span class="line">                  <span class="string">"W2"</span>: W2,</span><br><span class="line">                  <span class="string">"b2"</span>: b2&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">parameters = initialize_parameters(<span class="number">2</span>,<span class="number">2</span>,<span class="number">1</span>)</span><br><span class="line">print(<span class="string">"W1 = "</span> + str(parameters[<span class="string">"W1"</span>]))</span><br><span class="line">print(<span class="string">"b1 = "</span> + str(parameters[<span class="string">"b1"</span>]))</span><br><span class="line">print(<span class="string">"W2 = "</span> + str(parameters[<span class="string">"W2"</span>]))</span><br><span class="line">print(<span class="string">"b2 = "</span> + str(parameters[<span class="string">"b2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>W1 = [[ 0.01624345 -0.00611756]
+ [-0.00528172 -0.01072969]]
+b1 = [[ 0.]
+ [ 0.]]
+W2 = [[ 0.00865408 -0.02301539]]
+b2 = [[ 0.]]</code></pre>
+<h3 id="l层网络"><span class="math inline">\(L\)</span>层网络</h3>
+<p>假定 <span class="math inline">\(n^{[l]}\)</span> 是第 <span class="math inline">\(l\)</span>层的神经元个数. 当输入 <span class="math inline">\(X\)</span> 大小为 <span class="math inline">\((12288, 209)\)</span> (其中 <span class="math inline">\(m=209\)</span> 为样本数) ，则:</p>
+<table style="width:100%">
+<pre><code>&lt;tr&gt;
+    &lt;td&gt;  &lt;/td&gt; 
+    &lt;td&gt; **Shape of W** &lt;/td&gt; 
+    &lt;td&gt; **Shape of b**  &lt;/td&gt; 
+    &lt;td&gt; **Activation** &lt;/td&gt;
+    &lt;td&gt; **Shape of Activation** &lt;/td&gt; 
+&lt;tr&gt;
+
+&lt;tr&gt;
+    &lt;td&gt; **Layer 1** &lt;/td&gt; 
+    &lt;td&gt; $(n^{[1]},12288)$ &lt;/td&gt; 
+    &lt;td&gt; $(n^{[1]},1)$ &lt;/td&gt; 
+    &lt;td&gt; $Z^{[1]} = W^{[1]}  X + b^{[1]} $ &lt;/td&gt; 
+    
+    &lt;td&gt; $(n^{[1]},209)$ &lt;/td&gt; 
+&lt;tr&gt;
+
+&lt;tr&gt;
+    &lt;td&gt; **Layer 2** &lt;/td&gt; 
+    &lt;td&gt; $(n^{[2]}, n^{[1]})$  &lt;/td&gt; 
+    &lt;td&gt; $(n^{[2]},1)$ &lt;/td&gt; 
+    &lt;td&gt;$Z^{[2]} = W^{[2]} A^{[1]} + b^{[2]}$ &lt;/td&gt; 
+    &lt;td&gt; $(n^{[2]}, 209)$ &lt;/td&gt; 
+&lt;tr&gt;
+
+   &lt;tr&gt;
+    &lt;td&gt; $\vdots$ &lt;/td&gt; 
+    &lt;td&gt; $\vdots$  &lt;/td&gt; 
+    &lt;td&gt; $\vdots$  &lt;/td&gt; 
+    &lt;td&gt; $\vdots$&lt;/td&gt; 
+    &lt;td&gt; $\vdots$  &lt;/td&gt; 
+&lt;tr&gt;</code></pre>
+<tr>
+<pre><code>    &lt;td&gt; **Layer L-1** &lt;/td&gt; 
+    &lt;td&gt; $(n^{[L-1]}, n^{[L-2]})$ &lt;/td&gt; 
+    &lt;td&gt; $(n^{[L-1]}, 1)$  &lt;/td&gt; 
+    &lt;td&gt;$Z^{[L-1]} =  W^{[L-1]} A^{[L-2]} + b^{[L-1]}$ &lt;/td&gt; 
+    &lt;td&gt; $(n^{[L-1]}, 209)$ &lt;/td&gt; 
+&lt;tr&gt;</code></pre>
+</tr><tr>
+<pre><code>    &lt;td&gt; **Layer L** &lt;/td&gt; 
+    &lt;td&gt; $(n^{[L]}, n^{[L-1]})$ &lt;/td&gt; 
+    &lt;td&gt; $(n^{[L]}, 1)$ &lt;/td&gt;
+    &lt;td&gt; $Z^{[L]} =  W^{[L]} A^{[L-1]} + b^{[L]}$&lt;/td&gt;
+    &lt;td&gt; $(n^{[L]}, 209)$  &lt;/td&gt; 
+&lt;tr&gt;</code></pre>
+</tr></table>
+<p>Python在计算 <span class="math inline">\(W X + b\)</span>时, 使用了广播功能. 例如:</p>
+<p><span class="math display">\[ W = \begin{bmatrix}
+    j  &amp; k  &amp; l\\
+    m  &amp; n &amp; o \\
+    p  &amp; q &amp; r 
+\end{bmatrix}\;\;\; X = \begin{bmatrix}
+    a  &amp; b  &amp; c\\
+    d  &amp; e &amp; f \\
+    g  &amp; h &amp; i 
+\end{bmatrix} \;\;\; b =\begin{bmatrix}
+    s  \\
+    t  \\
+    u
+\end{bmatrix}\tag{2}\]</span></p>
+<p>那么 <span class="math inline">\(WX + b\)</span> 将为:</p>
+<p><span class="math display">\[ WX + b = \begin{bmatrix}
+    (ja + kd + lg) + s  &amp; (jb + ke + lh) + s  &amp; (jc + kf + li)+ s\\
+    (ma + nd + og) + t &amp; (mb + ne + oh) + t &amp; (mc + nf + oi) + t\\
+    (pa + qd + rg) + u &amp; (pb + qe + rh) + u &amp; (pc + qf + ri)+ u
+\end{bmatrix}\tag{3}  \]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: initialize_parameters_deep</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">initialize_parameters_deep</span><span class="params">(layer_dims)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    layer_dims -- python array (list) containing the dimensions of each layer in our network</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters "W1", "b1", ..., "WL", "bL":</span></span><br><span class="line"><span class="string">                    Wl -- weight matrix of shape (layer_dims[l], layer_dims[l-1])</span></span><br><span class="line"><span class="string">                    bl -- bias vector of shape (layer_dims[l], 1)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    np.random.seed(<span class="number">3</span>)</span><br><span class="line">    parameters = &#123;&#125;</span><br><span class="line">    L = len(layer_dims)            <span class="comment"># number of layers in the network</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(<span class="number">1</span>, L):</span><br><span class="line">        <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">        parameters[<span class="string">'W'</span> + str(l)] = np.random.randn(layer_dims[l], layer_dims[l<span class="number">-1</span>]) * <span class="number">0.01</span></span><br><span class="line">        parameters[<span class="string">'b'</span> + str(l)] = np.zeros((layer_dims[l], <span class="number">1</span>)) </span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">assert</span>(parameters[<span class="string">'W'</span> + str(l)].shape == (layer_dims[l], layer_dims[l<span class="number">-1</span>]))</span><br><span class="line">        <span class="keyword">assert</span>(parameters[<span class="string">'b'</span> + str(l)].shape == (layer_dims[l], <span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">parameters = initialize_parameters_deep([<span class="number">5</span>,<span class="number">4</span>,<span class="number">3</span>])</span><br><span class="line">print(<span class="string">"W1 = "</span> + str(parameters[<span class="string">"W1"</span>]))</span><br><span class="line">print(<span class="string">"b1 = "</span> + str(parameters[<span class="string">"b1"</span>]))</span><br><span class="line">print(<span class="string">"W2 = "</span> + str(parameters[<span class="string">"W2"</span>]))</span><br><span class="line">print(<span class="string">"b2 = "</span> + str(parameters[<span class="string">"b2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>W1 = [[ 0.01788628  0.0043651   0.00096497 -0.01863493 -0.00277388]
+ [-0.00354759 -0.00082741 -0.00627001 -0.00043818 -0.00477218]
+ [-0.01313865  0.00884622  0.00881318  0.01709573  0.00050034]
+ [-0.00404677 -0.0054536  -0.01546477  0.00982367 -0.01101068]]
+b1 = [[ 0.]
+ [ 0.]
+ [ 0.]
+ [ 0.]]
+W2 = [[-0.01185047 -0.0020565   0.01486148  0.00236716]
+ [-0.01023785 -0.00712993  0.00625245 -0.00160513]
+ [-0.00768836 -0.00230031  0.00745056  0.01976111]]
+b2 = [[ 0.]
+ [ 0.]
+ [ 0.]]</code></pre>
+<h2 id="正传模块">正传模块</h2>
+<p>对所有样本向量化之后的正传模块实现如下公式：</p>
+<p><span class="math display">\[Z^{[l]} = W^{[l]}A^{[l-1]} +b^{[l]}\tag{4}\]</span></p>
+<p>其中 <span class="math inline">\(A^{[0]} = X\)</span>.</p>
+<h3 id="线性正传">线性正传</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: linear_forward</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">linear_forward</span><span class="params">(A, W, b)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement the linear part of a layer's forward propagation.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    A -- activations from previous layer (or input data): (size of previous layer, number of examples)</span></span><br><span class="line"><span class="string">    W -- weights matrix: numpy array of shape (size of current layer, size of previous layer)</span></span><br><span class="line"><span class="string">    b -- bias vector, numpy array of shape (size of the current layer, 1)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    Z -- the input of the activation function, also called pre-activation parameter </span></span><br><span class="line"><span class="string">    cache -- a python dictionary containing "A", "W" and "b" ; stored for computing the backward pass efficiently</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 1 line of code)</span></span><br><span class="line">    Z = np.dot(W, A) + b</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">assert</span>(Z.shape == (W.shape[<span class="number">0</span>], A.shape[<span class="number">1</span>]))</span><br><span class="line">    cache = (A, W, b)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> Z, cache</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">A, W, b = linear_forward_test_case()</span><br><span class="line"></span><br><span class="line">Z, linear_cache = linear_forward(A, W, b)</span><br><span class="line">print(<span class="string">"Z = "</span> + str(Z))</span><br></pre></td></tr></table></figure>
+<pre><code>Z = [[ 3.26295337 -1.23429987]]</code></pre>
+<h3 id="线性正传激活函数">线性正传+激活函数</h3>
+<p>实现正传 <em>LINEAR-&gt;ACTIVATION</em> .数学关系是: <span class="math inline">\(A^{[l]} = g(Z^{[l]}) = g(W^{[l]}A^{[l-1]} +b^{[l]})\)</span> 其中激活函数 &quot;g&quot; 可以是 sigmoid() 或者 relu()</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: linear_activation_forward</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">linear_activation_forward</span><span class="params">(A_prev, W, b, activation)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement the forward propagation for the LINEAR-&gt;ACTIVATION layer</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    A_prev -- activations from previous layer (or input data): (size of previous layer, number of examples)</span></span><br><span class="line"><span class="string">    W -- weights matrix: numpy array of shape (size of current layer, size of previous layer)</span></span><br><span class="line"><span class="string">    b -- bias vector, numpy array of shape (size of the current layer, 1)</span></span><br><span class="line"><span class="string">    activation -- the activation to be used in this layer, stored as a text string: "sigmoid" or "relu"</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    A -- the output of the activation function, also called the post-activation value </span></span><br><span class="line"><span class="string">    cache -- a python dictionary containing "linear_cache" and "activation_cache";</span></span><br><span class="line"><span class="string">             stored for computing the backward pass efficiently</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> activation == <span class="string">"sigmoid"</span>:</span><br><span class="line">        <span class="comment"># Inputs: "A_prev, W, b". Outputs: "A, activation_cache".</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">        Z, linear_cache = linear_forward(A_prev, W, b)</span><br><span class="line">        A, activation_cache = sigmoid(Z)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">elif</span> activation == <span class="string">"relu"</span>:</span><br><span class="line">        <span class="comment"># Inputs: "A_prev, W, b". Outputs: "A, activation_cache".</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">        Z, linear_cache = linear_forward(A_prev, W, b)</span><br><span class="line">        A, activation_cache = relu(Z)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">assert</span> (A.shape == (W.shape[<span class="number">0</span>], A_prev.shape[<span class="number">1</span>]))</span><br><span class="line">    cache = (linear_cache, activation_cache)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> A, cache</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">A_prev, W, b = linear_activation_forward_test_case()</span><br><span class="line"></span><br><span class="line">A, linear_activation_cache = linear_activation_forward(A_prev, W, b, activation = <span class="string">"sigmoid"</span>)</span><br><span class="line">print(<span class="string">"With sigmoid: A = "</span> + str(A))</span><br><span class="line"></span><br><span class="line">A, linear_activation_cache = linear_activation_forward(A_prev, W, b, activation = <span class="string">"relu"</span>)</span><br><span class="line">print(<span class="string">"With ReLU: A = "</span> + str(A))</span><br></pre></td></tr></table></figure>
+<pre><code>With sigmoid: A = [[ 0.96890023  0.11013289]]
+With ReLU: A = [[ 3.43896131  0.        ]]</code></pre>
+<h3 id="l层模型"><span class="math inline">\(L\)</span>层模型</h3>
+<p>为了实现 <span class="math inline">\(L\)</span>层神经网络，可以复制前面的正传+ReLU激活函数 (<code>linear_activation_forward</code> + RELU) <span class="math inline">\(L-1\)</span> 次, 然后接上 <code>linear_activation_forward</code> + SIGMOID.</p>
+<img src="/2018/03/08/42_DNN/model_architecture_kiank.png" style="width:600px;height:300px;">
+<caption>
+<center>
+<strong>Figure 2</strong> : <em>[LINEAR -&gt; RELU] <span class="math inline">\(\times\)</span> (L-1) -&gt; LINEAR -&gt; SIGMOID</em> model
+</center>
+</caption>
+<p><br></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: L_model_forward</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">L_model_forward</span><span class="params">(X, parameters)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement forward propagation for the [LINEAR-&gt;RELU]*(L-1)-&gt;LINEAR-&gt;SIGMOID computation</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- data, numpy array of shape (input size, number of examples)</span></span><br><span class="line"><span class="string">    parameters -- output of initialize_parameters_deep()</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    AL -- last post-activation value</span></span><br><span class="line"><span class="string">    caches -- list of caches containing:</span></span><br><span class="line"><span class="string">                every cache of linear_relu_forward() (there are L-1 of them, indexed from 0 to L-2)</span></span><br><span class="line"><span class="string">                the cache of linear_sigmoid_forward() (there is one, indexed L-1)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    caches = []</span><br><span class="line">    A = X</span><br><span class="line">    L = len(parameters) // <span class="number">2</span>                  <span class="comment"># number of layers in the neural network</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Implement [LINEAR -&gt; RELU]*(L-1). Add "cache" to the "caches" list.</span></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(<span class="number">1</span>, L):</span><br><span class="line">        A_prev = A </span><br><span class="line">        <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">        A, cache = linear_activation_forward(A_prev, </span><br><span class="line">                                             parameters[<span class="string">"W"</span> + str(l)], </span><br><span class="line">                                             parameters[<span class="string">"b"</span> + str(l)], </span><br><span class="line">                                             activation=<span class="string">'relu'</span>)</span><br><span class="line">        caches.append(cache)</span><br><span class="line"></span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Implement LINEAR -&gt; SIGMOID. Add "cache" to the "caches" list.</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">    AL, cache = linear_activation_forward(A, </span><br><span class="line">                                             parameters[<span class="string">"W"</span> + str(L)], </span><br><span class="line">                                             parameters[<span class="string">"b"</span> + str(L)], </span><br><span class="line">                                             activation=<span class="string">'sigmoid'</span>)</span><br><span class="line">    caches.append(cache)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">assert</span>(AL.shape == (<span class="number">1</span>,X.shape[<span class="number">1</span>]))</span><br><span class="line">            </span><br><span class="line">    <span class="keyword">return</span> AL, caches</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">X, parameters = L_model_forward_test_case()</span><br><span class="line">AL, caches = L_model_forward(X, parameters)</span><br><span class="line">print(<span class="string">"AL = "</span> + str(AL))</span><br><span class="line">print(<span class="string">"Length of caches list = "</span> + str(len(caches)))</span><br></pre></td></tr></table></figure>
+<pre><code>AL = [[ 0.17007265  0.2524272 ]]
+Length of caches list = 2</code></pre>
+<h2 id="代价函数">代价函数</h2>
+<p>交叉熵代价函数 <span class="math inline">\(J\)</span>: <span class="math display">\[-\frac{1}{m} \sum\limits_{i = 1}^{m} (y^{(i)}\log\left(a^{[L] (i)}\right) + (1-y^{(i)})\log\left(1- a^{[L](i)}\right)) \tag{7}\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: compute_cost</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute_cost</span><span class="params">(AL, Y)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement the cost function defined by equation (7).</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    AL -- probability vector corresponding to your label predictions, shape (1, number of examples)</span></span><br><span class="line"><span class="string">    Y -- true "label" vector (for example: containing 0 if non-cat, 1 if cat), shape (1, number of examples)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    cost -- cross-entropy cost</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    m = Y.shape[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Compute loss from aL and y.</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 1 lines of code)</span></span><br><span class="line">    cost = (<span class="number">-1.</span>/ m) * np.sum(np.multiply(Y, np.log(AL)) + np.multiply((<span class="number">1</span>-Y), np.log( <span class="number">1</span>-AL)))</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    cost = np.squeeze(cost)      <span class="comment"># To make sure your cost's shape is what we expect (e.g. this turns [[17]] into 17).</span></span><br><span class="line">    <span class="keyword">assert</span>(cost.shape == ())</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> cost</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Y, AL = compute_cost_test_case()</span><br><span class="line"></span><br><span class="line">print(<span class="string">"cost = "</span> + str(compute_cost(AL, Y)))</span><br></pre></td></tr></table></figure>
+<pre><code>cost = 0.414931599615</code></pre>
+<h2 id="反传模块">反传模块</h2>
+<p>反传模块的作用是计算损失函数关于参数的梯度</p>
+<strong>提醒</strong>: <img src="/2018/03/08/42_DNN/backprop_kiank.png" style="width:650px;height:250px;">
+<caption>
+<center>
+<strong>Figure 3</strong> : <em>LINEAR-&gt;RELU-&gt;LINEAR-&gt;SIGMOID</em> 正传和反传过程: <br> <em>紫色方块表示正传过程, 红色模块表示反传过程.</em>
+</center>
+</caption>
+<!-- 
+For those of you who are expert in calculus (you don't need to be to do this assignment), the chain rule of calculus can be used to derive the derivative of the loss $\mathcal{L}$ with respect to $z^{[1]}$ in a 2-layer network as follows:
+
+$$\frac{d \mathcal{L}(a^{[2]},y)}{{dz^{[1]}}
+<p>} = {{da^{[2]}}}}{{dz^{[2]}}}}{{da^{[1]}}}}{{dz^{[1]}}}  $$</p>
+<p>In order to calculate the gradient <span class="math inline">\(dW^{[1]} = \frac{\partial L}{\partial W^{[1]}}\)</span>, you use the previous chain rule and you do <span class="math inline">\(dW^{[1]} = dz^{[1]} \times \frac{\partial z^{[1]} }{\partial W^{[1]}}\)</span>. During the backpropagation, at each step you multiply your current gradient by the gradient corresponding to the specific layer to get the gradient you wanted.</p>
+<p>Equivalently, in order to calculate the gradient <span class="math inline">\(db^{[1]} = \frac{\partial L}{\partial b^{[1]}}\)</span>, you use the previous chain rule and you do <span class="math inline">\(db^{[1]} = dz^{[1]} \times \frac{\partial z^{[1]} }{\partial b^{[1]}}\)</span>.</p>
+<p>This is why we talk about <strong>backpropagation</strong>. !--&gt;</p>
+<p>与正传类似，反传播过程可以用以下3步实现: - <strong>线性</strong> 反传 - <strong>线性 -&gt; 激活函数</strong> 反传，需要计算激活函数 ReLU 或者 sigmoid 梯度 - <strong>[线性映射 -&gt; RELU]反传</strong> <span class="math inline">\(\times\)</span> (L-1) -&gt; <strong>线性 -&gt; SIGMOID 反传</strong> (整个模型)</p>
+<h3 id="线性反传">线性反传</h3>
+<p>对第 <span class="math inline">\(l\)</span>层, 线性部分为: <span class="math inline">\(Z^{[l]} = W^{[l]} A^{[l-1]} + b^{[l]}\)</span> (紧接着激活函数).</p>
+<p>假定已经计算了导数 <span class="math inline">\(dZ^{[l]} = \frac{\partial \mathcal{L} }{\partial Z^{[l]}}\)</span>. 目标是求 <span class="math inline">\((dW^{[l]}, db^{[l]}, dA^{[l-1]})\)</span>.</p>
+<img src="images/linearback_kiank.png" style="width:250px;height:300px;">
+<caption>
+<center>
+<strong>Figure 4</strong>
+</center>
+</caption>
+<p>三个输出 <span class="math inline">\((dW^{[l]}, db^{[l]}, dA^{[l]})\)</span> 可以通过输入 <span class="math inline">\(dZ^{[l]}\)</span>求得.公式如下: <span class="math display">\[ dW^{[l]} = \frac{\partial \mathcal{L} }{\partial W^{[l]}} = \frac{1}{m} dZ^{[l]} A^{[l-1] T} \tag{8}\]</span> <span class="math display">\[ db^{[l]} = \frac{\partial \mathcal{L} }{\partial b^{[l]}} = \frac{1}{m} \sum_{i = 1}^{m} dZ^{[l](i)}\tag{9}\]</span> <span class="math display">\[ dA^{[l-1]} = \frac{\partial \mathcal{L} }{\partial A^{[l-1]}} = W^{[l] T} dZ^{[l]} \tag{10}\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: linear_backward</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">linear_backward</span><span class="params">(dZ, cache)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement the linear portion of backward propagation for a single layer (layer l)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    dZ -- Gradient of the cost with respect to the linear output (of current layer l)</span></span><br><span class="line"><span class="string">    cache -- tuple of values (A_prev, W, b) coming from the forward propagation in the current layer</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    dA_prev -- Gradient of the cost with respect to the activation (of the previous layer l-1), same shape as A_prev</span></span><br><span class="line"><span class="string">    dW -- Gradient of the cost with respect to W (current layer l), same shape as W</span></span><br><span class="line"><span class="string">    db -- Gradient of the cost with respect to b (current layer l), same shape as b</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    A_prev, W, b = cache</span><br><span class="line">    m = A_prev.shape[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 3 lines of code)</span></span><br><span class="line">    dW = (<span class="number">1.</span> / m) * np.dot(dZ, cache[<span class="number">0</span>].T) </span><br><span class="line">    db = (<span class="number">1.</span> / m) * np.sum(dZ, axis=<span class="number">1</span>, keepdims=<span class="keyword">True</span>)</span><br><span class="line">    dA_prev = np.dot(cache[<span class="number">1</span>].T, dZ)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">assert</span> (dA_prev.shape == A_prev.shape)</span><br><span class="line">    <span class="keyword">assert</span> (dW.shape == W.shape)</span><br><span class="line">    <span class="keyword">assert</span> (db.shape == b.shape)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> dA_prev, dW, db</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Set up some test inputs</span></span><br><span class="line">dZ, linear_cache = linear_backward_test_case()</span><br><span class="line"></span><br><span class="line">dA_prev, dW, db = linear_backward(dZ, linear_cache)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dA_prev = "</span>+ str(dA_prev))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dW = "</span> + str(dW))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"db = "</span> + str(db))</span><br></pre></td></tr></table></figure>
+<pre><code>dA_prev = [[ 0.51822968 -0.19517421]
+ [-0.40506361  0.15255393]
+ [ 2.37496825 -0.89445391]]
+dW = [[-0.10076895  1.40685096  1.64992505]]
+db = [[ 0.50629448]]</code></pre>
+<h3 id="线性激活函数反传">线性+激活函数反传</h3>
+<p>为实现线性+激活函数反传，需要提供激活函数的梯度。</p>
+<p>如果 <span class="math inline">\(g(.)\)</span> 是激活函数, 则 <code>sigmoid_backward</code> and <code>relu_backward</code> 计算 <span class="math display">\[dZ^{[l]} = dA^{[l]} * g&#39;(Z^{[l]}) \tag{11}\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: linear_activation_backward</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">linear_activation_backward</span><span class="params">(dA, cache, activation)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement the backward propagation for the LINEAR-&gt;ACTIVATION layer.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    dA -- post-activation gradient for current layer l </span></span><br><span class="line"><span class="string">    cache -- tuple of values (linear_cache, activation_cache) we store for computing backward propagation efficiently</span></span><br><span class="line"><span class="string">    activation -- the activation to be used in this layer, stored as a text string: "sigmoid" or "relu"</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    dA_prev -- Gradient of the cost with respect to the activation (of the previous layer l-1), same shape as A_prev</span></span><br><span class="line"><span class="string">    dW -- Gradient of the cost with respect to W (current layer l), same shape as W</span></span><br><span class="line"><span class="string">    db -- Gradient of the cost with respect to b (current layer l), same shape as b</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    linear_cache, activation_cache = cache</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> activation == <span class="string">"relu"</span>:</span><br><span class="line">        <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">        dZ = relu_backward(dA, activation_cache)</span><br><span class="line">        dA_prev, dW, db = linear_backward(dZ, linear_cache)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">elif</span> activation == <span class="string">"sigmoid"</span>:</span><br><span class="line">        <span class="comment">### START CODE HERE ### (≈ 2 lines of code)</span></span><br><span class="line">        dZ = sigmoid_backward(dA, activation_cache)</span><br><span class="line">        dA_prev, dW, db = linear_backward(dZ, linear_cache)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> dA_prev, dW, db</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">AL, linear_activation_cache = linear_activation_backward_test_case()</span><br><span class="line"></span><br><span class="line">dA_prev, dW, db = linear_activation_backward(AL, linear_activation_cache, activation = <span class="string">"sigmoid"</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"sigmoid:"</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dA_prev = "</span>+ str(dA_prev))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dW = "</span> + str(dW))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"db = "</span> + str(db) + <span class="string">"\n"</span>)</span><br><span class="line"></span><br><span class="line">dA_prev, dW, db = linear_activation_backward(AL, linear_activation_cache, activation = <span class="string">"relu"</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"relu:"</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dA_prev = "</span>+ str(dA_prev))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dW = "</span> + str(dW))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"db = "</span> + str(db))</span><br></pre></td></tr></table></figure>
+<pre><code>sigmoid:
+dA_prev = [[ 0.11017994  0.01105339]
+ [ 0.09466817  0.00949723]
+ [-0.05743092 -0.00576154]]
+dW = [[ 0.10266786  0.09778551 -0.01968084]]
+db = [[-0.05729622]]
+
+relu:
+dA_prev = [[ 0.44090989 -0.        ]
+ [ 0.37883606 -0.        ]
+ [-0.2298228   0.        ]]
+dW = [[ 0.44513824  0.37371418 -0.10478989]]
+db = [[-0.20837892]]</code></pre>
+<h3 id="l层模型反传"><span class="math inline">\(L\)</span>层模型反传</h3>
+<p>本节将实现整个网络的反传函数. 记得在实现正传函数 <code>L_model_forward</code> 时, 每一次迭代，都存储了变量 (X,W,b, and z). 在反传模块中，我们将用到这些变量计算梯度. 因此，在 <code>L_model_backward</code> 函数中, 我们将从第<span class="math inline">\(L\)</span>层开始，迭代反传所有的隐藏层. 每一步迭代中, 在第<span class="math inline">\(l\)</span>层反传时将会用到第<span class="math inline">\(l\)</span>寄存的变量。图5显示了反传过程.</p>
+<img src="images/mn_backward.png" style="width:450px;height:300px;">
+<caption>
+<center>
+<strong>Figure 5</strong> : 反传过程
+</center>
+</caption>
+<p>** 反传初始化 **: 为计算整个网络的反传过程,考虑到网络的最终输出是 <span class="math inline">\(A^{[L]} = \sigma(Z^{[L]})\)</span>. 需要计算 <code>dAL</code> <span class="math inline">\(= \frac{\partial \mathcal{L}}{\partial A^{[L]}}\)</span>. 实现过程为: <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dAL = - (np.divide(Y, AL) - np.divide(<span class="number">1</span> - Y, <span class="number">1</span> - AL)) <span class="comment"># derivative of cost with respect to AL</span></span><br></pre></td></tr></table></figure></p>
+<p>然后可以用这个激活后的梯度 <code>dAL</code> 进行反传. 同图5可以看出， 将 <code>dAL</code> 塞进已经实现的LINEAR-&gt;SIGMOID 反传函数,（当然会用到 L_model_forward 函数中寄存的变量）. 使用 <code>for</code> 循环迭代使用LINEAR-&gt;RELU函数，反传所有的层，并寄存梯度字典中的变量dA, dW, and db. 使用的公式如下:</p>
+<p><span class="math display">\[grads[&quot;dW&quot; + str(l)] = dW^{[l]}\tag{15} \]</span></p>
+<p>例如, 第 <span class="math inline">\(l=3\)</span> ，将 <span class="math inline">\(dW^{[l]}\)</span> 存储在 <code>grads[&quot;dW3&quot;]</code>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: L_model_backward</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">L_model_backward</span><span class="params">(AL, Y, caches)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implement the backward propagation for the [LINEAR-&gt;RELU] * (L-1) -&gt; LINEAR -&gt; SIGMOID group</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    AL -- probability vector, output of the forward propagation (L_model_forward())</span></span><br><span class="line"><span class="string">    Y -- true "label" vector (containing 0 if non-cat, 1 if cat)</span></span><br><span class="line"><span class="string">    caches -- list of caches containing:</span></span><br><span class="line"><span class="string">                every cache of linear_activation_forward() with "relu" (it's caches[l], for l in range(L-1) i.e l = 0...L-2)</span></span><br><span class="line"><span class="string">                the cache of linear_activation_forward() with "sigmoid" (it's caches[L-1])</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    grads -- A dictionary with the gradients</span></span><br><span class="line"><span class="string">             grads["dA" + str(l)] = ... </span></span><br><span class="line"><span class="string">             grads["dW" + str(l)] = ...</span></span><br><span class="line"><span class="string">             grads["db" + str(l)] = ... </span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    grads = &#123;&#125;</span><br><span class="line">    L = len(caches) <span class="comment"># the number of layers</span></span><br><span class="line">    m = AL.shape[<span class="number">1</span>]</span><br><span class="line">    Y = Y.reshape(AL.shape) <span class="comment"># after this line, Y is the same shape as AL</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initializing the backpropagation</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line of code)</span></span><br><span class="line">    dAL = - (np.divide(Y, AL) - np.divide(<span class="number">1</span> - Y, <span class="number">1</span> - AL))</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Lth layer (SIGMOID -&gt; LINEAR) gradients. Inputs: "AL, Y, caches". Outputs: "grads["dAL"], grads["dWL"], grads["dbL"]</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">    current_cache = caches[<span class="number">-1</span>]</span><br><span class="line">    grads[<span class="string">"dA"</span> + str(L)], grads[<span class="string">"dW"</span> + str(L)], grads[<span class="string">"db"</span> + str(L)] = linear_activation_backward(dAL, current_cache, activation=<span class="string">"sigmoid"</span>)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> reversed(range(L<span class="number">-1</span>)):</span><br><span class="line">        <span class="comment"># lth layer: (RELU -&gt; LINEAR) gradients.</span></span><br><span class="line">        <span class="comment"># Inputs: "grads["dA" + str(l + 2)], caches". Outputs: "grads["dA" + str(l + 1)] , grads["dW" + str(l + 1)] , grads["db" + str(l + 1)] </span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (approx. 5 lines)</span></span><br><span class="line">        current_cache = caches[l]</span><br><span class="line">        </span><br><span class="line">        dA_prev_temp, dW_temp, db_temp = linear_activation_backward(grads[<span class="string">"dA"</span> + str(l + <span class="number">2</span>)], current_cache, activation=<span class="string">"relu"</span>)</span><br><span class="line">        grads[<span class="string">"dA"</span> + str(l + <span class="number">1</span>)] = dA_prev_temp</span><br><span class="line">        grads[<span class="string">"dW"</span> + str(l + <span class="number">1</span>)] = dW_temp</span><br><span class="line">        grads[<span class="string">"db"</span> + str(l + <span class="number">1</span>)] = db_temp</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> grads</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">AL, Y_assess, caches = L_model_backward_test_case()</span><br><span class="line">grads = L_model_backward(AL, Y_assess, caches)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dW1 = "</span>+ str(grads[<span class="string">"dW1"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"db1 = "</span>+ str(grads[<span class="string">"db1"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"dA1 = "</span>+ str(grads[<span class="string">"dA1"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>dW1 = [[ 0.41010002  0.07807203  0.13798444  0.10502167]
+ [ 0.          0.          0.          0.        ]
+ [ 0.05283652  0.01005865  0.01777766  0.0135308 ]]
+db1 = [[-0.22007063]
+ [ 0.        ]
+ [-0.02835349]]
+dA1 = [[ 0.          0.52257901]
+ [ 0.         -0.3269206 ]
+ [ 0.         -0.32070404]
+ [ 0.         -0.74079187]]</code></pre>
+<h2 id="模型更新">模型更新</h2>
+<p>利用梯度下降发更新模型:</p>
+<p><span class="math display">\[ W^{[l]} = W^{[l]} - \alpha \text{ } dW^{[l]} \tag{16}\]</span> <span class="math display">\[ b^{[l]} = b^{[l]} - \alpha \text{ } db^{[l]} \tag{17}\]</span></p>
+<p>其中 <span class="math inline">\(\alpha\)</span> 为学习率. 对parameters字典中的模型进行更新.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: update_parameters</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">update_parameters</span><span class="params">(parameters, grads, learning_rate)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Update parameters using gradient descent</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters </span></span><br><span class="line"><span class="string">    grads -- python dictionary containing your gradients, output of L_model_backward</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your updated parameters </span></span><br><span class="line"><span class="string">                  parameters["W" + str(l)] = ... </span></span><br><span class="line"><span class="string">                  parameters["b" + str(l)] = ...</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    L = len(parameters) // <span class="number">2</span> <span class="comment"># number of layers in the neural network</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Update rule for each parameter. Use a for loop.</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈ 3 lines of code)</span></span><br><span class="line">    <span class="keyword">for</span> l <span class="keyword">in</span> range(L):</span><br><span class="line">        parameters[<span class="string">"W"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">"W"</span> + str(l+<span class="number">1</span>)] - learning_rate * grads[<span class="string">"dW"</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">        parameters[<span class="string">"b"</span> + str(l+<span class="number">1</span>)] = parameters[<span class="string">"b"</span> + str(l+<span class="number">1</span>)] - learning_rate * grads[<span class="string">"db"</span> + str(l+<span class="number">1</span>)]</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">parameters, grads = update_parameters_test_case()</span><br><span class="line">parameters = update_parameters(parameters, grads, <span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> (<span class="string">"W1 = "</span>+ str(parameters[<span class="string">"W1"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"b1 = "</span>+ str(parameters[<span class="string">"b1"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"W2 = "</span>+ str(parameters[<span class="string">"W2"</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"b2 = "</span>+ str(parameters[<span class="string">"b2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>W1 = [[-0.59562069 -0.09991781 -2.14584584  1.82662008]
+ [-1.76569676 -0.80627147  0.51115557 -1.18258802]
+ [-1.0535704  -0.86128581  0.68284052  2.20374577]]
+b1 = [[-0.04659241]
+ [-1.28888275]
+ [ 0.53405496]]
+W2 = [[-0.55569196  0.0354055   1.32964895]]
+b2 = [[-0.84610769]]</code></pre>
+<h2 id="结论">结论</h2>
+<p>本文实现了深度神经网络的所有函数，简单说可以分为6步： 1. 初始化<br />
+2. 正传 3. 计算代价函数<br />
+4. 反传 6. 模型更新</p>
+<p>公式推导过程主要采用了链式法则。实现过程则主要用到了python的向量化和广播特性。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning">coursera深度学习课程</a></li>
+</ul>
+-->
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/梯度下降/" rel="tag"># 梯度下降</a>
+          
+            <a href="/tags/激活函数/" rel="tag"># 激活函数</a>
+          
+            <a href="/tags/深度神经网络/" rel="tag"># 深度神经网络</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/08/41_1HiddenNN/" rel="next" title="单个隐藏层的神经网络">
+                <i class="fa fa-chevron-left"></i> 单个隐藏层的神经网络
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/08/43_DNNApp/" rel="prev" title="深度神经网络在图像分类中的应用">
+                深度神经网络在图像分类中的应用 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#网络结构"><span class="nav-number">1.</span> <span class="nav-text">网络结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#初始化"><span class="nav-number">2.</span> <span class="nav-text">初始化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#两层网络"><span class="nav-number">2.1.</span> <span class="nav-text">两层网络</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#l层网络"><span class="nav-number">2.2.</span> <span class="nav-text">\(L\)层网络</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#正传模块"><span class="nav-number">3.</span> <span class="nav-text">正传模块</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#线性正传"><span class="nav-number">3.1.</span> <span class="nav-text">线性正传</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线性正传激活函数"><span class="nav-number">3.2.</span> <span class="nav-text">线性正传+激活函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#l层模型"><span class="nav-number">3.3.</span> <span class="nav-text">\(L\)层模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#代价函数"><span class="nav-number">4.</span> <span class="nav-text">代价函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#反传模块"><span class="nav-number">5.</span> <span class="nav-text">反传模块</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

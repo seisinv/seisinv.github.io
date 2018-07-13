@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="序列到序列模型,注意力机制,机器翻译," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文将介绍注意力机制的基本原理，并通过Keras搭建一个神经网络机器翻译机以介绍注意力机制的实现过程，最后将其应用于日期格式翻译：从人类可读的日期（比如25th of June, 2009）翻译成机器可读的日期（2009-06-25）。该模型同样可以作为人类语言翻译的雏形。">
+<meta name="keywords" content="序列到序列模型,注意力机制,机器翻译">
+<meta property="og:type" content="article">
+<meta property="og:title" content="神经网络机器翻译机">
+<meta property="og:url" content="http://yoursite.com/2018/06/04/62_MachineTranslation/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文将介绍注意力机制的基本原理，并通过Keras搭建一个神经网络机器翻译机以介绍注意力机制的实现过程，最后将其应用于日期格式翻译：从人类可读的日期（比如25th of June, 2009）翻译成机器可读的日期（2009-06-25）。该模型同样可以作为人类语言翻译的雏形。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/62_MachineTranslation/attn_model.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/62_MachineTranslation/attn_mechanism.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/62_MachineTranslation/table.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/62_MachineTranslation/date_attention.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/62_MachineTranslation/output_38_1.png">
+<meta property="og:updated_time" content="2018-06-04T14:19:56.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="神经网络机器翻译机">
+<meta name="twitter:description" content="本文将介绍注意力机制的基本原理，并通过Keras搭建一个神经网络机器翻译机以介绍注意力机制的实现过程，最后将其应用于日期格式翻译：从人类可读的日期（比如25th of June, 2009）翻译成机器可读的日期（2009-06-25）。该模型同样可以作为人类语言翻译的雏形。">
+<meta name="twitter:image" content="http://yoursite.com/2018/06/04/62_MachineTranslation/attn_model.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/06/04/62_MachineTranslation/"/>
+
+
+
+
+
+  <title>神经网络机器翻译机 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/04/62_MachineTranslation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">神经网络机器翻译机</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-04T22:20:09+08:00">
+                2018-06-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文将介绍注意力机制的基本原理，并通过Keras搭建一个神经网络机器翻译机以介绍<strong>注意力机制</strong>的实现过程，最后将其应用于日期格式翻译：从人类可读的日期（比如25th of June, 2009）翻译成机器可读的日期（2009-06-25）。该模型同样可以作为人类语言翻译的雏形。 <a id="more"></a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Bidirectional, Concatenate, Permute, Dot, Input, LSTM, Multiply</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> RepeatVector, Dense, Activation, Lambda</span><br><span class="line"><span class="keyword">from</span> keras.optimizers <span class="keyword">import</span> Adam</span><br><span class="line"><span class="keyword">from</span> keras.utils <span class="keyword">import</span> to_categorical</span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> load_model, Model</span><br><span class="line"><span class="keyword">import</span> keras.backend <span class="keyword">as</span> K</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> faker <span class="keyword">import</span> Faker</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"><span class="keyword">from</span> tqdm <span class="keyword">import</span> tqdm</span><br><span class="line"><span class="keyword">from</span> babel.dates <span class="keyword">import</span> format_date</span><br><span class="line"><span class="keyword">from</span> nmt_utils <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line">%matplotlib inline</span><br></pre></td></tr></table></figure>
+<h2 id="将人类可读的日期翻译为机器可读的日期">将人类可读的日期翻译为机器可读的日期</h2>
+<p>这里你所建立的模型也可以用来将一种语言翻译成另一种余元，比如将英语翻译成印第安语。但是，语言翻译需要大量的数据集，往往需要在多个GPU上训练好几天。为了不适用海量数据集就可以测试这些模型，我们选择更加简单的“日期翻译”任务。</p>
+<p>这个网络将写成不同形式的日期（比如&quot;the 29th of August 1958&quot;, &quot;03/30/1968&quot;, &quot;24 JUNE 1987&quot;）翻译成标准的机器可读的日期（比如&quot;1958-08-29&quot;, &quot;1968-03-30&quot;, &quot;1987-06-24&quot;）。我们训练这个网络使得它学会输出机器可读的形式：YYYY-MM-DD。</p>
+<h3 id="数据集">数据集</h3>
+<p>我们在10000个人类可读的日期和对应的标准化机器可读的日期作为数据集。下面加载数据集，并显示几个例子。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">m = <span class="number">10000</span></span><br><span class="line">dataset, human_vocab, machine_vocab, inv_machine_vocab = load_dataset(m)</span><br></pre></td></tr></table></figure>
+<pre><code>100%|██████████| 10000/10000 [00:01&lt;00:00, 8664.72it/s]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">dataset[:<span class="number">10</span>]</span><br></pre></td></tr></table></figure>
+<pre><code>[(&#39;9 may 1998&#39;, &#39;1998-05-09&#39;),
+ (&#39;10.09.70&#39;, &#39;1970-09-10&#39;),
+ (&#39;4/28/90&#39;, &#39;1990-04-28&#39;),
+ (&#39;thursday january 26 1995&#39;, &#39;1995-01-26&#39;),
+ (&#39;monday march 7 1983&#39;, &#39;1983-03-07&#39;),
+ (&#39;sunday may 22 1988&#39;, &#39;1988-05-22&#39;),
+ (&#39;tuesday july 8 2008&#39;, &#39;2008-07-08&#39;),
+ (&#39;08 sep 1999&#39;, &#39;1999-09-08&#39;),
+ (&#39;1 jan 1981&#39;, &#39;1981-01-01&#39;),
+ (&#39;monday may 22 1995&#39;, &#39;1995-05-22&#39;)]</code></pre>
+<p>上面的命令下载了如下数据：</p>
+<ul>
+<li>dataset: 一系列元组(人类可读日期，机器可读日期)<br>
+</li>
+<li>human_vocab: 人类可读日期中所使用的所有字符映射为整型索引的python字典<br>
+</li>
+<li>machine_vocab: 机器可读日期中所使用的所有字符映射为整型索引的python字典<br>
+</li>
+<li>inv_machine_vocab: machine_vocab的逆过程，从索引映射回字符</li>
+</ul>
+<p>下面对数据进行预处理，并将纯文本数据映射到索引值。令Tx=30（假定人类可读的最大长度，如果更长，可以截断这个文本个），Ty=10（因为YYYY-MM-DD长度为10）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Tx = <span class="number">30</span></span><br><span class="line">Ty = <span class="number">10</span></span><br><span class="line">X, Y, Xoh, Yoh = preprocess_data(dataset, human_vocab, machine_vocab, Tx, Ty)</span><br><span class="line"></span><br><span class="line">print(<span class="string">"X.shape:"</span>, X.shape)</span><br><span class="line">print(<span class="string">"Y.shape:"</span>, Y.shape)</span><br><span class="line">print(<span class="string">"Xoh.shape:"</span>, Xoh.shape)</span><br><span class="line">print(<span class="string">"Yoh.shape:"</span>, Yoh.shape)</span><br></pre></td></tr></table></figure>
+<pre><code>X.shape: (10000, 30)
+Y.shape: (10000, 10)
+Xoh.shape: (10000, 30, 37)
+Yoh.shape: (10000, 10, 11)</code></pre>
+<p>现在你有：</p>
+<ul>
+<li>X: 训练集中预处理之后的人类可读日期，其中每个字符都通过human_vocab映射到对应的索引值。每个日期进一步用特殊字符（&lt; pad &gt;）补到Tx长。X.shape=(m,Tx)。<br>
+</li>
+<li>Y: 训练集中预处理之后的机器可读日期，其中每个字符都通过machine_vocab映射到对应的索引值。Y.shape=(m,Ty)。<br>
+</li>
+<li>Xoh: X的one-hot版本，采用human_vocab可以将元素为1的索引映射到对应的字符。Xoh.shape=(m, Tx, len(human_vocab))。<br>
+</li>
+<li>Yoh: Y的one-hot版本，采用machine_vocab可以将元素为1的索引映射到对应的字符。Yoh.shape=(m, Tx, len(machine_vocab))。其中machine_vocab=11。</li>
+</ul>
+<p>下面查看预处理之后的训练样本。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">index = <span class="number">0</span></span><br><span class="line">print(<span class="string">"Source date:"</span>, dataset[index][<span class="number">0</span>])</span><br><span class="line">print(<span class="string">"Target date:"</span>, dataset[index][<span class="number">1</span>])</span><br><span class="line">print()</span><br><span class="line">print(<span class="string">"Source after preprocessing (indices):"</span>, X[index])</span><br><span class="line">print(<span class="string">"Target after preprocessing (indices):"</span>, Y[index])</span><br><span class="line">print()</span><br><span class="line">print(<span class="string">"Source after preprocessing (one-hot):"</span>, Xoh[index])</span><br><span class="line">print(<span class="string">"Target after preprocessing (one-hot):"</span>, Yoh[index])</span><br></pre></td></tr></table></figure>
+<pre><code>Source date: 9 may 1998
+Target date: 1998-05-09
+
+Source after preprocessing (indices): [12  0 24 13 34  0  4 12 12 11 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36
+ 36 36 36 36 36]
+Target after preprocessing (indices): [ 2 10 10  9  0  1  6  0  1 10]
+
+Source after preprocessing (one-hot): [[ 0.  0.  0. ...,  0.  0.  0.]
+ [ 1.  0.  0. ...,  0.  0.  0.]
+ [ 0.  0.  0. ...,  0.  0.  0.]
+ ..., 
+ [ 0.  0.  0. ...,  0.  0.  1.]
+ [ 0.  0.  0. ...,  0.  0.  1.]
+ [ 0.  0.  0. ...,  0.  0.  1.]]
+Target after preprocessing (one-hot): [[ 0.  0.  1.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  1.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  1.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  1.  0.]
+ [ 1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  1.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  1.  0.  0.  0.  0.]
+ [ 1.  0.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  1.  0.  0.  0.  0.  0.  0.  0.  0.  0.]
+ [ 0.  0.  0.  0.  0.  0.  0.  0.  0.  0.  1.]]</code></pre>
+<h2 id="基于注意力机制的神经网络机器翻译系统">基于注意力机制的神经网络机器翻译系统</h2>
+<p>当你在将一段话从法语翻译成英语的过程中，你不会读完整段话，然后关上书本开始翻译。就算在翻译的过程中，你也是读了又读，然后聚焦在你要写下翻译对应的那部分法语部分。</p>
+<p>注意力机制告诉神经网络翻译系统：<strong>每一步需要注意的部分</strong></p>
+<h3 id="注意力机制">注意力机制</h3>
+<p>这部分将实现注意力机制。下图显示了这种机制的工作原理。</p>
+<table>
+<td>
+<img src="/2018/06/04/62_MachineTranslation/attn_model.png" style="width:500;height:500px;"> <br>
+</td>
+<td>
+<img src="/2018/06/04/62_MachineTranslation/attn_mechanism.png" style="width:500;height:500px;"> <br>
+</td>
+</table>
+<caption>
+<center>
+<strong>图 1</strong>: 基于注意力机制的神经网络机器翻译系统。左图是完整模型；右图是注意力模块
+</center>
+</caption>
+<p>该模型具有以下特性：</p>
+<ul>
+<li>左图的模型中有两个独立的LSTMs。下方的LSTM是双向的，且在注意力机制的前面，被称之为<strong>预注意力双向LSTM</strong>。上方的LSTM在注意力机制之后，被称为<strong>后注意力LSTM</strong>。预注意力双向LSTM通过<span class="math inline">\(T_x\)</span>个时间步，后注意力LSTM通过<span class="math inline">\(T_y\)</span>个时间步<br>
+</li>
+<li>后注意力LSTM将<span class="math inline">\(s^{&lt;t&gt;},c^{&lt;t&gt;}\)</span>从一个时间步传到下一个时间步。但是，和语言生成模型不同的是后注意力LSTM在<span class="math inline">\(t\)</span>时刻，并没有将之前生成的输出<span class="math inline">\(y^{&lt;t-1&gt;}\)</span>作为输入。原因是在这个例子中，YYYY-MM-DD日期不像语言模型那样，相邻之间的字符串高度相关。<br>
+</li>
+<li>我们采用<span class="math inline">\(a^{\langle t \rangle} = [\overrightarrow{a}^{\langle t \rangle}; \overleftarrow{a}^{\langle t \rangle}]\)</span>代表将预训练双向LSTM的正向和反向激励合并。<br>
+</li>
+<li>右图使用<code>RepeatVector</code>节点将<span class="math inline">\(s^{\langle t-1 \rangle}\)</span>的值拷贝了<span class="math inline">\(T_x\)</span>次，然后用<code>Concatenation</code>合并<span class="math inline">\(s^{\langle t-1 \rangle}\)</span>和<span class="math inline">\(a^{\langle t \rangle}\)</span>，计算<span class="math inline">\(e^{\langle t, t&#39;}\)</span>。然后传到softmax层计算<span class="math inline">\(\alpha^{\langle t, t&#39; \rangle}\)</span>。下面会使用Keras详细介绍如何使用<code>RepeatVector</code>和<code>Concatenation</code>。</li>
+</ul>
+<p><strong>1) <code>one_step_attention()</code></strong>: 在时间<span class="math inline">\(t\)</span>，给定双向LSTM的所有隐藏层状态（<span class="math inline">\([a^{&lt;1&gt;},a^{&lt;2&gt;}, ..., a^{&lt;T_x&gt;}]\)</span>）和第二个LSTM层的隐藏状态(<span class="math inline">\(s^{&lt;t-1&gt;}\)</span>)，<code>one_step_attention()</code>将计算注意力函数(<span class="math inline">\([\alpha^{&lt;t,1&gt;},\alpha^{&lt;t,2&gt;}, ..., \alpha^{&lt;t,T_x&gt;}]\)</span>)和输出文本向量（如图右所示），<span class="math display">\[context^{&lt;t&gt;} = \sum_{t&#39; = 0}^{T_x} \alpha^{&lt;t,t&#39;&gt;}a^{&lt;t&#39;&gt;}\tag{1}\]</span>。</p>
+<p>注意：这里使用<span class="math inline">\(context^{\langle t \rangle}\)</span>表示文本向量，而<span class="math inline">\(c^{\langle t \rangle}\)</span>用来表示LSTM的内部记忆单元变量。</p>
+<p><strong>2) <code>model()</code></strong>: 实现整个模型。首先运行双向LSTM得到<span class="math inline">\([a^{&lt;1&gt;},a^{&lt;2&gt;}, ..., a^{&lt;T_x&gt;}]\)</span>。然后调用<code>one_step_attention()</code> <span class="math inline">\(T_y\)</span> 次。每次计算内容向量<span class="math inline">\(c^{&lt;t&gt;}\)</span>。将内容向量输入到第二个LSTM，经过带softmax激活函数的全连接层，得到预测值<span class="math inline">\(\hat{y}^{&lt;t&gt;}\)</span></p>
+<p>注意：函数<code>model()</code>调用<code>one_step_attention()</code><span class="math inline">\(T_y\)</span>次，每次共享权函数。在Keras中实现共享权函数的层：<br>
+1. 定义层对象（比如作为全局变量）<br>
+2. 正传输入时调用这些对象</p>
+<p>下面是需要用到的一些Keras函数以及帮助文档：<br>
+<a href="https://keras.io/layers/core/#repeatvector" target="_blank" rel="noopener">RepeatVector()</a>, <a href="https://keras.io/layers/merge/#concatenate" target="_blank" rel="noopener">Concatenate()</a>, <a href="https://keras.io/layers/core/#dense" target="_blank" rel="noopener">Dense()</a>, <a href="https://keras.io/layers/core/#activation" target="_blank" rel="noopener">Activation()</a>, <a href="https://keras.io/layers/merge/#dot" target="_blank" rel="noopener">Dot()</a>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Defined shared layers as global variables</span></span><br><span class="line">repeator = RepeatVector(Tx)</span><br><span class="line">concatenator = Concatenate(axis=<span class="number">-1</span>)</span><br><span class="line">densor = Dense(<span class="number">1</span>, activation = <span class="string">"relu"</span>)</span><br><span class="line">activator = Activation(softmax, name=<span class="string">'attention_weights'</span>) <span class="comment"># We are using a custom softmax(axis = 1) loaded in this notebook</span></span><br><span class="line">dotor = Dot(axes = <span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<p>使用上面提供的函数实现函数<code>one_step_attention()</code>。为了在其中一层正传一个Keras向量X，使用<code>layer(X)</code> (或在多个输入的情况下 <code>layer([X,Y])</code>)。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: one_step_attention</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">one_step_attention</span><span class="params">(a, s_prev)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Performs one step of attention: Outputs a context vector computed as a dot product of the attention weights</span></span><br><span class="line"><span class="string">    "alphas" and the hidden states "a" of the Bi-LSTM.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    a -- hidden state output of the Bi-LSTM, numpy-array of shape (m, Tx, 2*n_a)</span></span><br><span class="line"><span class="string">    s_prev -- previous hidden state of the (post-attention) LSTM, numpy-array of shape (m, n_s)</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    context -- context vector, input of the next (post-attetion) LSTM cell</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Use repeator to repeat s_prev to be of shape (m, Tx, n_s) so that you can concatenate it with all hidden states "a" (≈ 1 line)</span></span><br><span class="line">    s_prev = repeator(s_prev)</span><br><span class="line">    <span class="comment"># Use concatenator to concatenate a and s_prev on the last axis (≈ 1 line)</span></span><br><span class="line">    concat = concatenator([a, s_prev])</span><br><span class="line">    <span class="comment"># Use densor to propagate concat through a small fully-connected neural network to compute the "energies" variable e. (≈1 lines)</span></span><br><span class="line">    e = densor(concat)</span><br><span class="line">    <span class="comment"># Use activator and e to compute the attention weights "alphas" (≈ 1 line)</span></span><br><span class="line">    alphas = activator(e)</span><br><span class="line">    <span class="comment"># Use dotor together with "alphas" and "a" to compute the context vector to be given to the next (post-attention) LSTM-cell (≈ 1 line)</span></span><br><span class="line">    context = dotor([alphas, a])</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> context</span><br></pre></td></tr></table></figure>
+<p>下面实现函数<code>model()</code>，定义全局层以实现权值共享</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">n_a = <span class="number">64</span></span><br><span class="line">n_s = <span class="number">128</span></span><br><span class="line">post_activation_LSTM_cell = LSTM(n_s, return_state = <span class="keyword">True</span>)</span><br><span class="line">output_layer = Dense(len(machine_vocab), activation=softmax)</span><br></pre></td></tr></table></figure>
+<p>下面调用这些层<span class="math inline">\(T_x\)</span>次，生成输出，其中参数不会重新初始化。下面是详细步骤：</p>
+<ol style="list-style-type: decimal">
+<li>在双向LSTM中正传输入<a href="https://keras.io/layers/wrappers/#bidirectional" target="_blank" rel="noopener">Bidirectional</a> <a href="https://keras.io/layers/recurrent/#lstm" target="_blank" rel="noopener">LSTM</a><br>
+</li>
+<li>循环<span class="math inline">\(t = 0, \dots, T_y-1\)</span>:
+<ol style="list-style-type: decimal">
+<li>对 <span class="math inline">\([\alpha^{&lt;t,1&gt;},\alpha^{&lt;t,2&gt;}, ..., \alpha^{&lt;t,T_x&gt;}]\)</span> 和 <span class="math inline">\(s^{&lt;t-1&gt;}\)</span> 调用 <code>one_step_attention()</code>获得内容向量<span class="math inline">\(context^{&lt;t&gt;}\)</span> .<br>
+</li>
+<li>给定 <span class="math inline">\(context^{&lt;t&gt;}\)</span>，输入到后注意力LSTM单元. 输入的是这个神经元的前一个隐藏状态 <span class="math inline">\(s^{\langle t-1\rangle}\)</span> 和 单元状态<span class="math inline">\(c^{\langle t-1\rangle}\)</span>，输入组合成<code>initial_state= [previous hidden state, previous cell state]</code>. 返回新的隐藏状态 <span class="math inline">\(s^{&lt;t&gt;}\)</span> 和新的神经元状态 <span class="math inline">\(c^{&lt;t&gt;}\)</span>.<br>
+</li>
+<li>对<span class="math inline">\(s^{&lt;t&gt;}\)</span>应用softmax层, 得到输出.<br>
+</li>
+<li>将输出添加到输出列表，保存输出.</li>
+</ol></li>
+<li>创建Keras模型实例，包含三个输入 (&quot;输入&quot;, <span class="math inline">\(s^{&lt;0&gt;}\)</span> 和 <span class="math inline">\(c^{&lt;0&gt;}\)</span>) 和 输出一系列 &quot;outputs&quot;.</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: model</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model</span><span class="params">(Tx, Ty, n_a, n_s, human_vocab_size, machine_vocab_size)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    Tx -- length of the input sequence</span></span><br><span class="line"><span class="string">    Ty -- length of the output sequence</span></span><br><span class="line"><span class="string">    n_a -- hidden state size of the Bi-LSTM</span></span><br><span class="line"><span class="string">    n_s -- hidden state size of the post-attention LSTM</span></span><br><span class="line"><span class="string">    human_vocab_size -- size of the python dictionary "human_vocab"</span></span><br><span class="line"><span class="string">    machine_vocab_size -- size of the python dictionary "machine_vocab"</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    model -- Keras model instance</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Define the inputs of your model with a shape (Tx,)</span></span><br><span class="line">    <span class="comment"># Define s0 and c0, initial hidden state for the decoder LSTM of shape (n_s,)</span></span><br><span class="line">    X = Input(shape=(Tx, human_vocab_size))</span><br><span class="line">    s0 = Input(shape=(n_s,), name=<span class="string">'s0'</span>)</span><br><span class="line">    c0 = Input(shape=(n_s,), name=<span class="string">'c0'</span>)</span><br><span class="line">    s = s0</span><br><span class="line">    c = c0</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize empty list of outputs</span></span><br><span class="line">    outputs = []</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 1: Define your pre-attention Bi-LSTM. Remember to use return_sequences=True. (≈ 1 line)</span></span><br><span class="line">    a = Bidirectional(LSTM(n_a, return_sequences=<span class="keyword">True</span>))(X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 2: Iterate for Ty steps</span></span><br><span class="line">    <span class="keyword">for</span> t <span class="keyword">in</span> range(Ty):</span><br><span class="line">    </span><br><span class="line">        <span class="comment"># Step 2.A: Perform one step of the attention mechanism to get back the context vector at step t (≈ 1 line)</span></span><br><span class="line">        context = one_step_attention(a, s)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Step 2.B: Apply the post-attention LSTM cell to the "context" vector.</span></span><br><span class="line">        <span class="comment"># Don't forget to pass: initial_state = [hidden state, cell state] (≈ 1 line)</span></span><br><span class="line">        s, _, c = post_activation_LSTM_cell(context, initial_state=[s, c])</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Step 2.C: Apply Dense layer to the hidden state output of the post-attention LSTM (≈ 1 line)</span></span><br><span class="line">        out = output_layer(s)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Step 2.D: Append "out" to the "outputs" list (≈ 1 line)</span></span><br><span class="line">        outputs.append(out)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 3: Create model instance taking three inputs and returning the list of outputs. (≈ 1 line)</span></span><br><span class="line">    model = Model([X, s0, c0], outputs)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> model</span><br></pre></td></tr></table></figure>
+<p>创建模型</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model = model(Tx, Ty, n_a, n_s, len(human_vocab), len(machine_vocab))</span><br></pre></td></tr></table></figure>
+<pre><code>WARNING:tensorflow:From /home/seisinv/anaconda3/envs/fwi_ai/lib/python3.5/site-packages/keras/backend/tensorflow_backend.py:1190: calling reduce_sum (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead
+WARNING:tensorflow:From /home/seisinv/anaconda3/envs/fwi_ai/lib/python3.5/site-packages/keras/backend/tensorflow_backend.py:1154: calling reduce_max (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model.summary()</span><br></pre></td></tr></table></figure>
+<pre><code>____________________________________________________________________________________________________
+Layer (type)                     Output Shape          Param #     Connected to                     
+====================================================================================================
+input_1 (InputLayer)             (None, 30, 37)        0                                            
+____________________________________________________________________________________________________
+s0 (InputLayer)                  (None, 128)           0                                            
+____________________________________________________________________________________________________
+bidirectional_1 (Bidirectional)  (None, 30, 128)       52224       input_1[0][0]                    
+____________________________________________________________________________________________________
+repeat_vector_1 (RepeatVector)   (None, 30, 128)       0           s0[0][0]                         
+                                                                   lstm_1[0][0]                     
+                                                                   lstm_1[1][0]                     
+                                                                   lstm_1[2][0]                     
+                                                                   lstm_1[3][0]                     
+                                                                   lstm_1[4][0]                     
+                                                                   lstm_1[5][0]                     
+                                                                   lstm_1[6][0]                     
+                                                                   lstm_1[7][0]                     
+                                                                   lstm_1[8][0]                     
+____________________________________________________________________________________________________
+concatenate_1 (Concatenate)      (None, 30, 256)       0           bidirectional_1[0][0]            
+                                                                   repeat_vector_1[0][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[1][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[2][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[3][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[4][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[5][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[6][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[7][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[8][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[9][0]            
+____________________________________________________________________________________________________
+dense_1 (Dense)                  (None, 30, 1)         257         concatenate_1[0][0]              
+                                                                   concatenate_1[1][0]              
+                                                                   concatenate_1[2][0]              
+                                                                   concatenate_1[3][0]              
+                                                                   concatenate_1[4][0]              
+                                                                   concatenate_1[5][0]              
+                                                                   concatenate_1[6][0]              
+                                                                   concatenate_1[7][0]              
+                                                                   concatenate_1[8][0]              
+                                                                   concatenate_1[9][0]              
+____________________________________________________________________________________________________
+attention_weights (Activation)   (None, 30, 1)         0           dense_1[0][0]                    
+                                                                   dense_1[1][0]                    
+                                                                   dense_1[2][0]                    
+                                                                   dense_1[3][0]                    
+                                                                   dense_1[4][0]                    
+                                                                   dense_1[5][0]                    
+                                                                   dense_1[6][0]                    
+                                                                   dense_1[7][0]                    
+                                                                   dense_1[8][0]                    
+                                                                   dense_1[9][0]                    
+____________________________________________________________________________________________________
+dot_1 (Dot)                      (None, 1, 128)        0           attention_weights[0][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[1][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[2][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[3][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[4][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[5][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[6][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[7][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[8][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[9][0]          
+                                                                   bidirectional_1[0][0]            
+____________________________________________________________________________________________________
+c0 (InputLayer)                  (None, 128)           0                                            
+____________________________________________________________________________________________________
+lstm_1 (LSTM)                    [(None, 128), (None,  131584      dot_1[0][0]                      
+                                                                   s0[0][0]                         
+                                                                   c0[0][0]                         
+                                                                   dot_1[1][0]                      
+                                                                   lstm_1[0][0]                     
+                                                                   lstm_1[0][2]                     
+                                                                   dot_1[2][0]                      
+                                                                   lstm_1[1][0]                     
+                                                                   lstm_1[1][2]                     
+                                                                   dot_1[3][0]                      
+                                                                   lstm_1[2][0]                     
+                                                                   lstm_1[2][2]                     
+                                                                   dot_1[4][0]                      
+                                                                   lstm_1[3][0]                     
+                                                                   lstm_1[3][2]                     
+                                                                   dot_1[5][0]                      
+                                                                   lstm_1[4][0]                     
+                                                                   lstm_1[4][2]                     
+                                                                   dot_1[6][0]                      
+                                                                   lstm_1[5][0]                     
+                                                                   lstm_1[5][2]                     
+                                                                   dot_1[7][0]                      
+                                                                   lstm_1[6][0]                     
+                                                                   lstm_1[6][2]                     
+                                                                   dot_1[8][0]                      
+                                                                   lstm_1[7][0]                     
+                                                                   lstm_1[7][2]                     
+                                                                   dot_1[9][0]                      
+                                                                   lstm_1[8][0]                     
+                                                                   lstm_1[8][2]                     
+____________________________________________________________________________________________________
+dense_2 (Dense)                  (None, 11)            1419        lstm_1[0][0]                     
+                                                                   lstm_1[1][0]                     
+                                                                   lstm_1[2][0]                     
+                                                                   lstm_1[3][0]                     
+                                                                   lstm_1[4][0]                     
+                                                                   lstm_1[5][0]                     
+                                                                   lstm_1[6][0]                     
+                                                                   lstm_1[7][0]                     
+                                                                   lstm_1[8][0]                     
+                                                                   lstm_1[9][0]                     
+====================================================================================================
+Total params: 185,484
+Trainable params: 185,484
+Non-trainable params: 0
+____________________________________________________________________________________________________</code></pre>
+<p><strong>预计的输出</strong>:</p>
+<table>
+<pre><code>&lt;tr&gt;
+    &lt;td&gt;
+        **Total params:**
+    &lt;/td&gt;
+    &lt;td&gt;
+     185,484
+    &lt;/td&gt;
+&lt;/tr&gt;
+    &lt;tr&gt;
+    &lt;td&gt;
+        **Trainable params:**
+    &lt;/td&gt;
+    &lt;td&gt;
+     185,484
+    &lt;/td&gt;
+&lt;/tr&gt;
+        &lt;tr&gt;
+    &lt;td&gt;
+        **Non-trainable params:**
+    &lt;/td&gt;
+    &lt;td&gt;
+     0
+    &lt;/td&gt;
+&lt;/tr&gt;
+                &lt;tr&gt;
+    &lt;td&gt;
+        **bidirectional_1&#39;s output shape **
+    &lt;/td&gt;
+    &lt;td&gt;
+     (None, 30, 128)  
+    &lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+    &lt;td&gt;
+        **repeat_vector_1&#39;s output shape **
+    &lt;/td&gt;
+    &lt;td&gt;
+     (None, 30, 128)  
+    &lt;/td&gt;
+&lt;/tr&gt;
+            &lt;tr&gt;
+    &lt;td&gt;
+        **concatenate_1&#39;s output shape **
+    &lt;/td&gt;
+    &lt;td&gt;
+     (None, 30, 256) 
+    &lt;/td&gt;
+&lt;/tr&gt;
+        &lt;tr&gt;
+    &lt;td&gt;
+        **attention_weights&#39;s output shape **
+    &lt;/td&gt;
+    &lt;td&gt;
+     (None, 30, 1)  
+    &lt;/td&gt;
+&lt;/tr&gt;
+    &lt;tr&gt;
+    &lt;td&gt;
+        **dot_1&#39;s output shape **
+    &lt;/td&gt;
+    &lt;td&gt;
+     (None, 1, 128) 
+    &lt;/td&gt;
+&lt;/tr&gt;
+       &lt;tr&gt;
+    &lt;td&gt;
+        **dense_2&#39;s output shape **
+    &lt;/td&gt;
+    &lt;td&gt;
+     (None, 11) 
+    &lt;/td&gt;
+&lt;/tr&gt;</code></pre>
+</table>
+<p>和之前一样，在Keras中创建好模型之后，需要编译并定义损失函数，优化器以及要使用的性能度量。使用categorical_crossentropy损失函数，自定义的优化器<a href="https://keras.io/optimizers/#usage-of-optimizers" target="_blank" rel="noopener">optimizer</a> (<code>learning rate = 0.005</code>, <span class="math inline">\(\beta_1 = 0.9\)</span>, <span class="math inline">\(\beta_2 = 0.999\)</span>, <code>decay = 0.01</code>)和<code>['accuracy']</code>作为性能度量</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### START CODE HERE ### (≈2 lines)</span></span><br><span class="line">opt = Adam(lr = <span class="number">0.005</span>, beta_1=<span class="number">0.9</span>, beta_2=<span class="number">0.999</span>, decay = <span class="number">0.01</span>)</span><br><span class="line">model.compile(loss=<span class="string">'categorical_crossentropy'</span>, optimizer=opt, metrics=[<span class="string">'accuracy'</span>])</span><br><span class="line"><span class="comment">### END CODE HERE ###</span></span><br></pre></td></tr></table></figure>
+<pre><code>WARNING:tensorflow:From /home/seisinv/anaconda3/envs/fwi_ai/lib/python3.5/site-packages/keras/backend/tensorflow_backend.py:1297: calling reduce_mean (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead</code></pre>
+<p>最后一步：定义所有的输入和输出，并拟合模型。</p>
+<ul>
+<li>X的维度为<span class="math inline">\((m = 10000, T_x = 30)\)</span> 包含所有的训练样本.<br>
+</li>
+<li>创建 <code>s0</code> 和 <code>c0</code> 初始化 <code>post_activation_LSTM_cell</code> 为0.</li>
+<li>给定<code>model()</code> , 输出 &quot;outputs&quot; 为 含11 个元素的序列，维度为 (m, T_y). 因此: <code>outputs[i][0], ..., outputs[i][Ty]</code> 第<span class="math inline">\(i\)</span> 个样本 (<code>X[i]</code>)的真实标签（字符）(<code>X[i]</code>). 更一般的, <code>outputs[i][j]</code> 为第<span class="math inline">\(i^{th}\)</span>个训练样本第<span class="math inline">\(j^{th}\)</span>个字符的真实标签。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">s0 = np.zeros((m, n_s))</span><br><span class="line">c0 = np.zeros((m, n_s))</span><br><span class="line">outputs = list(Yoh.swapaxes(<span class="number">0</span>,<span class="number">1</span>))</span><br></pre></td></tr></table></figure>
+<p>下面拟合模型，只执行一次迭代。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model.fit([Xoh, s0, c0], outputs, epochs=<span class="number">10</span>, batch_size=<span class="number">100</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>Epoch 1/10
+10000/10000 [==============================] - 33s - loss: 7.4147 - dense_2_loss_1: 0.1020 - dense_2_loss_2: 0.0813 - dense_2_loss_3: 0.6302 - dense_2_loss_4: 1.8963 - dense_2_loss_5: 0.0076 - dense_2_loss_6: 0.1562 - dense_2_loss_7: 1.6076 - dense_2_loss_8: 0.0046 - dense_2_loss_9: 0.9532 - dense_2_loss_10: 1.9758 - dense_2_acc_1: 0.9687 - dense_2_acc_2: 0.9723 - dense_2_acc_3: 0.7522 - dense_2_acc_4: 0.3075 - dense_2_acc_5: 0.9999 - dense_2_acc_6: 0.9523 - dense_2_acc_7: 0.4073 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.5871 - dense_2_acc_10: 0.2662    
+Epoch 2/10
+10000/10000 [==============================] - 33s - loss: 5.3461 - dense_2_loss_1: 0.0713 - dense_2_loss_2: 0.0602 - dense_2_loss_3: 0.4529 - dense_2_loss_4: 1.2917 - dense_2_loss_5: 0.0059 - dense_2_loss_6: 0.1070 - dense_2_loss_7: 1.2188 - dense_2_loss_8: 0.0054 - dense_2_loss_9: 0.7383 - dense_2_loss_10: 1.3946 - dense_2_acc_1: 0.9774 - dense_2_acc_2: 0.9792 - dense_2_acc_3: 0.8190 - dense_2_acc_4: 0.5389 - dense_2_acc_5: 0.9999 - dense_2_acc_6: 0.9695 - dense_2_acc_7: 0.5465 - dense_2_acc_8: 0.9998 - dense_2_acc_9: 0.6832 - dense_2_acc_10: 0.4885    
+Epoch 3/10
+10000/10000 [==============================] - 33s - loss: 3.7412 - dense_2_loss_1: 0.0584 - dense_2_loss_2: 0.0498 - dense_2_loss_3: 0.3604 - dense_2_loss_4: 0.8144 - dense_2_loss_5: 0.0049 - dense_2_loss_6: 0.0930 - dense_2_loss_7: 0.9398 - dense_2_loss_8: 0.0045 - dense_2_loss_9: 0.5976 - dense_2_loss_10: 0.8183 - dense_2_acc_1: 0.9810 - dense_2_acc_2: 0.9819 - dense_2_acc_3: 0.8534 - dense_2_acc_4: 0.7320 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9734 - dense_2_acc_7: 0.6660 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.7660 - dense_2_acc_10: 0.7118    
+Epoch 4/10
+10000/10000 [==============================] - 33s - loss: 2.6837 - dense_2_loss_1: 0.0485 - dense_2_loss_2: 0.0414 - dense_2_loss_3: 0.2905 - dense_2_loss_4: 0.5242 - dense_2_loss_5: 0.0043 - dense_2_loss_6: 0.0762 - dense_2_loss_7: 0.6770 - dense_2_loss_8: 0.0042 - dense_2_loss_9: 0.4856 - dense_2_loss_10: 0.5319 - dense_2_acc_1: 0.9843 - dense_2_acc_2: 0.9844 - dense_2_acc_3: 0.8810 - dense_2_acc_4: 0.8535 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9779 - dense_2_acc_7: 0.7785 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.8240 - dense_2_acc_10: 0.8149    
+Epoch 5/10
+10000/10000 [==============================] - 34s - loss: 2.0444 - dense_2_loss_1: 0.0419 - dense_2_loss_2: 0.0348 - dense_2_loss_3: 0.2438 - dense_2_loss_4: 0.3605 - dense_2_loss_5: 0.0035 - dense_2_loss_6: 0.0624 - dense_2_loss_7: 0.4857 - dense_2_loss_8: 0.0038 - dense_2_loss_9: 0.4024 - dense_2_loss_10: 0.4056 - dense_2_acc_1: 0.9866 - dense_2_acc_2: 0.9865 - dense_2_acc_3: 0.8946 - dense_2_acc_4: 0.8977 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9815 - dense_2_acc_7: 0.8585 - dense_2_acc_8: 0.9998 - dense_2_acc_9: 0.8549 - dense_2_acc_10: 0.8575    
+Epoch 6/10
+10000/10000 [==============================] - 34s - loss: 1.6617 - dense_2_loss_1: 0.0354 - dense_2_loss_2: 0.0283 - dense_2_loss_3: 0.2110 - dense_2_loss_4: 0.2748 - dense_2_loss_5: 0.0029 - dense_2_loss_6: 0.0569 - dense_2_loss_7: 0.3805 - dense_2_loss_8: 0.0030 - dense_2_loss_9: 0.3356 - dense_2_loss_10: 0.3333 - dense_2_acc_1: 0.9878 - dense_2_acc_2: 0.9891 - dense_2_acc_3: 0.9083 - dense_2_acc_4: 0.9206 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9843 - dense_2_acc_7: 0.8917 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.8778 - dense_2_acc_10: 0.8811    
+Epoch 7/10
+10000/10000 [==============================] - 34s - loss: 1.3926 - dense_2_loss_1: 0.0286 - dense_2_loss_2: 0.0225 - dense_2_loss_3: 0.1850 - dense_2_loss_4: 0.2215 - dense_2_loss_5: 0.0026 - dense_2_loss_6: 0.0493 - dense_2_loss_7: 0.3083 - dense_2_loss_8: 0.0026 - dense_2_loss_9: 0.2848 - dense_2_loss_10: 0.2876 - dense_2_acc_1: 0.9923 - dense_2_acc_2: 0.9916 - dense_2_acc_3: 0.9179 - dense_2_acc_4: 0.9288 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9848 - dense_2_acc_7: 0.9155 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.8996 - dense_2_acc_10: 0.8946    
+Epoch 8/10
+10000/10000 [==============================] - 34s - loss: 1.2089 - dense_2_loss_1: 0.0258 - dense_2_loss_2: 0.0195 - dense_2_loss_3: 0.1666 - dense_2_loss_4: 0.1916 - dense_2_loss_5: 0.0021 - dense_2_loss_6: 0.0450 - dense_2_loss_7: 0.2664 - dense_2_loss_8: 0.0023 - dense_2_loss_9: 0.2382 - dense_2_loss_10: 0.2514 - dense_2_acc_1: 0.9920 - dense_2_acc_2: 0.9921 - dense_2_acc_3: 0.9293 - dense_2_acc_4: 0.9394 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9863 - dense_2_acc_7: 0.9297 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.9187 - dense_2_acc_10: 0.9044    
+Epoch 9/10
+10000/10000 [==============================] - 34s - loss: 1.0653 - dense_2_loss_1: 0.0218 - dense_2_loss_2: 0.0162 - dense_2_loss_3: 0.1498 - dense_2_loss_4: 0.1703 - dense_2_loss_5: 0.0019 - dense_2_loss_6: 0.0412 - dense_2_loss_7: 0.2351 - dense_2_loss_8: 0.0021 - dense_2_loss_9: 0.2030 - dense_2_loss_10: 0.2238 - dense_2_acc_1: 0.9929 - dense_2_acc_2: 0.9939 - dense_2_acc_3: 0.9392 - dense_2_acc_4: 0.9448 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9865 - dense_2_acc_7: 0.9357 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.9339 - dense_2_acc_10: 0.9164    
+Epoch 10/10
+10000/10000 [==============================] - 34s - loss: 0.9475 - dense_2_loss_1: 0.0194 - dense_2_loss_2: 0.0142 - dense_2_loss_3: 0.1359 - dense_2_loss_4: 0.1506 - dense_2_loss_5: 0.0018 - dense_2_loss_6: 0.0380 - dense_2_loss_7: 0.2107 - dense_2_loss_8: 0.0019 - dense_2_loss_9: 0.1732 - dense_2_loss_10: 0.2018 - dense_2_acc_1: 0.9939 - dense_2_acc_2: 0.9949 - dense_2_acc_3: 0.9481 - dense_2_acc_4: 0.9536 - dense_2_acc_5: 1.0000 - dense_2_acc_6: 0.9873 - dense_2_acc_7: 0.9427 - dense_2_acc_8: 1.0000 - dense_2_acc_9: 0.9458 - dense_2_acc_10: 0.9228    
+
+
+
+
+
+&lt;keras.callbacks.History at 0x7fc615040ef0&gt;</code></pre>
+在训练过程中，输出的每10个位置你可以看到损失函数和精度信息。下表是当batch大小为2个样本时的精度。 <img src="/2018/06/04/62_MachineTranslation/table.png" style="width:700;height:200px;"> <br>
+<caption>
+<center>
+Thus, <code>dense_2_acc_8: 0.89</code> means that you are predicting the 7th character of the output correctly 89% of the time in the current batch of data.
+</center>
+</caption>
+<p>下面是训练好的模型，你也可以增加迭代次数获得类似的模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#model.load_weights('models/model.h5')</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">EXAMPLES = [<span class="string">'3 May 1979'</span>, <span class="string">'5 April 09'</span>, <span class="string">'21th of August 2016'</span>, <span class="string">'Tue 10 Jul 2007'</span>, <span class="string">'Saturday May 9 2018'</span>, <span class="string">'March 3 2001'</span>, <span class="string">'March 3rd 2001'</span>, <span class="string">'1 March 2001'</span>]</span><br><span class="line"><span class="keyword">for</span> example <span class="keyword">in</span> EXAMPLES:</span><br><span class="line">    </span><br><span class="line">    source = string_to_int(example, Tx, human_vocab)</span><br><span class="line">    source = np.array(list(map(<span class="keyword">lambda</span> x: to_categorical(x, num_classes=len(human_vocab)), source))).swapaxes(<span class="number">0</span>,<span class="number">1</span>)</span><br><span class="line">    prediction = model.predict([source, s0, c0])</span><br><span class="line">    prediction = np.argmax(prediction, axis = <span class="number">-1</span>)</span><br><span class="line">    output = [inv_machine_vocab[int(i)] <span class="keyword">for</span> i <span class="keyword">in</span> prediction]</span><br><span class="line">    </span><br><span class="line">    print(<span class="string">"source:"</span>, example)</span><br><span class="line">    print(<span class="string">"output:"</span>, <span class="string">''</span>.join(output))</span><br></pre></td></tr></table></figure>
+<pre><code>source: 3 May 1979
+output: 1979-05-03
+source: 5 April 09
+output: 2009-04-05
+source: 21th of August 2016
+output: 2016-08-11
+source: Tue 10 Jul 2007
+output: 2007-07-10
+source: Saturday May 9 2018
+output: 2018-05-09
+source: March 3 2001
+output: 2011-03-03
+source: March 3rd 2001
+output: 2011-03-03
+source: 1 March 2001
+output: 2010-03-01</code></pre>
+<h2 id="可视化注意力">可视化注意力</h2>
+<p>由于这个问题有固定的输出长度<span class="math inline">\(T_y=10\)</span>，因此也有可能采用常规的神经网络：用10个不同的softmax单元生成10个字符。但是注意力模型的一个优势是：输出的每个部分（比如月份）知道它仅仅依赖于输出的一小部分（比如输入中给定月份的字符）。我们可以可视化这个输出注意输入的哪个部分。</p>
+比如将&quot;Saturday 9 May 2018&quot; 翻译成 &quot;2018-05-09&quot;。如果可视化<span class="math inline">\(\alpha^{\langle t, t&#39; \rangle}\)</span>，将会得到：<img src="/2018/06/04/62_MachineTranslation/date_attention.png" style="width:600;height:300px;"> <br>
+<caption>
+<center>
+<strong>Figure 8</strong>: Full Attention Map
+</center>
+</caption>
+<p>注意到：输出是如何忽略输入的&quot;Saturday&quot;部分的。没有另个一个输出时间步关注太多到那部分。我们也能看到每个输出关注它需要注意的部分，9被翻译成09，May被翻译成05。为了生成&quot;2018&quot;，需要关注输入的&quot;18&quot;部分。</p>
+<h3 id="获取网络的激励">获取网络的激励</h3>
+<p>为了可视化网络中注意力值，首先要正传一个样例，然后可视化<span class="math inline">\(\alpha^{\langle t, t&#39; \rangle}\)</span>的值。</p>
+<p>为了找到注意力值的位置，打印模型的总结。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model.summary()</span><br></pre></td></tr></table></figure>
+<pre><code>____________________________________________________________________________________________________
+Layer (type)                     Output Shape          Param #     Connected to                     
+====================================================================================================
+input_1 (InputLayer)             (None, 30, 37)        0                                            
+____________________________________________________________________________________________________
+s0 (InputLayer)                  (None, 128)           0                                            
+____________________________________________________________________________________________________
+bidirectional_1 (Bidirectional)  (None, 30, 128)       52224       input_1[0][0]                    
+____________________________________________________________________________________________________
+repeat_vector_1 (RepeatVector)   (None, 30, 128)       0           s0[0][0]                         
+                                                                   lstm_1[0][0]                     
+                                                                   lstm_1[1][0]                     
+                                                                   lstm_1[2][0]                     
+                                                                   lstm_1[3][0]                     
+                                                                   lstm_1[4][0]                     
+                                                                   lstm_1[5][0]                     
+                                                                   lstm_1[6][0]                     
+                                                                   lstm_1[7][0]                     
+                                                                   lstm_1[8][0]                     
+____________________________________________________________________________________________________
+concatenate_1 (Concatenate)      (None, 30, 256)       0           bidirectional_1[0][0]            
+                                                                   repeat_vector_1[0][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[1][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[2][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[3][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[4][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[5][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[6][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[7][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[8][0]            
+                                                                   bidirectional_1[0][0]            
+                                                                   repeat_vector_1[9][0]            
+____________________________________________________________________________________________________
+dense_1 (Dense)                  (None, 30, 1)         257         concatenate_1[0][0]              
+                                                                   concatenate_1[1][0]              
+                                                                   concatenate_1[2][0]              
+                                                                   concatenate_1[3][0]              
+                                                                   concatenate_1[4][0]              
+                                                                   concatenate_1[5][0]              
+                                                                   concatenate_1[6][0]              
+                                                                   concatenate_1[7][0]              
+                                                                   concatenate_1[8][0]              
+                                                                   concatenate_1[9][0]              
+____________________________________________________________________________________________________
+attention_weights (Activation)   (None, 30, 1)         0           dense_1[0][0]                    
+                                                                   dense_1[1][0]                    
+                                                                   dense_1[2][0]                    
+                                                                   dense_1[3][0]                    
+                                                                   dense_1[4][0]                    
+                                                                   dense_1[5][0]                    
+                                                                   dense_1[6][0]                    
+                                                                   dense_1[7][0]                    
+                                                                   dense_1[8][0]                    
+                                                                   dense_1[9][0]                    
+____________________________________________________________________________________________________
+dot_1 (Dot)                      (None, 1, 128)        0           attention_weights[0][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[1][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[2][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[3][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[4][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[5][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[6][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[7][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[8][0]          
+                                                                   bidirectional_1[0][0]            
+                                                                   attention_weights[9][0]          
+                                                                   bidirectional_1[0][0]            
+____________________________________________________________________________________________________
+c0 (InputLayer)                  (None, 128)           0                                            
+____________________________________________________________________________________________________
+lstm_1 (LSTM)                    [(None, 128), (None,  131584      dot_1[0][0]                      
+                                                                   s0[0][0]                         
+                                                                   c0[0][0]                         
+                                                                   dot_1[1][0]                      
+                                                                   lstm_1[0][0]                     
+                                                                   lstm_1[0][2]                     
+                                                                   dot_1[2][0]                      
+                                                                   lstm_1[1][0]                     
+                                                                   lstm_1[1][2]                     
+                                                                   dot_1[3][0]                      
+                                                                   lstm_1[2][0]                     
+                                                                   lstm_1[2][2]                     
+                                                                   dot_1[4][0]                      
+                                                                   lstm_1[3][0]                     
+                                                                   lstm_1[3][2]                     
+                                                                   dot_1[5][0]                      
+                                                                   lstm_1[4][0]                     
+                                                                   lstm_1[4][2]                     
+                                                                   dot_1[6][0]                      
+                                                                   lstm_1[5][0]                     
+                                                                   lstm_1[5][2]                     
+                                                                   dot_1[7][0]                      
+                                                                   lstm_1[6][0]                     
+                                                                   lstm_1[6][2]                     
+                                                                   dot_1[8][0]                      
+                                                                   lstm_1[7][0]                     
+                                                                   lstm_1[7][2]                     
+                                                                   dot_1[9][0]                      
+                                                                   lstm_1[8][0]                     
+                                                                   lstm_1[8][2]                     
+____________________________________________________________________________________________________
+dense_2 (Dense)                  (None, 11)            1419        lstm_1[0][0]                     
+                                                                   lstm_1[1][0]                     
+                                                                   lstm_1[2][0]                     
+                                                                   lstm_1[3][0]                     
+                                                                   lstm_1[4][0]                     
+                                                                   lstm_1[5][0]                     
+                                                                   lstm_1[6][0]                     
+                                                                   lstm_1[7][0]                     
+                                                                   lstm_1[8][0]                     
+                                                                   lstm_1[9][0]                     
+====================================================================================================
+Total params: 185,484
+Trainable params: 185,484
+Non-trainable params: 0
+____________________________________________________________________________________________________</code></pre>
+<p>从上面的总结可以看出，从<span class="math inline">\(t = 0, \ldots, T_y-1\)</span>每一步，在<code>dot_2</code>计算内容向量之前，<code>attention_weights</code> 输出维度为(m, 30, 1)的 <code>alphas</code>。</p>
+<p>函数<code>attention_map()</code>实现了从模型中提取出注意力值，并绘制出来。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">attention_map = plot_attention_map(model, human_vocab, inv_machine_vocab, <span class="string">"Tuesday April 08 1993"</span>, num = <span class="number">6</span>, n_s = <span class="number">128</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>&lt;matplotlib.figure.Figure at 0x7fc614061fd0&gt;</code></pre>
+<div class="figure">
+<img src="/2018/06/04/62_MachineTranslation/output_38_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<p>从上面的图中可以分析网络的输出对输入的哪一部分施加的注意力。</p>
+<h2 id="小结">小结</h2>
+<ul>
+<li>机器翻译模型可以用来将一个序列映射到另一个序列，它不仅在翻译人类语言（比如法语到英语）中十分有用，而且在日期格式翻译这样的任务中也有应用<br>
+</li>
+<li>注意力机制允许一个网络在生成输出的特定部分时，只关注输入的相关部分<br>
+</li>
+<li>基于注意力机制的网络可以将长度为<span class="math inline">\(T_x\)</span>的输入，映射为长度为<span class="math inline">\(T_y\)</span>的输出，其中<span class="math inline">\(T_x\)</span>和<span class="math inline">\(T_y\)</span>可以不同<br>
+</li>
+<li>可视化注意力权重<span class="math inline">\(\alpha^{\langle t,t&#39; \rangle}\)</span>，可以获得在生成每个输出时网络所关注的输入部分</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/序列到序列模型/" rel="tag"># 序列到序列模型</a>
+          
+            <a href="/tags/注意力机制/" rel="tag"># 注意力机制</a>
+          
+            <a href="/tags/机器翻译/" rel="tag"># 机器翻译</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/06/04/61_WordEmb_Emojify/" rel="next" title="基于词编码模型制作表情包">
+                <i class="fa fa-chevron-left"></i> 基于词编码模型制作表情包
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/05/63_TriggerWord/" rel="prev" title="唤醒词检测">
+                唤醒词检测 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#将人类可读的日期翻译为机器可读的日期"><span class="nav-number">1.</span> <span class="nav-text">将人类可读的日期翻译为机器可读的日期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据集"><span class="nav-number">1.1.</span> <span class="nav-text">数据集</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#基于注意力机制的神经网络机器翻译系统"><span class="nav-number">2.</span> <span class="nav-text">基于注意力机制的神经网络机器翻译系统</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#注意力机制"><span class="nav-number">2.1.</span> <span class="nav-text">注意力机制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可视化注意力"><span class="nav-number">3.</span> <span class="nav-text">可视化注意力</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#获取网络的激励"><span class="nav-number">3.1.</span> <span class="nav-text">获取网络的激励</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="循环神经网络,LSTM,梯度裁剪,采样,文本生成模型,作诗模型," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文介绍如何使用循环神经网络生成字符级语言模型。分别使用python和keras建立文本生成模型。一个是用来给恐龙取名称，另一个是学莎士比亚作诗。第一个模型用基本的RNN神经元，第二个模型用PSTM神经元。通过这两个应用，验证循环神经网络在自然语言处理中的巨大潜力。">
+<meta name="keywords" content="循环神经网络,LSTM,梯度裁剪,采样,文本生成模型,作诗模型">
+<meta property="og:type" content="article">
+<meta property="og:title" content="循环神经网络生成字符级语言模型">
+<meta property="og:url" content="http://yoursite.com/2018/04/21/58_RNN_langmodel/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文介绍如何使用循环神经网络生成字符级语言模型。分别使用python和keras建立文本生成模型。一个是用来给恐龙取名称，另一个是学莎士比亚作诗。第一个模型用基本的RNN神经元，第二个模型用PSTM神经元。通过这两个应用，验证循环神经网络在自然语言处理中的巨大潜力。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/04/21/58_RNN_langmodel/RNN.png">
+<meta property="og:image" content="http://yoursite.com/2018/04/21/58_RNN_langmodel/clip.png">
+<meta property="og:image" content="http://yoursite.com/2018/04/21/58_RNN_langmodel/dinos3.png">
+<meta property="og:image" content="http://yoursite.com/2018/04/21/58_RNN_langmodel/shakespeare.jpg">
+<meta property="og:updated_time" content="2018-04-21T00:11:22.938Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="循环神经网络生成字符级语言模型">
+<meta name="twitter:description" content="本文介绍如何使用循环神经网络生成字符级语言模型。分别使用python和keras建立文本生成模型。一个是用来给恐龙取名称，另一个是学莎士比亚作诗。第一个模型用基本的RNN神经元，第二个模型用PSTM神经元。通过这两个应用，验证循环神经网络在自然语言处理中的巨大潜力。">
+<meta name="twitter:image" content="http://yoursite.com/2018/04/21/58_RNN_langmodel/RNN.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/04/21/58_RNN_langmodel/"/>
+
+
+
+
+
+  <title>循环神经网络生成字符级语言模型 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/04/21/58_RNN_langmodel/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">循环神经网络生成字符级语言模型</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-21T08:11:22+08:00">
+                2018-04-21
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文介绍如何使用循环神经网络生成字符级语言模型。分别使用python和keras建立文本生成模型。一个是用来给恐龙取名称，另一个是学莎士比亚作诗。第一个模型用基本的RNN神经元，第二个模型用PSTM神经元。通过这两个应用，验证循环神经网络在自然语言处理中的巨大潜力。 <a id="more"></a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> utils <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> random</span><br></pre></td></tr></table></figure>
+<h2 id="问题描述">问题描述</h2>
+<h3 id="数据集和预处理">数据集和预处理</h3>
+<p>运行下面的单元，读取恐龙名称数据集，建立唯一单词序列（如a-z），并计算数据集和单词集的大小。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">data = open(<span class="string">'dinos.txt'</span>, <span class="string">'r'</span>).read()</span><br><span class="line">data= data.lower()</span><br><span class="line">chars = list(set(data))</span><br><span class="line">data_size, vocab_size = len(data), len(chars)</span><br><span class="line">print(<span class="string">'There are %d total characters and %d unique characters in your data.'</span> % (data_size, vocab_size))</span><br></pre></td></tr></table></figure>
+<pre><code>There are 19909 total characters and 27 unique characters in your data.</code></pre>
+<p>字符集包括a-z（26个字符）和&quot;&quot;（或者新行字符），类似于<eos>（或者句子的结尾），只不过这里表示恐龙名称结束。下面的单元建立一个python字典（即Hash表），将每个字符映射到0-26的数字索引，也建立一个python字典，将每个索引映射回对应的字符。这两个字典有助于在softmax层输出的概率分布中找到某个索引对应的字符。</eos></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">char_to_ix = &#123; ch:i <span class="keyword">for</span> i,ch <span class="keyword">in</span> enumerate(sorted(chars)) &#125;</span><br><span class="line">ix_to_char = &#123; i:ch <span class="keyword">for</span> i,ch <span class="keyword">in</span> enumerate(sorted(chars)) &#125;</span><br><span class="line">print(ix_to_char)</span><br></pre></td></tr></table></figure>
+<pre><code>{0: &#39;\n&#39;, 1: &#39;a&#39;, 2: &#39;b&#39;, 3: &#39;c&#39;, 4: &#39;d&#39;, 5: &#39;e&#39;, 6: &#39;f&#39;, 7: &#39;g&#39;, 8: &#39;h&#39;, 9: &#39;i&#39;, 10: &#39;j&#39;, 11: &#39;k&#39;, 12: &#39;l&#39;, 13: &#39;m&#39;, 14: &#39;n&#39;, 15: &#39;o&#39;, 16: &#39;p&#39;, 17: &#39;q&#39;, 18: &#39;r&#39;, 19: &#39;s&#39;, 20: &#39;t&#39;, 21: &#39;u&#39;, 22: &#39;v&#39;, 23: &#39;w&#39;, 24: &#39;x&#39;, 25: &#39;y&#39;, 26: &#39;z&#39;}</code></pre>
+<h3 id="模型简介">模型简介</h3>
+<p>模型具有以下结构:</p>
+<ul>
+<li>初始化参数<br>
+</li>
+<li>运行最优化循环
+<ul>
+<li>正传播计算损失函数<br>
+</li>
+<li>反传计算损失函数的梯度<br>
+</li>
+<li>裁剪梯度避免梯度爆炸<br>
+</li>
+<li>利用梯度下降法更新参数<br>
+</li>
+</ul></li>
+<li>返回学习的参数</li>
+</ul>
+<img src="/2018/04/21/58_RNN_langmodel/RNN.png" style="width:450;height:300px;">
+<caption>
+<center>
+<strong>图 1</strong>: 循环神经网络
+</center>
+</caption>
+<p>在每个时间步, RNN根据前面的字符 预测下一个字符. 数据集<span class="math inline">\(X = (x^{\langle 1 \rangle}, x^{\langle 2 \rangle}, ..., x^{\langle T_x \rangle})\)</span> 是训练集中的一系列字符, 而 <span class="math inline">\(Y = (y^{\langle 1 \rangle}, y^{\langle 2 \rangle}, ..., y^{\langle T_x \rangle})\)</span> 是在时间 <span class="math inline">\(t\)</span>上满足 <span class="math inline">\(y^{\langle t \rangle} = x^{\langle t+1 \rangle}\)</span>.</p>
+<h2 id="建立模型的基本元素">建立模型的基本元素</h2>
+<p>这部分建立完整模型的两个重要元素：<br>
+- 梯度裁剪：避免梯度爆炸<br>
+- 采样：一种生成字符的技术</p>
+<h3 id="优化循环中裁剪梯度">优化循环中裁剪梯度</h3>
+<p>本节在优化循环中实现 <code>clip</code>函数，整个循环结构中，包括正传播、代价函数计算、反传播和模型更新。在更新模型之前，进行梯度裁剪，以保证梯度不会<em>爆炸</em>。</p>
+<p>这里采用简单的元素裁剪方法，也就是让梯度向量中的每个元素裁剪到指定的范围[-N, N]。</p>
+<img src="/2018/04/21/58_RNN_langmodel/clip.png" style="width:400;height:150px;">
+<caption>
+<center>
+<strong>图 2</strong>: 可视化在网络遇到梯度爆炸问题时，有无梯度裁剪对梯度下降法的影响。
+</center>
+</caption>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### GRADED FUNCTION: clip</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">clip</span><span class="params">(gradients, maxValue)</span>:</span></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">    Clips the gradients' values between minimum and maximum.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    gradients -- a dictionary containing the gradients "dWaa", "dWax", "dWya", "db", "dby"</span></span><br><span class="line"><span class="string">    maxValue -- everything above this number is set to this number, and everything less than -maxValue is set to -maxValue</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    gradients -- a dictionary with the clipped gradients.</span></span><br><span class="line"><span class="string">    '''</span></span><br><span class="line">    </span><br><span class="line">    dWaa, dWax, dWya, db, dby = gradients[<span class="string">'dWaa'</span>], gradients[<span class="string">'dWax'</span>], gradients[<span class="string">'dWya'</span>], gradients[<span class="string">'db'</span>], gradients[<span class="string">'dby'</span>]</span><br><span class="line">   </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># clip to mitigate exploding gradients, loop over [dWax, dWaa, dWya, db, dby]. (≈2 lines)</span></span><br><span class="line">    <span class="keyword">for</span> gradient <span class="keyword">in</span> [dWax, dWaa, dWya, db, dby]:</span><br><span class="line">        gradient.clip(-maxValue, maxValue, out=gradient)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    gradients = &#123;<span class="string">"dWaa"</span>: dWaa, <span class="string">"dWax"</span>: dWax, <span class="string">"dWya"</span>: dWya, <span class="string">"db"</span>: db, <span class="string">"dby"</span>: dby&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> gradients</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">np.random.seed(<span class="number">3</span>)</span><br><span class="line">dWax = np.random.randn(<span class="number">5</span>,<span class="number">3</span>)*<span class="number">10</span></span><br><span class="line">dWaa = np.random.randn(<span class="number">5</span>,<span class="number">5</span>)*<span class="number">10</span></span><br><span class="line">dWya = np.random.randn(<span class="number">2</span>,<span class="number">5</span>)*<span class="number">10</span></span><br><span class="line">db = np.random.randn(<span class="number">5</span>,<span class="number">1</span>)*<span class="number">10</span></span><br><span class="line">dby = np.random.randn(<span class="number">2</span>,<span class="number">1</span>)*<span class="number">10</span></span><br><span class="line">gradients = &#123;<span class="string">"dWax"</span>: dWax, <span class="string">"dWaa"</span>: dWaa, <span class="string">"dWya"</span>: dWya, <span class="string">"db"</span>: db, <span class="string">"dby"</span>: dby&#125;</span><br><span class="line">gradients = clip(gradients, <span class="number">10</span>)</span><br><span class="line">print(<span class="string">"gradients[\"dWaa\"][1][2] ="</span>, gradients[<span class="string">"dWaa"</span>][<span class="number">1</span>][<span class="number">2</span>])</span><br><span class="line">print(<span class="string">"gradients[\"dWax\"][3][1] ="</span>, gradients[<span class="string">"dWax"</span>][<span class="number">3</span>][<span class="number">1</span>])</span><br><span class="line">print(<span class="string">"gradients[\"dWya\"][1][2] ="</span>, gradients[<span class="string">"dWya"</span>][<span class="number">1</span>][<span class="number">2</span>])</span><br><span class="line">print(<span class="string">"gradients[\"db\"][4] ="</span>, gradients[<span class="string">"db"</span>][<span class="number">4</span>])</span><br><span class="line">print(<span class="string">"gradients[\"dby\"][1] ="</span>, gradients[<span class="string">"dby"</span>][<span class="number">1</span>])</span><br></pre></td></tr></table></figure>
+<pre><code>gradients[&quot;dWaa&quot;][1][2] = 10.0
+gradients[&quot;dWax&quot;][3][1] = -10.0
+gradients[&quot;dWya&quot;][1][2] = 0.29713815361
+gradients[&quot;db&quot;][4] = [ 10.]
+gradients[&quot;dby&quot;][1] = [ 8.45833407]</code></pre>
+<h3 id="采样">采样</h3>
+<p>假定模型已经训练好了，你希望用它来生成新的文本。生成过程如下图所示：</p>
+<img src="/2018/04/21/58_RNN_langmodel/dinos3.png" style="width:500;height:300px;">
+<caption>
+<center>
+<strong>图 3</strong>: 图中假定模型已经训练好. 在第一个时间步传入 <span class="math inline">\(x^{\langle 1\rangle} = \vec{0}\)</span>, 然后从网络中一次采样一个字符.
+</center>
+</caption>
+<p><strong>流程</strong>:</p>
+<ul>
+<li><p><strong>步骤 1</strong>: 对网络传入第一个 &quot;假的&quot; 输入 <span class="math inline">\(x^{\langle 1 \rangle} = \vec{0}\)</span> (零向量). 这是生成任何字符前的缺省输入. 同时令 <span class="math inline">\(a^{\langle 0 \rangle} = \vec{0}\)</span></p></li>
+<li><p><strong>步骤 2</strong>: 正传播一次得到 <span class="math inline">\(a^{\langle 1 \rangle}\)</span> 和 <span class="math inline">\(\hat{y}^{\langle 1 \rangle}\)</span>. 方程如下:</p></li>
+</ul>
+<p><span class="math display">\[ a^{\langle t+1 \rangle} = \tanh(W_{ax}  x^{\langle t \rangle } + W_{aa} a^{\langle t \rangle } + b)\tag{1}\]</span></p>
+<p><span class="math display">\[ z^{\langle t + 1 \rangle } = W_{ya}  a^{\langle t + 1 \rangle } + b_y \tag{2}\]</span></p>
+<p><span class="math display">\[ \hat{y}^{\langle t+1 \rangle } = softmax(z^{\langle t + 1 \rangle })\tag{3}\]</span></p>
+<p>注意 <span class="math inline">\(\hat{y}^{\langle t+1 \rangle }\)</span> 是(softmax) 概率向量 (其元素介于0到1之间，并且求和为1). <span class="math inline">\(\hat{y}^{\langle t+1 \rangle}_i\)</span> 代表索引为 &quot;i&quot; 对应的字符是下一个字符的概率.</p>
+<ul>
+<li><strong>步骤 3</strong>: 执行采样过程: 在 <span class="math inline">\(\hat{y}^{\langle t+1 \rangle }\)</span>定义的概率分布下，选择下一个字符的索引. 意味着如果 <span class="math inline">\(\hat{y}^{\langle t+1 \rangle }_i = 0.16\)</span>, 表示你有16% 的概率选择索引 &quot;i&quot;. 实现这个功能，使用函数 <a href="https://docs.scipy.org/doc/numpy-1.13.0/reference/generated/numpy.random.choice.html" target="_blank" rel="noopener"><code>np.random.choice</code></a>.</li>
+</ul>
+<p>下面是使用<code>np.random.choice()</code>的一个例子: <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">np.random.seed(<span class="number">0</span>)</span><br><span class="line">p = np.array([<span class="number">0.1</span>, <span class="number">0.0</span>, <span class="number">0.7</span>, <span class="number">0.2</span>])</span><br><span class="line">index = np.random.choice([<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>], p = p.ravel())</span><br></pre></td></tr></table></figure></p>
+<p>意味着你会根据分布: <span class="math inline">\(P(index = 0) = 0.1, P(index = 1) = 0.0, P(index = 2) = 0.7, P(index = 3) = 0.2\)</span>，选择索引.</p>
+<ul>
+<li><strong>步骤 4</strong>: <code>sample()</code>的最后一步是覆盖变量 <code>x</code>, 它此时存储 <span class="math inline">\(x^{\langle t \rangle }\)</span>的值是 <span class="math inline">\(x^{\langle t + 1 \rangle }\)</span>. <span class="math inline">\(x^{\langle t + 1 \rangle }\)</span> 将由预测后选择的字符进行one-hot编码之后产生. 然后继续从第一步正传 <span class="math inline">\(x^{\langle t + 1 \rangle }\)</span> 直到遇到 &quot;&quot; 字符, 表示你已经到了恐龙名字的结尾.</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: sample</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sample</span><span class="params">(parameters, char_to_ix, seed)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Sample a sequence of characters according to a sequence of probability distributions output of the RNN</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing the parameters Waa, Wax, Wya, by, and b. </span></span><br><span class="line"><span class="string">    char_to_ix -- python dictionary mapping each character to an index.</span></span><br><span class="line"><span class="string">    seed -- used for grading purposes. Do not worry about it.</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    indices -- a list of length n containing the indices of the sampled characters.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Retrieve parameters and relevant shapes from "parameters" dictionary</span></span><br><span class="line">    Waa, Wax, Wya, by, b = parameters[<span class="string">'Waa'</span>], parameters[<span class="string">'Wax'</span>], parameters[<span class="string">'Wya'</span>], parameters[<span class="string">'by'</span>], parameters[<span class="string">'b'</span>]</span><br><span class="line">    vocab_size = by.shape[<span class="number">0</span>]</span><br><span class="line">    n_a = Waa.shape[<span class="number">1</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Step 1: Create the one-hot vector x for the first character (initializing the sequence generation). (≈1 line)</span></span><br><span class="line">    x = np.zeros((vocab_size, <span class="number">1</span>))</span><br><span class="line">    <span class="comment"># Step 1': Initialize a_prev as zeros (≈1 line)</span></span><br><span class="line">    a_prev = np.zeros((n_a, <span class="number">1</span>))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create an empty list of indices, this is the list which will contain the list of indices of the characters to generate (≈1 line)</span></span><br><span class="line">    indices = []</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Idx is a flag to detect a newline character, we initialize it to -1</span></span><br><span class="line">    idx = <span class="number">-1</span> </span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Loop over time-steps t. At each time-step, sample a character from a probability distribution and append </span></span><br><span class="line">    <span class="comment"># its index to "indices". We'll stop if we reach 50 characters (which should be very unlikely with a well </span></span><br><span class="line">    <span class="comment"># trained model), which helps debugging and prevents entering an infinite loop. </span></span><br><span class="line">    counter = <span class="number">0</span></span><br><span class="line">    newline_character = char_to_ix[<span class="string">'\n'</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">while</span> (idx != newline_character <span class="keyword">and</span> counter != <span class="number">50</span>):</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Step 2: Forward propagate x using the equations (1), (2) and (3)</span></span><br><span class="line">        a = np.tanh(np.dot(Wax, x) + np.dot(Waa, a_prev) + b)</span><br><span class="line">        z = np.dot(Wya, a) + by</span><br><span class="line">        y = softmax(z)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># for grading purposes</span></span><br><span class="line">        np.random.seed(counter+seed) </span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Step 3: Sample the index of a character within the vocabulary from the probability distribution y</span></span><br><span class="line">        idx = np.random.choice(list(range(vocab_size)), p = y.ravel())</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Append the index to "indices"</span></span><br><span class="line">        indices.append(idx)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Step 4: Overwrite the input character as the one corresponding to the sampled index.</span></span><br><span class="line">        x = np.zeros((vocab_size, <span class="number">1</span>))</span><br><span class="line">        x[idx] = <span class="number">1</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Update "a_prev" to be "a"</span></span><br><span class="line">        a_prev = a</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># for grading purposes</span></span><br><span class="line">        seed += <span class="number">1</span></span><br><span class="line">        counter +=<span class="number">1</span></span><br><span class="line">        </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (counter == <span class="number">50</span>):</span><br><span class="line">        indices.append(char_to_ix[<span class="string">'\n'</span>])</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> indices</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">np.random.seed(<span class="number">2</span>)</span><br><span class="line">_, n_a = <span class="number">20</span>, <span class="number">100</span></span><br><span class="line">Wax, Waa, Wya = np.random.randn(n_a, vocab_size), np.random.randn(n_a, n_a), np.random.randn(vocab_size, n_a)</span><br><span class="line">b, by = np.random.randn(n_a, <span class="number">1</span>), np.random.randn(vocab_size, <span class="number">1</span>)</span><br><span class="line">parameters = &#123;<span class="string">"Wax"</span>: Wax, <span class="string">"Waa"</span>: Waa, <span class="string">"Wya"</span>: Wya, <span class="string">"b"</span>: b, <span class="string">"by"</span>: by&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">indices = sample(parameters, char_to_ix, <span class="number">0</span>)</span><br><span class="line">print(<span class="string">"Sampling:"</span>)</span><br><span class="line">print(<span class="string">"list of sampled indices:"</span>, indices)</span><br><span class="line">print(<span class="string">"list of sampled characters:"</span>, [ix_to_char[i] <span class="keyword">for</span> i <span class="keyword">in</span> indices])</span><br></pre></td></tr></table></figure>
+<pre><code>Sampling:
+list of sampled indices: [12, 17, 24, 14, 13, 9, 10, 22, 24, 6, 13, 11, 12, 6, 21, 15, 21, 14, 3, 2, 1, 21, 18, 24, 7, 25, 6, 25, 18, 10, 16, 2, 3, 8, 15, 12, 11, 7, 1, 12, 10, 2, 7, 7, 11, 5, 6, 12, 7, 11, 0]
+list of sampled characters: [&#39;l&#39;, &#39;q&#39;, &#39;x&#39;, &#39;n&#39;, &#39;m&#39;, &#39;i&#39;, &#39;j&#39;, &#39;v&#39;, &#39;x&#39;, &#39;f&#39;, &#39;m&#39;, &#39;k&#39;, &#39;l&#39;, &#39;f&#39;, &#39;u&#39;, &#39;o&#39;, &#39;u&#39;, &#39;n&#39;, &#39;c&#39;, &#39;b&#39;, &#39;a&#39;, &#39;u&#39;, &#39;r&#39;, &#39;x&#39;, &#39;g&#39;, &#39;y&#39;, &#39;f&#39;, &#39;y&#39;, &#39;r&#39;, &#39;j&#39;, &#39;p&#39;, &#39;b&#39;, &#39;c&#39;, &#39;h&#39;, &#39;o&#39;, &#39;l&#39;, &#39;k&#39;, &#39;g&#39;, &#39;a&#39;, &#39;l&#39;, &#39;j&#39;, &#39;b&#39;, &#39;g&#39;, &#39;g&#39;, &#39;k&#39;, &#39;e&#39;, &#39;f&#39;, &#39;l&#39;, &#39;g&#39;, &#39;k&#39;, &#39;\n&#39;]</code></pre>
+<h2 id="构建语言模型">构建语言模型</h2>
+<h3 id="梯度下降法">梯度下降法</h3>
+<p>本节实现随机梯度下降法的一步（包括梯度裁剪）。每次循环只使用一个训练样本，因此是随机梯度下降法。RNN常规的优化流程包括：<br>
+- 沿着RNN正传计算损失函数<br>
+- 沿着时间反传计算损失函数关于参数的梯度<br>
+- 如果需要，对梯度进行裁剪<br>
+- 利用梯度下降法更新参数</p>
+<p>已经提供的函数包括： <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">rnn_forward</span><span class="params">(X, Y, a_prev, parameters)</span>:</span></span><br><span class="line">    <span class="string">""" Performs the forward propagation through the RNN and computes the cross-entropy loss.</span></span><br><span class="line"><span class="string">    It returns the loss' value as well as a "cache" storing values to be used in the backpropagation."""</span></span><br><span class="line">    ....</span><br><span class="line">    <span class="keyword">return</span> loss, cache</span><br><span class="line">    </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">rnn_backward</span><span class="params">(X, Y, parameters, cache)</span>:</span></span><br><span class="line">    <span class="string">""" Performs the backward propagation through time to compute the gradients of the loss with respect</span></span><br><span class="line"><span class="string">    to the parameters. It returns also all the hidden states."""</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> gradients, a</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">update_parameters</span><span class="params">(parameters, gradients, learning_rate)</span>:</span></span><br><span class="line">    <span class="string">""" Updates parameters using the Gradient Descent Update Rule."""</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: optimize</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">optimize</span><span class="params">(X, Y, a_prev, parameters, learning_rate = <span class="number">0.01</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Execute one step of the optimization to train the model.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- list of integers, where each integer is a number that maps to a character in the vocabulary.</span></span><br><span class="line"><span class="string">    Y -- list of integers, exactly the same as X but shifted one index to the left.</span></span><br><span class="line"><span class="string">    a_prev -- previous hidden state.</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing:</span></span><br><span class="line"><span class="string">                        Wax -- Weight matrix multiplying the input, numpy array of shape (n_a, n_x)</span></span><br><span class="line"><span class="string">                        Waa -- Weight matrix multiplying the hidden state, numpy array of shape (n_a, n_a)</span></span><br><span class="line"><span class="string">                        Wya -- Weight matrix relating the hidden-state to the output, numpy array of shape (n_y, n_a)</span></span><br><span class="line"><span class="string">                        b --  Bias, numpy array of shape (n_a, 1)</span></span><br><span class="line"><span class="string">                        by -- Bias relating the hidden-state to the output, numpy array of shape (n_y, 1)</span></span><br><span class="line"><span class="string">    learning_rate -- learning rate for the model.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    loss -- value of the loss function (cross-entropy)</span></span><br><span class="line"><span class="string">    gradients -- python dictionary containing:</span></span><br><span class="line"><span class="string">                        dWax -- Gradients of input-to-hidden weights, of shape (n_a, n_x)</span></span><br><span class="line"><span class="string">                        dWaa -- Gradients of hidden-to-hidden weights, of shape (n_a, n_a)</span></span><br><span class="line"><span class="string">                        dWya -- Gradients of hidden-to-output weights, of shape (n_y, n_a)</span></span><br><span class="line"><span class="string">                        db -- Gradients of bias vector, of shape (n_a, 1)</span></span><br><span class="line"><span class="string">                        dby -- Gradients of output bias vector, of shape (n_y, 1)</span></span><br><span class="line"><span class="string">    a[len(X)-1] -- the last hidden state, of shape (n_a, 1)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Forward propagate through time (≈1 line)</span></span><br><span class="line">    loss, cache = rnn_forward(X, Y, a_prev, parameters)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Backpropagate through time (≈1 line)</span></span><br><span class="line">    gradients, a = rnn_backward(X, Y, parameters, cache)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Clip your gradients between -5 (min) and 5 (max) (≈1 line)</span></span><br><span class="line">    gradients = clip(gradients, <span class="number">5</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Update parameters (≈1 line)</span></span><br><span class="line">    parameters = update_parameters(parameters, gradients, learning_rate)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> loss, gradients, a[len(X)<span class="number">-1</span>]</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">np.random.seed(<span class="number">1</span>)</span><br><span class="line">vocab_size, n_a = <span class="number">27</span>, <span class="number">100</span></span><br><span class="line">a_prev = np.random.randn(n_a, <span class="number">1</span>)</span><br><span class="line">Wax, Waa, Wya = np.random.randn(n_a, vocab_size), np.random.randn(n_a, n_a), np.random.randn(vocab_size, n_a)</span><br><span class="line">b, by = np.random.randn(n_a, <span class="number">1</span>), np.random.randn(vocab_size, <span class="number">1</span>)</span><br><span class="line">parameters = &#123;<span class="string">"Wax"</span>: Wax, <span class="string">"Waa"</span>: Waa, <span class="string">"Wya"</span>: Wya, <span class="string">"b"</span>: b, <span class="string">"by"</span>: by&#125;</span><br><span class="line">X = [<span class="number">12</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">11</span>,<span class="number">22</span>,<span class="number">3</span>]</span><br><span class="line">Y = [<span class="number">4</span>,<span class="number">14</span>,<span class="number">11</span>,<span class="number">22</span>,<span class="number">25</span>, <span class="number">26</span>]</span><br><span class="line"></span><br><span class="line">loss, gradients, a_last = optimize(X, Y, a_prev, parameters, learning_rate = <span class="number">0.01</span>)</span><br><span class="line">print(<span class="string">"Loss ="</span>, loss)</span><br><span class="line">print(<span class="string">"gradients[\"dWaa\"][1][2] ="</span>, gradients[<span class="string">"dWaa"</span>][<span class="number">1</span>][<span class="number">2</span>])</span><br><span class="line">print(<span class="string">"np.argmax(gradients[\"dWax\"]) ="</span>, np.argmax(gradients[<span class="string">"dWax"</span>]))</span><br><span class="line">print(<span class="string">"gradients[\"dWya\"][1][2] ="</span>, gradients[<span class="string">"dWya"</span>][<span class="number">1</span>][<span class="number">2</span>])</span><br><span class="line">print(<span class="string">"gradients[\"db\"][4] ="</span>, gradients[<span class="string">"db"</span>][<span class="number">4</span>])</span><br><span class="line">print(<span class="string">"gradients[\"dby\"][1] ="</span>, gradients[<span class="string">"dby"</span>][<span class="number">1</span>])</span><br><span class="line">print(<span class="string">"a_last[4] ="</span>, a_last[<span class="number">4</span>])</span><br></pre></td></tr></table></figure>
+<pre><code>Loss = 126.503975722
+gradients[&quot;dWaa&quot;][1][2] = 0.194709315347
+np.argmax(gradients[&quot;dWax&quot;]) = 93
+gradients[&quot;dWya&quot;][1][2] = -0.007773876032
+gradients[&quot;db&quot;][4] = [-0.06809825]
+gradients[&quot;dby&quot;][1] = [ 0.01538192]
+a_last[4] = [-1.]</code></pre>
+<h3 id="训练模型">训练模型</h3>
+<p>规定恐龙名称数据集，数据集的每一行对应一个训练样本。随机梯度下降法每隔100步，随机采样10个名称，以查看算法如何工作。记住，训练前要随机重组数据集，以保证随机梯度下降法可以随机地访问训练样本。</p>
+<p>每个样本包含一个恐龙名称（字符串）。为了建立样本 (X, Y), 使用下面的代码: <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">index = j % len(examples)</span><br><span class="line">X = [<span class="keyword">None</span>] + [char_to_ix[ch] <span class="keyword">for</span> ch <span class="keyword">in</span> examples[index]] </span><br><span class="line">Y = X[<span class="number">1</span>:] + [char_to_ix[<span class="string">"\n"</span>]]</span><br></pre></td></tr></table></figure></p>
+<p>注意: <code>index= j % len(examples)</code>, 其中 <code>j = 1....num_iterations</code>,保证 <code>examples[index]</code> 一直是有效的 (<code>index</code> 小于 <code>len(examples)</code>). 第一个元素 <code>X</code> 为 <code>None</code> ，在 <code>rnn_forward()</code> 中设置为<span class="math inline">\(x^{\langle 0 \rangle} = \vec{0}\)</span>. 这样，保证了 <code>Y</code> 和 <code>X</code> 相同，但是往左移动了一个字符, 并在最后增加了字符 &quot;&quot;，以表示恐龙名称结束.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: model</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model</span><span class="params">(data, ix_to_char, char_to_ix, num_iterations = <span class="number">35000</span>, n_a = <span class="number">50</span>, dino_names = <span class="number">7</span>, vocab_size = <span class="number">27</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Trains the model and generates dinosaur names. </span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    data -- text corpus</span></span><br><span class="line"><span class="string">    ix_to_char -- dictionary that maps the index to a character</span></span><br><span class="line"><span class="string">    char_to_ix -- dictionary that maps a character to an index</span></span><br><span class="line"><span class="string">    num_iterations -- number of iterations to train the model for</span></span><br><span class="line"><span class="string">    n_a -- number of units of the RNN cell</span></span><br><span class="line"><span class="string">    dino_names -- number of dinosaur names you want to sample at each iteration. </span></span><br><span class="line"><span class="string">    vocab_size -- number of unique characters found in the text, size of the vocabulary</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- learned parameters</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Retrieve n_x and n_y from vocab_size</span></span><br><span class="line">    n_x, n_y = vocab_size, vocab_size</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize parameters</span></span><br><span class="line">    parameters = initialize_parameters(n_a, n_x, n_y)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize loss (this is required because we want to smooth our loss, don't worry about it)</span></span><br><span class="line">    loss = get_initial_loss(vocab_size, dino_names)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Build list of all dinosaur names (training examples).</span></span><br><span class="line">    <span class="keyword">with</span> open(<span class="string">"dinos.txt"</span>) <span class="keyword">as</span> f:</span><br><span class="line">        examples = f.readlines()</span><br><span class="line">    examples = [x.lower().strip() <span class="keyword">for</span> x <span class="keyword">in</span> examples]</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Shuffle list of all dinosaur names</span></span><br><span class="line">    np.random.seed(<span class="number">0</span>)</span><br><span class="line">    np.random.shuffle(examples)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize the hidden state of your LSTM</span></span><br><span class="line">    a_prev = np.zeros((n_a, <span class="number">1</span>))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Optimization loop</span></span><br><span class="line">    <span class="keyword">for</span> j <span class="keyword">in</span> range(num_iterations):</span><br><span class="line">        </span><br><span class="line">        <span class="comment">### START CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Use the hint above to define one training example (X,Y) (≈ 2 lines)</span></span><br><span class="line">        index = j % len(examples)</span><br><span class="line">        X = [<span class="keyword">None</span>] + [char_to_ix[ch] <span class="keyword">for</span> ch <span class="keyword">in</span> examples[index]]</span><br><span class="line">        Y = X[<span class="number">1</span>:] + [char_to_ix[<span class="string">"\n"</span>]]</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Perform one optimization step: Forward-prop -&gt; Backward-prop -&gt; Clip -&gt; Update parameters</span></span><br><span class="line">        <span class="comment"># Choose a learning rate of 0.01</span></span><br><span class="line">        curr_loss, gradients, a_prev = optimize(X, Y, a_prev, parameters, learning_rate = <span class="number">0.01</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Use a latency trick to keep the loss smooth. It happens here to accelerate the training.</span></span><br><span class="line">        loss = smooth(loss, curr_loss)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Every 2000 Iteration, generate "n" characters thanks to sample() to check if the model is learning properly</span></span><br><span class="line">        <span class="keyword">if</span> j % <span class="number">2000</span> == <span class="number">0</span>:</span><br><span class="line">            </span><br><span class="line">            print(<span class="string">'Iteration: %d, Loss: %f'</span> % (j, loss) + <span class="string">'\n'</span>)</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># The number of dinosaur names to print</span></span><br><span class="line">            seed = <span class="number">0</span></span><br><span class="line">            <span class="keyword">for</span> name <span class="keyword">in</span> range(dino_names):</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># Sample indices and print them</span></span><br><span class="line">                sampled_indices = sample(parameters, char_to_ix, seed)</span><br><span class="line">                print_sample(sampled_indices, ix_to_char)</span><br><span class="line">                </span><br><span class="line">                seed += <span class="number">1</span>  <span class="comment"># To get the same result for grading purposed, increment the seed by one. </span></span><br><span class="line">      </span><br><span class="line">            print(<span class="string">'\n'</span>)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">parameters = model(data, ix_to_char, char_to_ix)</span><br></pre></td></tr></table></figure>
+<pre><code>Iteration: 0, Loss: 23.087336
+
+Nkzxwtdmfqoeyhsqwasjkjvu
+Kneb
+Kzxwtdmfqoeyhsqwasjkjvu
+Neb
+Zxwtdmfqoeyhsqwasjkjvu
+Eb
+Xwtdmfqoeyhsqwasjkjvu
+
+
+Iteration: 2000, Loss: 27.884160
+
+Liusskeomnolxeros
+Hmdaairus
+Hytroligoraurus
+Lecalosapaus
+Xusicikoraurus
+Abalpsamantisaurus
+Tpraneronxeros
+
+
+Iteration: 4000, Loss: 25.901815
+
+Mivrosaurus
+Inee
+Ivtroplisaurus
+Mbaaisaurus
+Wusichisaurus
+Cabaselachus
+Toraperlethosdarenitochusthiamamumamaon
+
+
+Iteration: 6000, Loss: 24.608779
+
+Onwusceomosaurus
+Lieeaerosaurus
+Lxussaurus
+Oma
+Xusteonosaurus
+Eeahosaurus
+Toreonosaurus
+
+
+Iteration: 8000, Loss: 24.070350
+
+Onxusichepriuon
+Kilabersaurus
+Lutrodon
+Omaaerosaurus
+Xutrcheps
+Edaksoje
+Trodiktonus
+
+
+Iteration: 10000, Loss: 23.844446
+
+Onyusaurus
+Klecalosaurus
+Lustodon
+Ola
+Xusodonia
+Eeaeosaurus
+Troceosaurus
+
+
+Iteration: 12000, Loss: 23.291971
+
+Onyxosaurus
+Kica
+Lustrepiosaurus
+Olaagrraiansaurus
+Yuspangosaurus
+Eealosaurus
+Trognesaurus
+
+
+Iteration: 14000, Loss: 23.382339
+
+Meutromodromurus
+Inda
+Iutroinatorsaurus
+Maca
+Yusteratoptititan
+Ca
+Troclosaurus
+
+
+Iteration: 16000, Loss: 23.310540
+
+Meuspsapcosaurus
+Inda
+Iuspsarciiasauruimphis
+Macabosaurus
+Yusociman
+Caagosaurus
+Trrasaurus
+
+
+Iteration: 18000, Loss: 22.846780
+
+Phytrohekosaurus
+Mggaaeschachynthalus
+Mxsstarasomus
+Pegahosaurus
+Yusidon
+Ehantor
+Troma
+
+
+Iteration: 20000, Loss: 22.921921
+
+Meutroinepheusaurus
+Lola
+Lytrogonosaurus
+Macalosaurus
+Ytrpangricrlosaurus
+Elagosaurus
+Trochiqkaurus
+
+
+Iteration: 22000, Loss: 22.758659
+
+Meutrodon
+Lola
+Mustodon
+Necagpsancosaurus
+Yuspengromus
+Eiadrus
+Trochepomushus
+
+
+Iteration: 24000, Loss: 22.671906
+
+Mitrseitan
+Jogaacosaurus
+Kurroelathateraterachus
+Mecalosaurus
+Yusicheosaurus
+Eiaeosaurus
+Trodon
+
+
+Iteration: 26000, Loss: 22.628685
+
+Niusaurus
+Liceaitona
+Lytrodon
+Necagrona
+Ytrodon
+Ejaertalenthomenxtheychosaurus
+Trochinictititanhimus
+
+
+Iteration: 28000, Loss: 22.635401
+
+Plytosaurus
+Lmacaisaurus
+Mustocephictesaurus
+Pacaksela
+Xtspanesaurus
+Eiaestedantes
+Trocenitaudosantenithamus
+
+
+Iteration: 30000, Loss: 22.627572
+
+Piutysaurus
+Micaahus
+Mustodongoptes
+Pacagsicelosaurus
+Wustapisaurus
+Eg
+Trochesaurus
+
+
+Iteration: 32000, Loss: 22.250284
+
+Mautosaurus
+Kraballona
+Lyusianasaurus
+Macallona
+Xustanarhasauruiraplos
+Efaiosaurus
+Trodondonsaurukusaurukusaurus
+
+
+Iteration: 34000, Loss: 22.477635
+
+Nivosaurus
+Libaadosaurus
+Lutosaurus
+Nebahosaurus
+Wrosaurus
+Eiaeosaurus
+Spidonosaurus</code></pre>
+<h2 id="学莎士比亚写作">学莎士比亚写作</h2>
+<p>和根据恐龙名称数据集给恐龙取名字类似，我们也可以利用莎士比亚的诗集，学莎士比亚写诗。利用LSTM神经元，你可以学习文本中跨越很多个字符之间的依赖关系。这种长期的依赖关系对给恐龙取名字不重要，因为名字十分短。</p>
+<img src="/2018/04/21/58_RNN_langmodel/shakespeare.jpg" style="width:500;height:400px;">
+<caption>
+<center>
+莎士比亚像!
+</center>
+</caption>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> print_function</span><br><span class="line"><span class="keyword">from</span> keras.callbacks <span class="keyword">import</span> LambdaCallback</span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> Model, load_model, Sequential</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Dense, Activation, Dropout, Input, Masking</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> LSTM</span><br><span class="line"><span class="keyword">from</span> keras.utils.data_utils <span class="keyword">import</span> get_file</span><br><span class="line"><span class="keyword">from</span> keras.preprocessing.sequence <span class="keyword">import</span> pad_sequences</span><br><span class="line"><span class="keyword">from</span> shakespeare_utils <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> io</span><br></pre></td></tr></table></figure>
+<pre><code>Using TensorFlow backend.
+
+
+Loading text data...
+Creating training set...
+number of training examples: 31412
+Vectorizing training set...
+Loading model...
+WARNING:tensorflow:From /home/seisinv/anaconda3/envs/fwi_ai/lib/python3.5/site-packages/keras/backend/tensorflow_backend.py:1190: calling reduce_sum (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead
+WARNING:tensorflow:From /home/seisinv/anaconda3/envs/fwi_ai/lib/python3.5/site-packages/keras/backend/tensorflow_backend.py:1297: calling reduce_mean (from tensorflow.python.ops.math_ops) with keep_dims is deprecated and will be removed in a future version.
+Instructions for updating:
+keep_dims is deprecated, use keepdims instead</code></pre>
+<p>加载已经训练好的模型，该模型使用的训练集是<a href="shakespeare.txt"><em>&quot;The Sonnets&quot;</em></a>，已经迭代了大概1000次。可以在此基础上再迭代一次。训练结束后，输入一句话（少于40个字符），这个模型便会开始完成一首诗。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">print_callback = LambdaCallback(on_epoch_end=on_epoch_end)</span><br><span class="line"></span><br><span class="line">model.fit(x, y, batch_size=<span class="number">128</span>, epochs=<span class="number">1</span>, callbacks=[print_callback])</span><br></pre></td></tr></table></figure>
+<pre><code>Epoch 1/1
+31412/31412 [==============================] - 144s - loss: 2.7234   
+
+
+
+
+
+&lt;keras.callbacks.History at 0x7f8a219f9fd0&gt;</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Run this cell to try with different inputs without having to re-train the model </span></span><br><span class="line">generate_output()</span><br></pre></td></tr></table></figure>
+<pre><code>Write the beginning of your poem, the Shakespeare machine will complete it. Your input is: k
+
+
+Here is your poem: 
+
+k.
+and haply woomers from that thinger dose,
+which i ameng thes world the heart expors,
+have breat lesst wist&#39;seng with trilh, that now before,
+a swill mince theraw ant thy dasuin torde.
+ 
+
+
+lay nor repers manthl in haby thou sight,
+for that befair portoonss that the beind,
+love hall makile strenb which doth ever so,
+nor galtend with mind and sho send the belest,
+lerentew yith thes incey alonc whic</code></pre>
+<p>和前面给恐龙取名的RNN网络不同之处在于：<br>
+- 使用LSTM，而不是基本的RNN，获取更长范围的依赖关系<br>
+- 模型更深，两层LSTM模型<br>
+- 利用Keras，而不是python简化建模过程</p>
+<p>可以参考Keras团队在github上关于文本生成的实现：https://github.com/keras-team/keras/blob/master/examples/lstm_text_generation.py.</p>
+<h2 id="结论">结论</h2>
+<p>本文详细介绍了RNN网络的一个应用场景---文本生成模型。通过使用文本数据集，训练语言模型，通过采样函数，生成新的文本。根据模型所要求的依赖关系，可以选择是否使用长范围依赖的LSTM模型或者基本的RNN模型。</p>
+<h2 id="参考文献">参考文献</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a><br>
+</li>
+<li>本作业的想法来自Andrej Karpathy的实现: https://gist.github.com/karpathy/d4dee566867f8291f086. 想了解更多内容，可以参考 Karpathy <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">博客</a>.<br>
+</li>
+<li>关于作诗模型，本实现参考了Keras团队的实现过程，具体参考: https://github.com/keras-team/keras/blob/master/examples/lstm_text_generation.py</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/循环神经网络/" rel="tag"># 循环神经网络</a>
+          
+            <a href="/tags/LSTM/" rel="tag"># LSTM</a>
+          
+            <a href="/tags/梯度裁剪/" rel="tag"># 梯度裁剪</a>
+          
+            <a href="/tags/采样/" rel="tag"># 采样</a>
+          
+            <a href="/tags/文本生成模型/" rel="tag"># 文本生成模型</a>
+          
+            <a href="/tags/作诗模型/" rel="tag"># 作诗模型</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/22/32_PySpark数据准备/" rel="next" title="PySpark数据准备">
+                <i class="fa fa-chevron-left"></i> PySpark数据准备
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/04/21/59_RNN_Music/" rel="prev" title="循环神经网络生成音乐">
+                循环神经网络生成音乐 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#问题描述"><span class="nav-number">1.</span> <span class="nav-text">问题描述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据集和预处理"><span class="nav-number">1.1.</span> <span class="nav-text">数据集和预处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#模型简介"><span class="nav-number">1.2.</span> <span class="nav-text">模型简介</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建立模型的基本元素"><span class="nav-number">2.</span> <span class="nav-text">建立模型的基本元素</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#优化循环中裁剪梯度"><span class="nav-number">2.1.</span> <span class="nav-text">优化循环中裁剪梯度</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#采样"><span class="nav-number">2.2.</span> <span class="nav-text">采样</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#构建语言模型"><span class="nav-number">3.</span> <span class="nav-text">构建语言模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#梯度下降法"><span class="nav-number">3.1.</span> <span class="nav-text">梯度下降法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#训练模型"><span class="nav-number">3.2.</span> <span class="nav-text">训练模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#学莎士比亚写作"><span class="nav-number">4.</span> <span class="nav-text">学莎士比亚写作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">5.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">6.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

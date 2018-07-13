@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Spark,分布式计算,机器学习,自然语言处理,主题提取," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文从预测婴儿生存几率这个例子出发，介绍PySpark中ML包在数据加载、数据转换、特征提取、机器学习算法等方面的功能。并介绍了逻辑回归、聚类、自然语言处理、主题提取等方面的应用。">
+<meta name="keywords" content="Spark,分布式计算,机器学习,自然语言处理,主题提取">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PySpark+ML简介">
+<meta property="og:url" content="http://yoursite.com/2018/03/22/34_PySpark_ML/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文从预测婴儿生存几率这个例子出发，介绍PySpark中ML包在数据加载、数据转换、特征提取、机器学习算法等方面的功能。并介绍了逻辑回归、聚类、自然语言处理、主题提取等方面的应用。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-03-22T02:19:57.459Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PySpark+ML简介">
+<meta name="twitter:description" content="本文从预测婴儿生存几率这个例子出发，介绍PySpark中ML包在数据加载、数据转换、特征提取、机器学习算法等方面的功能。并介绍了逻辑回归、聚类、自然语言处理、主题提取等方面的应用。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/22/34_PySpark_ML/"/>
+
+
+
+
+
+  <title>PySpark+ML简介 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/22/34_PySpark_ML/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">PySpark+ML简介</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-22T10:19:57+08:00">
+                2018-03-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/高性能计算/" itemprop="url" rel="index">
+                    <span itemprop="name">高性能计算</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文从预测婴儿生存几率这个例子出发，介绍PySpark中ML包在数据加载、数据转换、特征提取、机器学习算法等方面的功能。并介绍了逻辑回归、聚类、自然语言处理、主题提取等方面的应用。 <a id="more"></a></p>
+<h2 id="预测婴儿生存几率">预测婴儿生存几率</h2>
+<h3 id="数据加载">数据加载</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.sql.types <span class="keyword">as</span> typ</span><br><span class="line"></span><br><span class="line">labels = [</span><br><span class="line">    (<span class="string">'INFANT_ALIVE_AT_REPORT'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'BIRTH_PLACE'</span>, typ.StringType()),</span><br><span class="line">    (<span class="string">'MOTHER_AGE_YEARS'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'FATHER_COMBINED_AGE'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'CIG_BEFORE'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'CIG_1_TRI'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'CIG_2_TRI'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'CIG_3_TRI'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'MOTHER_HEIGHT_IN'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'MOTHER_PRE_WEIGHT'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'MOTHER_DELIVERY_WEIGHT'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'MOTHER_WEIGHT_GAIN'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'DIABETES_PRE'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'DIABETES_GEST'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'HYP_TENS_PRE'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'HYP_TENS_GEST'</span>, typ.IntegerType()),</span><br><span class="line">    (<span class="string">'PREV_BIRTH_PRETERM'</span>, typ.IntegerType())</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">schema = typ.StructType([</span><br><span class="line">    typ.StructField(e[<span class="number">0</span>], e[<span class="number">1</span>], <span class="keyword">False</span>) <span class="keyword">for</span> e <span class="keyword">in</span> labels</span><br><span class="line">])</span><br><span class="line"></span><br><span class="line">births = spark.read.csv(<span class="string">'births_transformed.csv.gz'</span>, </span><br><span class="line">                        header=<span class="keyword">True</span>, </span><br><span class="line">                        schema=schema)</span><br></pre></td></tr></table></figure>
+<h3 id="数据转换">数据转换</h3>
+<p>数据类型转换</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.ml.feature <span class="keyword">as</span> ft</span><br><span class="line"></span><br><span class="line">births = births \</span><br><span class="line">    .withColumn(       <span class="string">'BIRTH_PLACE_INT'</span>, </span><br><span class="line">                births[<span class="string">'BIRTH_PLACE'</span>] \</span><br><span class="line">                    .cast(typ.IntegerType()))</span><br></pre></td></tr></table></figure>
+<p>one-hot编码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">encoder = ft.OneHotEncoder(</span><br><span class="line">    inputCol=<span class="string">'BIRTH_PLACE_INT'</span>, </span><br><span class="line">    outputCol=<span class="string">'BIRTH_PLACE_VEC'</span>)</span><br></pre></td></tr></table></figure>
+<p>将所有特征合并成一列</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">featuresCreator = ft.VectorAssembler(</span><br><span class="line">    inputCols=[</span><br><span class="line">        col[<span class="number">0</span>] </span><br><span class="line">        <span class="keyword">for</span> col </span><br><span class="line">        <span class="keyword">in</span> labels[<span class="number">2</span>:]] + \</span><br><span class="line">    [encoder.getOutputCol()], </span><br><span class="line">    outputCol=<span class="string">'features'</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<h3 id="建立评估模型">建立评估模型</h3>
+<p>逻辑回归模型</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.ml.classification <span class="keyword">as</span> cl</span><br><span class="line"></span><br><span class="line">logistic = cl.LogisticRegression(</span><br><span class="line">    maxIter=<span class="number">10</span>, </span><br><span class="line">    regParam=<span class="number">0.01</span>, </span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="创建管道">创建管道</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pyspark.ml <span class="keyword">import</span> Pipeline</span><br><span class="line"></span><br><span class="line">pipeline = Pipeline(stages=[</span><br><span class="line">        encoder, </span><br><span class="line">        featuresCreator, </span><br><span class="line">        logistic</span><br><span class="line">    ])</span><br></pre></td></tr></table></figure>
+<h3 id="模型拟合">模型拟合</h3>
+<p>数据分割</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">births_train, births_test = births \</span><br><span class="line">    .randomSplit([<span class="number">0.7</span>, <span class="number">0.3</span>], seed=<span class="number">666</span>)</span><br></pre></td></tr></table></figure>
+<p>训练过程</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">model = pipeline.fit(births_train)</span><br><span class="line">test_model = model.transform(births_test)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">测试过程</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">test_model.take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(INFANT_ALIVE_AT_REPORT=0, BIRTH_PLACE=&#39;1&#39;, MOTHER_AGE_YEARS=13, FATHER_COMBINED_AGE=99, CIG_BEFORE=0, CIG_1_TRI=0, CIG_2_TRI=0, CIG_3_TRI=0, MOTHER_HEIGHT_IN=66, MOTHER_PRE_WEIGHT=133, MOTHER_DELIVERY_WEIGHT=135, MOTHER_WEIGHT_GAIN=2, DIABETES_PRE=0, DIABETES_GEST=0, HYP_TENS_PRE=0, HYP_TENS_GEST=0, PREV_BIRTH_PRETERM=0, BIRTH_PLACE_INT=1, BIRTH_PLACE_VEC=SparseVector(9, {1: 1.0}), features=SparseVector(24, {0: 13.0, 1: 99.0, 6: 66.0, 7: 133.0, 8: 135.0, 9: 2.0, 16: 1.0}), rawPrediction=DenseVector([1.0573, -1.0573]), probability=DenseVector([0.7422, 0.2578]), prediction=0.0)]</code></pre>
+<h3 id="模型评估">模型评估</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.ml.evaluation <span class="keyword">as</span> ev</span><br><span class="line"></span><br><span class="line">evaluator = ev.BinaryClassificationEvaluator(</span><br><span class="line">    rawPredictionCol=<span class="string">'probability'</span>, </span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br><span class="line"></span><br><span class="line">print(evaluator.evaluate(test_model, </span><br><span class="line">     &#123;evaluator.metricName: <span class="string">'areaUnderROC'</span>&#125;))</span><br><span class="line">print(evaluator.evaluate(test_model, &#123;evaluator.metricName: <span class="string">'areaUnderPR'</span>&#125;))</span><br></pre></td></tr></table></figure>
+<pre><code>0.7401301847095617
+0.7139354342365674</code></pre>
+<h3 id="保存模型">保存模型</h3>
+<p>保存管道定义</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pipelinePath = <span class="string">'./infant_oneHotEncoder_Logistic_Pipeline'</span></span><br><span class="line">pipeline.write().overwrite().save(pipelinePath)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">loadedPipeline = Pipeline.load(pipelinePath)</span><br><span class="line">loadedPipeline \</span><br><span class="line">    .fit(births_train)\</span><br><span class="line">    .transform(births_test)\</span><br><span class="line">    .take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(INFANT_ALIVE_AT_REPORT=0, BIRTH_PLACE=&#39;1&#39;, MOTHER_AGE_YEARS=13, FATHER_COMBINED_AGE=99, CIG_BEFORE=0, CIG_1_TRI=0, CIG_2_TRI=0, CIG_3_TRI=0, MOTHER_HEIGHT_IN=66, MOTHER_PRE_WEIGHT=133, MOTHER_DELIVERY_WEIGHT=135, MOTHER_WEIGHT_GAIN=2, DIABETES_PRE=0, DIABETES_GEST=0, HYP_TENS_PRE=0, HYP_TENS_GEST=0, PREV_BIRTH_PRETERM=0, BIRTH_PLACE_INT=1, BIRTH_PLACE_VEC=SparseVector(9, {1: 1.0}), features=SparseVector(24, {0: 13.0, 1: 99.0, 6: 66.0, 7: 133.0, 8: 135.0, 9: 2.0, 16: 1.0}), rawPrediction=DenseVector([1.0573, -1.0573]), probability=DenseVector([0.7422, 0.2578]), prediction=0.0)]</code></pre>
+<p>保存模型</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pyspark.ml <span class="keyword">import</span> PipelineModel</span><br><span class="line"></span><br><span class="line">modelPath = <span class="string">'./infant_oneHotEncoder_Logistic_PipelineModel'</span></span><br><span class="line">model.write().overwrite().save(modelPath)</span><br><span class="line"></span><br><span class="line">loadedPipelineModel = PipelineModel.load(modelPath)</span><br><span class="line">test_loadedModel = loadedPipelineModel.transform(births_test)</span><br><span class="line">test_loadedModel.take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(INFANT_ALIVE_AT_REPORT=0, BIRTH_PLACE=&#39;1&#39;, MOTHER_AGE_YEARS=13, FATHER_COMBINED_AGE=99, CIG_BEFORE=0, CIG_1_TRI=0, CIG_2_TRI=0, CIG_3_TRI=0, MOTHER_HEIGHT_IN=66, MOTHER_PRE_WEIGHT=133, MOTHER_DELIVERY_WEIGHT=135, MOTHER_WEIGHT_GAIN=2, DIABETES_PRE=0, DIABETES_GEST=0, HYP_TENS_PRE=0, HYP_TENS_GEST=0, PREV_BIRTH_PRETERM=0, BIRTH_PLACE_INT=1, BIRTH_PLACE_VEC=SparseVector(9, {1: 1.0}), features=SparseVector(24, {0: 13.0, 1: 99.0, 6: 66.0, 7: 133.0, 8: 135.0, 9: 2.0, 16: 1.0}), rawPrediction=DenseVector([1.0573, -1.0573]), probability=DenseVector([0.7422, 0.2578]), prediction=0.0)]</code></pre>
+<h2 id="超参调优">超参调优</h2>
+<h3 id="网格搜索">网格搜索</h3>
+<p>第一步，定义搜索范围</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.ml.tuning <span class="keyword">as</span> tune</span><br><span class="line"></span><br><span class="line">logistic = cl.LogisticRegression(</span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br><span class="line"></span><br><span class="line">grid = tune.ParamGridBuilder() \</span><br><span class="line">    .addGrid(logistic.maxIter,  </span><br><span class="line">             [<span class="number">2</span>, <span class="number">10</span>, <span class="number">50</span>]) \</span><br><span class="line">    .addGrid(logistic.regParam, </span><br><span class="line">             [<span class="number">0.01</span>, <span class="number">0.05</span>, <span class="number">0.3</span>]) \</span><br><span class="line">    .build()</span><br></pre></td></tr></table></figure>
+<p>第二步，建立评估模型</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">evaluator = ev.BinaryClassificationEvaluator(</span><br><span class="line">    rawPredictionCol=<span class="string">'probability'</span>, </span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br></pre></td></tr></table></figure>
+<p>第三步，设置验证参数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cv = tune.CrossValidator(</span><br><span class="line">    estimator=logistic, </span><br><span class="line">    estimatorParamMaps=grid, </span><br><span class="line">    evaluator=evaluator</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">第四步，建立转换管道</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pipeline = Pipeline(stages=[encoder,featuresCreator])</span><br><span class="line">data_transformer = pipeline.fit(births_train)</span><br></pre></td></tr></table></figure>
+<p>第五步，寻找最优超参集</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cvModel = cv.fit(data_transformer.transform(births_train))</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">data_train = data_transformer \</span><br><span class="line">    .transform(births_test)</span><br><span class="line">results = cvModel.transform(data_train)</span><br><span class="line"></span><br><span class="line">print(evaluator.evaluate(results, </span><br><span class="line">     &#123;evaluator.metricName: <span class="string">'areaUnderROC'</span>&#125;))</span><br><span class="line">print(evaluator.evaluate(results, </span><br><span class="line">     &#123;evaluator.metricName: <span class="string">'areaUnderPR'</span>&#125;))</span><br></pre></td></tr></table></figure>
+<pre><code>0.7404959803309813
+0.7157971108486731</code></pre>
+<p>提取对应的超参</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">results = [</span><br><span class="line">    (</span><br><span class="line">        [</span><br><span class="line">            &#123;key.name: paramValue&#125; </span><br><span class="line">            <span class="keyword">for</span> key, paramValue </span><br><span class="line">            <span class="keyword">in</span> zip(</span><br><span class="line">                params.keys(), </span><br><span class="line">                params.values())</span><br><span class="line">        ], metric</span><br><span class="line">    ) </span><br><span class="line">    <span class="keyword">for</span> params, metric </span><br><span class="line">    <span class="keyword">in</span> zip(</span><br><span class="line">        cvModel.getEstimatorParamMaps(), </span><br><span class="line">        cvModel.avgMetrics</span><br><span class="line">    )</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">sorted(results, </span><br><span class="line">       key=<span class="keyword">lambda</span> el: el[<span class="number">1</span>], </span><br><span class="line">       reverse=<span class="keyword">True</span>)[<span class="number">0</span>]</span><br></pre></td></tr></table></figure>
+<pre><code>([{&#39;maxIter&#39;: 50}, {&#39;regParam&#39;: 0.01}], 0.7386350804981119)</code></pre>
+<h3 id="训练-验证集划分">训练-验证集划分</h3>
+<p>使用卡方验证法选择前五个特征</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">selector = ft.ChiSqSelector(</span><br><span class="line">    numTopFeatures=<span class="number">5</span>, </span><br><span class="line">    featuresCol=featuresCreator.getOutputCol(), </span><br><span class="line">    outputCol=<span class="string">'selectedFeatures'</span>,</span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">logistic = cl.LogisticRegression(</span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>,</span><br><span class="line">    featuresCol=<span class="string">'selectedFeatures'</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">pipeline = Pipeline(stages=[encoder,featuresCreator,selector])</span><br><span class="line">data_transformer = pipeline.fit(births_train)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">tvs = tune.TrainValidationSplit(</span><br><span class="line">    estimator=logistic, </span><br><span class="line">    estimatorParamMaps=grid, </span><br><span class="line">    evaluator=evaluator</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">tvsModel = tvs.fit(</span><br><span class="line">    data_transformer \</span><br><span class="line">        .transform(births_train)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">data_train = data_transformer \</span><br><span class="line">    .transform(births_test)</span><br><span class="line">results = tvsModel.transform(data_train)</span><br><span class="line"></span><br><span class="line">print(evaluator.evaluate(results, </span><br><span class="line">     &#123;evaluator.metricName: <span class="string">'areaUnderROC'</span>&#125;))</span><br><span class="line">print(evaluator.evaluate(results, </span><br><span class="line">     &#123;evaluator.metricName: <span class="string">'areaUnderPR'</span>&#125;))</span><br></pre></td></tr></table></figure>
+<pre><code>0.7294296314442145
+0.703775950281647</code></pre>
+<p>从上面的结果可以看出，使用较少的特征，模型表现差一些，但是并不明显。</p>
+<h2 id="pyspark-ml的其他功能">PySpark ML的其他功能</h2>
+<h3 id="nlp相关的特征提取">NLP相关的特征提取</h3>
+<p>以一个简单的数据集为例</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">text_data = spark.createDataFrame([</span><br><span class="line">    [<span class="string">'''Machine learning can be applied to a wide variety </span></span><br><span class="line"><span class="string">        of data types, such as vectors, text, images, and </span></span><br><span class="line"><span class="string">        structured data. This API adopts the DataFrame from </span></span><br><span class="line"><span class="string">        Spark SQL in order to support a variety of data types.'''</span>],</span><br><span class="line">    [<span class="string">'''DataFrame supports many basic and structured types; </span></span><br><span class="line"><span class="string">        see the Spark SQL datatype reference for a list of </span></span><br><span class="line"><span class="string">        supported types. In addition to the types listed in </span></span><br><span class="line"><span class="string">        the Spark SQL guide, DataFrame can use ML Vector types.'''</span>],</span><br><span class="line">    [<span class="string">'''A DataFrame can be created either implicitly or </span></span><br><span class="line"><span class="string">        explicitly from a regular RDD. See the code examples </span></span><br><span class="line"><span class="string">        below and the Spark SQL programming guide for examples.'''</span>],</span><br><span class="line">    [<span class="string">'''Columns in a DataFrame are named. The code examples </span></span><br><span class="line"><span class="string">        below use names such as "text," "features," and "label."'''</span>]</span><br><span class="line">], [<span class="string">'input'</span>])</span><br></pre></td></tr></table></figure>
+<p>将文本划分为单词，并删除符号，改成小写。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">tokenizer = ft.RegexTokenizer(</span><br><span class="line">    inputCol=<span class="string">'input'</span>, </span><br><span class="line">    outputCol=<span class="string">'input_arr'</span>, </span><br><span class="line">    pattern=<span class="string">'\s+|[,.\"]'</span>)</span><br><span class="line"></span><br><span class="line">tok = tokenizer \</span><br><span class="line">    .transform(text_data) \</span><br><span class="line">    .select(<span class="string">'input_arr'</span>) </span><br><span class="line"></span><br><span class="line">tok.take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(input_arr=[&#39;machine&#39;, &#39;learning&#39;, &#39;can&#39;, &#39;be&#39;, &#39;applied&#39;, &#39;to&#39;, &#39;a&#39;, &#39;wide&#39;, &#39;variety&#39;, &#39;of&#39;, &#39;data&#39;, &#39;types&#39;, &#39;such&#39;, &#39;as&#39;, &#39;vectors&#39;, &#39;text&#39;, &#39;images&#39;, &#39;and&#39;, &#39;structured&#39;, &#39;data&#39;, &#39;this&#39;, &#39;api&#39;, &#39;adopts&#39;, &#39;the&#39;, &#39;dataframe&#39;, &#39;from&#39;, &#39;spark&#39;, &#39;sql&#39;, &#39;in&#39;, &#39;order&#39;, &#39;to&#39;, &#39;support&#39;, &#39;a&#39;, &#39;variety&#39;, &#39;of&#39;, &#39;data&#39;, &#39;types&#39;])]</code></pre>
+<p>删除无用的单词，如a,be等</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">stopwords = ft.StopWordsRemover(</span><br><span class="line">    inputCol=tokenizer.getOutputCol(), </span><br><span class="line">    outputCol=<span class="string">'input_stop'</span>)</span><br><span class="line"></span><br><span class="line">stopwords.transform(tok).select(<span class="string">'input_stop'</span>).take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(input_stop=[&#39;machine&#39;, &#39;learning&#39;, &#39;applied&#39;, &#39;wide&#39;, &#39;variety&#39;, &#39;data&#39;, &#39;types&#39;, &#39;vectors&#39;, &#39;text&#39;, &#39;images&#39;, &#39;structured&#39;, &#39;data&#39;, &#39;api&#39;, &#39;adopts&#39;, &#39;dataframe&#39;, &#39;spark&#39;, &#39;sql&#39;, &#39;order&#39;, &#39;support&#39;, &#39;variety&#39;, &#39;data&#39;, &#39;types&#39;])]</code></pre>
+<p>构建NGram模型和管道</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">ngram = ft.NGram(n=<span class="number">2</span>, </span><br><span class="line">    inputCol=stopwords.getOutputCol(), </span><br><span class="line">    outputCol=<span class="string">"nGrams"</span>)</span><br><span class="line"></span><br><span class="line">pipeline = Pipeline(stages=[tokenizer, stopwords, ngram])</span><br><span class="line"></span><br><span class="line">data_ngram = pipeline \</span><br><span class="line">    .fit(text_data) \</span><br><span class="line">    .transform(text_data)</span><br><span class="line">    </span><br><span class="line">data_ngram.select(<span class="string">'nGrams'</span>).take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(nGrams=[&#39;machine learning&#39;, &#39;learning applied&#39;, &#39;applied wide&#39;, &#39;wide variety&#39;, &#39;variety data&#39;, &#39;data types&#39;, &#39;types vectors&#39;, &#39;vectors text&#39;, &#39;text images&#39;, &#39;images structured&#39;, &#39;structured data&#39;, &#39;data api&#39;, &#39;api adopts&#39;, &#39;adopts dataframe&#39;, &#39;dataframe spark&#39;, &#39;spark sql&#39;, &#39;sql order&#39;, &#39;order support&#39;, &#39;support variety&#39;, &#39;variety data&#39;, &#39;data types&#39;])]</code></pre>
+<h3 id="离散化连续变量">离散化连续变量</h3>
+<p>创建一个简单的数据集</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">x = np.arange(<span class="number">0</span>, <span class="number">100</span>)</span><br><span class="line">x = x / <span class="number">100.0</span> * np.pi * <span class="number">4</span></span><br><span class="line">y = x * np.sin(x / <span class="number">1.764</span>) + <span class="number">20.1234</span></span><br><span class="line"></span><br><span class="line">schema = typ.StructType([</span><br><span class="line">    typ.StructField(<span class="string">'continuous_var'</span>, </span><br><span class="line">                    typ.DoubleType(), </span><br><span class="line">                    <span class="keyword">False</span></span><br><span class="line">   )</span><br><span class="line">])</span><br><span class="line"></span><br><span class="line">data = spark.createDataFrame([[float(e), ] <span class="keyword">for</span> e <span class="keyword">in</span> y], schema=schema)</span><br></pre></td></tr></table></figure>
+<p>将连续变量离散化为5个类别</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">discretizer = ft.QuantileDiscretizer(</span><br><span class="line">    numBuckets=<span class="number">5</span>, </span><br><span class="line">    inputCol=<span class="string">'continuous_var'</span>, </span><br><span class="line">    outputCol=<span class="string">'discretized'</span>)</span><br></pre></td></tr></table></figure>
+<p>查看每个类别的平均值</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">data_discretized = discretizer.fit(data).transform(data)</span><br><span class="line"></span><br><span class="line">data_discretized \</span><br><span class="line">    .groupby(<span class="string">'discretized'</span>)\</span><br><span class="line">    .mean(<span class="string">'continuous_var'</span>)\</span><br><span class="line">    .sort(<span class="string">'discretized'</span>)\</span><br><span class="line">    .collect()</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(discretized=0.0, avg(continuous_var)=12.314360733007915),
+ Row(discretized=1.0, avg(continuous_var)=16.046244793347466),
+ Row(discretized=2.0, avg(continuous_var)=20.25079947835259),
+ Row(discretized=3.0, avg(continuous_var)=22.040988218437327),
+ Row(discretized=4.0, avg(continuous_var)=24.264824657002865)]</code></pre>
+<h3 id="标准化连续特征">标准化连续特征</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">vectorizer = ft.VectorAssembler(</span><br><span class="line">    inputCols=[<span class="string">'continuous_var'</span>], </span><br><span class="line">    outputCol= <span class="string">'continuous_vec'</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">normalizer = ft.StandardScaler(</span><br><span class="line">    inputCol=vectorizer.getOutputCol(), </span><br><span class="line">    outputCol=<span class="string">'normalized'</span>, </span><br><span class="line">    withMean=<span class="keyword">True</span>,</span><br><span class="line">    withStd=<span class="keyword">True</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">pipeline = Pipeline(stages=[vectorizer, normalizer])</span><br><span class="line">data_standardized = pipeline.fit(data).transform(data)</span><br></pre></td></tr></table></figure>
+<h2 id="随机森林进行分类">随机森林进行分类</h2>
+<p>本节采用随机森林算法预测婴儿存活率</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.sql.functions <span class="keyword">as</span> func</span><br><span class="line"></span><br><span class="line">births = births.withColumn(</span><br><span class="line">    <span class="string">'INFANT_ALIVE_AT_REPORT'</span>, </span><br><span class="line">    func.col(<span class="string">'INFANT_ALIVE_AT_REPORT'</span>).cast(typ.DoubleType())</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">births_train, births_test = births \</span><br><span class="line">    .randomSplit([<span class="number">0.7</span>, <span class="number">0.3</span>], seed=<span class="number">666</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">classifier = cl.RandomForestClassifier(</span><br><span class="line">    numTrees=<span class="number">5</span>, </span><br><span class="line">    maxDepth=<span class="number">5</span>, </span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br><span class="line"></span><br><span class="line">pipeline = Pipeline(</span><br><span class="line">    stages=[</span><br><span class="line">        encoder,</span><br><span class="line">        featuresCreator, </span><br><span class="line">        classifier])</span><br><span class="line"></span><br><span class="line">model = pipeline.fit(births_train)</span><br><span class="line">test = model.transform(births_test)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">evaluator = ev.BinaryClassificationEvaluator(</span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br><span class="line">print(evaluator.evaluate(test, </span><br><span class="line">    &#123;evaluator.metricName: <span class="string">"areaUnderROC"</span>&#125;))</span><br><span class="line">print(evaluator.evaluate(test, </span><br><span class="line">    &#123;evaluator.metricName: <span class="string">"areaUnderPR"</span>&#125;))</span><br></pre></td></tr></table></figure>
+<pre><code>0.7625231306933616
+0.7474287997552782</code></pre>
+<p>使用一棵树进行分类</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">classifier = cl.DecisionTreeClassifier(</span><br><span class="line">    maxDepth=<span class="number">5</span>, </span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br><span class="line">pipeline = Pipeline(stages=[</span><br><span class="line">        encoder,</span><br><span class="line">        featuresCreator, </span><br><span class="line">        classifier]</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">model = pipeline.fit(births_train)</span><br><span class="line">test = model.transform(births_test)</span><br><span class="line"></span><br><span class="line">evaluator = ev.BinaryClassificationEvaluator(</span><br><span class="line">    labelCol=<span class="string">'INFANT_ALIVE_AT_REPORT'</span>)</span><br><span class="line">print(evaluator.evaluate(test, </span><br><span class="line">     &#123;evaluator.metricName: <span class="string">"areaUnderROC"</span>&#125;))</span><br><span class="line">print(evaluator.evaluate(test, </span><br><span class="line">     &#123;evaluator.metricName: <span class="string">"areaUnderPR"</span>&#125;))</span><br></pre></td></tr></table></figure>
+<pre><code>0.7582781726635287
+0.7787580540118526</code></pre>
+<h2 id="聚类">聚类</h2>
+<h3 id="簇查找">簇查找</h3>
+<p>使用k-means方法在数据集中查找数据相似性</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.ml.clustering <span class="keyword">as</span> clus</span><br><span class="line"></span><br><span class="line">kmeans = clus.KMeans(k = <span class="number">5</span>, </span><br><span class="line">    featuresCol=<span class="string">'features'</span>)</span><br><span class="line"></span><br><span class="line">pipeline = Pipeline(stages=[</span><br><span class="line">        encoder,</span><br><span class="line">        featuresCreator, </span><br><span class="line">        kmeans]</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">model = pipeline.fit(births_train)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">test = model.transform(births_test)</span><br><span class="line"></span><br><span class="line">test \</span><br><span class="line">    .groupBy(<span class="string">'prediction'</span>) \</span><br><span class="line">    .agg(&#123;</span><br><span class="line">        <span class="string">'*'</span>: <span class="string">'count'</span>, </span><br><span class="line">        <span class="string">'MOTHER_HEIGHT_IN'</span>: <span class="string">'avg'</span></span><br><span class="line">    &#125;).collect()</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(prediction=1, avg(MOTHER_HEIGHT_IN)=83.91154791154791, count(1)=407),
+ Row(prediction=3, avg(MOTHER_HEIGHT_IN)=66.64658634538152, count(1)=249),
+ Row(prediction=4, avg(MOTHER_HEIGHT_IN)=64.31597357170618, count(1)=10292),
+ Row(prediction=2, avg(MOTHER_HEIGHT_IN)=67.69473684210526, count(1)=475),
+ Row(prediction=0, avg(MOTHER_HEIGHT_IN)=64.43472584856397, count(1)=2298)]</code></pre>
+<h3 id="主题挖掘">主题挖掘</h3>
+<p>一个简单的例子</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line">text_data = spark.createDataFrame([</span><br><span class="line">    [<span class="string">'''To make a computer do anything, you have to write a </span></span><br><span class="line"><span class="string">    computer program. To write a computer program, you have </span></span><br><span class="line"><span class="string">    to tell the computer, step by step, exactly what you want </span></span><br><span class="line"><span class="string">    it to do. The computer then "executes" the program, </span></span><br><span class="line"><span class="string">    following each step mechanically, to accomplish the end </span></span><br><span class="line"><span class="string">    goal. When you are telling the computer what to do, you </span></span><br><span class="line"><span class="string">    also get to choose how it's going to do it. That's where </span></span><br><span class="line"><span class="string">    computer algorithms come in. The algorithm is the basic </span></span><br><span class="line"><span class="string">    technique used to get the job done. Let's follow an </span></span><br><span class="line"><span class="string">    example to help get an understanding of the algorithm </span></span><br><span class="line"><span class="string">    concept.'''</span>],</span><br><span class="line">    [<span class="string">'''Laptop computers use batteries to run while not </span></span><br><span class="line"><span class="string">    connected to mains. When we overcharge or overheat </span></span><br><span class="line"><span class="string">    lithium ion batteries, the materials inside start to </span></span><br><span class="line"><span class="string">    break down and produce bubbles of oxygen, carbon dioxide, </span></span><br><span class="line"><span class="string">    and other gases. Pressure builds up, and the hot battery </span></span><br><span class="line"><span class="string">    swells from a rectangle into a pillow shape. Sometimes </span></span><br><span class="line"><span class="string">    the phone involved will operate afterwards. Other times </span></span><br><span class="line"><span class="string">    it will die. And occasionally—kapow! To see what's </span></span><br><span class="line"><span class="string">    happening inside the battery when it swells, the CLS team </span></span><br><span class="line"><span class="string">    used an x-ray technology called computed tomography.'''</span>],</span><br><span class="line">    [<span class="string">'''This technology describes a technique where touch </span></span><br><span class="line"><span class="string">    sensors can be placed around any side of a device </span></span><br><span class="line"><span class="string">    allowing for new input sources. The patent also notes </span></span><br><span class="line"><span class="string">    that physical buttons (such as the volume controls) could </span></span><br><span class="line"><span class="string">    be replaced by these embedded touch sensors. In essence </span></span><br><span class="line"><span class="string">    Apple could drop the current buttons and move towards </span></span><br><span class="line"><span class="string">    touch-enabled areas on the device for the existing UI. It </span></span><br><span class="line"><span class="string">    could also open up areas for new UI paradigms, such as </span></span><br><span class="line"><span class="string">    using the back of the smartphone for quick scrolling or </span></span><br><span class="line"><span class="string">    page turning.'''</span>],</span><br><span class="line">    [<span class="string">'''The National Park Service is a proud protector of </span></span><br><span class="line"><span class="string">    America’s lands. Preserving our land not only safeguards </span></span><br><span class="line"><span class="string">    the natural environment, but it also protects the </span></span><br><span class="line"><span class="string">    stories, cultures, and histories of our ancestors. As we </span></span><br><span class="line"><span class="string">    face the increasingly dire consequences of climate </span></span><br><span class="line"><span class="string">    change, it is imperative that we continue to expand </span></span><br><span class="line"><span class="string">    America’s protected lands under the oversight of the </span></span><br><span class="line"><span class="string">    National Park Service. Doing so combats climate change </span></span><br><span class="line"><span class="string">    and allows all American’s to visit, explore, and learn </span></span><br><span class="line"><span class="string">    from these treasured places for generations to come. It </span></span><br><span class="line"><span class="string">    is critical that President Obama acts swiftly to preserve </span></span><br><span class="line"><span class="string">    land that is at risk of external threats before the end </span></span><br><span class="line"><span class="string">    of his term as it has become blatantly clear that the </span></span><br><span class="line"><span class="string">    next administration will not hold the same value for our </span></span><br><span class="line"><span class="string">    environment over the next four years.'''</span>],</span><br><span class="line">    [<span class="string">'''The National Park Foundation, the official charitable </span></span><br><span class="line"><span class="string">    partner of the National Park Service, enriches America’s </span></span><br><span class="line"><span class="string">    national parks and programs through the support of </span></span><br><span class="line"><span class="string">    private citizens, park lovers, stewards of nature, </span></span><br><span class="line"><span class="string">    history enthusiasts, and wilderness adventurers. </span></span><br><span class="line"><span class="string">    Chartered by Congress in 1967, the Foundation grew out of </span></span><br><span class="line"><span class="string">    a legacy of park protection that began over a century </span></span><br><span class="line"><span class="string">    ago, when ordinary citizens took action to establish and </span></span><br><span class="line"><span class="string">    protect our national parks. Today, the National Park </span></span><br><span class="line"><span class="string">    Foundation carries on the tradition of early park </span></span><br><span class="line"><span class="string">    advocates, big thinkers, doers and dreamers—from John </span></span><br><span class="line"><span class="string">    Muir and Ansel Adams to President Theodore Roosevelt.'''</span>],</span><br><span class="line">    [<span class="string">'''Australia has over 500 national parks. Over 28 </span></span><br><span class="line"><span class="string">    million hectares of land is designated as national </span></span><br><span class="line"><span class="string">    parkland, accounting for almost four per cent of </span></span><br><span class="line"><span class="string">    Australia's land areas. In addition, a further six per </span></span><br><span class="line"><span class="string">    cent of Australia is protected and includes state </span></span><br><span class="line"><span class="string">    forests, nature parks and conservation reserves.National </span></span><br><span class="line"><span class="string">    parks are usually large areas of land that are protected </span></span><br><span class="line"><span class="string">    because they have unspoilt landscapes and a diverse </span></span><br><span class="line"><span class="string">    number of native plants and animals. This means that </span></span><br><span class="line"><span class="string">    commercial activities such as farming are prohibited and </span></span><br><span class="line"><span class="string">    human activity is strictly monitored.'''</span>]</span><br><span class="line">], [<span class="string">'documents'</span>])</span><br></pre></td></tr></table></figure>
+<p>和前面NLP的例子类似，首先对文本进行处理</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">tokenizer = ft.RegexTokenizer(</span><br><span class="line">    inputCol=<span class="string">'documents'</span>, </span><br><span class="line">    outputCol=<span class="string">'input_arr'</span>, </span><br><span class="line">    pattern=<span class="string">'\s+|[,.\"]'</span>)</span><br><span class="line"></span><br><span class="line">stopwords = ft.StopWordsRemover(</span><br><span class="line">    inputCol=tokenizer.getOutputCol(), </span><br><span class="line">    outputCol=<span class="string">'input_stop'</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">stringIndexer = ft.CountVectorizer(</span><br><span class="line">    inputCol=stopwords.getOutputCol(), </span><br><span class="line">    outputCol=<span class="string">"input_indexed"</span>)</span><br><span class="line"></span><br><span class="line">tokenized = stopwords \</span><br><span class="line">    .transform(</span><br><span class="line">        tokenizer\</span><br><span class="line">            .transform(text_data)</span><br><span class="line">    )</span><br><span class="line">    </span><br><span class="line">stringIndexer \</span><br><span class="line">    .fit(tokenized)\</span><br><span class="line">    .transform(tokenized)\</span><br><span class="line">    .select(<span class="string">'input_indexed'</span>)\</span><br><span class="line">    .take(<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(input_indexed=SparseVector(257, {2: 7.0, 6: 1.0, 7: 3.0, 10: 3.0, 11: 3.0, 19: 1.0, 27: 1.0, 31: 1.0, 32: 2.0, 35: 2.0, 40: 1.0, 51: 1.0, 56: 1.0, 65: 1.0, 66: 1.0, 72: 1.0, 74: 1.0, 77: 1.0, 81: 1.0, 83: 1.0, 96: 1.0, 106: 1.0, 111: 1.0, 123: 1.0, 128: 1.0, 163: 1.0, 173: 1.0, 204: 1.0, 206: 1.0, 210: 1.0, 250: 1.0, 253: 1.0, 256: 1.0})),
+ Row(input_indexed=SparseVector(257, {18: 2.0, 19: 1.0, 22: 1.0, 28: 2.0, 30: 2.0, 38: 2.0, 45: 1.0, 46: 1.0, 48: 1.0, 50: 1.0, 59: 1.0, 60: 1.0, 62: 1.0, 68: 1.0, 76: 1.0, 92: 1.0, 100: 1.0, 103: 1.0, 107: 1.0, 108: 1.0, 110: 1.0, 113: 1.0, 121: 1.0, 126: 1.0, 131: 1.0, 140: 1.0, 145: 1.0, 146: 1.0, 147: 1.0, 150: 1.0, 151: 1.0, 160: 1.0, 178: 1.0, 179: 1.0, 186: 1.0, 187: 1.0, 191: 1.0, 193: 1.0, 198: 1.0, 199: 1.0, 202: 1.0, 226: 1.0, 232: 1.0, 240: 1.0, 243: 1.0, 247: 1.0, 252: 1.0}))]</code></pre>
+<p>采用LDA（Latent Dirichlet Allocation）模型提取主题</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clustering = clus.LDA(k=<span class="number">2</span>, optimizer=<span class="string">'online'</span>, featuresCol=stringIndexer.getOutputCol())</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pipeline = Pipeline(stages=[</span><br><span class="line">        tokenizer, </span><br><span class="line">        stopwords,</span><br><span class="line">        stringIndexer, </span><br><span class="line">        clustering]</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">topics = pipeline \</span><br><span class="line">    .fit(text_data) \</span><br><span class="line">    .transform(text_data)</span><br><span class="line"></span><br><span class="line">topics.select(<span class="string">'topicDistribution'</span>).collect()</span><br></pre></td></tr></table></figure>
+<pre><code>[Row(topicDistribution=DenseVector([0.2357, 0.7643])),
+ Row(topicDistribution=DenseVector([0.0362, 0.9638])),
+ Row(topicDistribution=DenseVector([0.986, 0.014])),
+ Row(topicDistribution=DenseVector([0.039, 0.961])),
+ Row(topicDistribution=DenseVector([0.3513, 0.6487])),
+ Row(topicDistribution=DenseVector([0.9715, 0.0285]))]</code></pre>
+<h2 id="回归模型">回归模型</h2>
+<p>选择一些特征预测属性<code>MOTHER_WEIGHT_GAIN</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">features = [<span class="string">'MOTHER_AGE_YEARS'</span>,<span class="string">'MOTHER_HEIGHT_IN'</span>,</span><br><span class="line">            <span class="string">'MOTHER_PRE_WEIGHT'</span>,<span class="string">'DIABETES_PRE'</span>,</span><br><span class="line">            <span class="string">'DIABETES_GEST'</span>,<span class="string">'HYP_TENS_PRE'</span>, </span><br><span class="line">            <span class="string">'HYP_TENS_GEST'</span>, <span class="string">'PREV_BIRTH_PRETERM'</span>,</span><br><span class="line">            <span class="string">'CIG_BEFORE'</span>,<span class="string">'CIG_1_TRI'</span>, <span class="string">'CIG_2_TRI'</span>, </span><br><span class="line">            <span class="string">'CIG_3_TRI'</span></span><br><span class="line">           ]</span><br></pre></td></tr></table></figure>
+<p>将所有的属性合并为一列，然后优选最重要的6个特征</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">featuresCreator = ft.VectorAssembler(</span><br><span class="line">    inputCols=[col <span class="keyword">for</span> col <span class="keyword">in</span> features[<span class="number">1</span>:]], </span><br><span class="line">    outputCol=<span class="string">'features'</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">selector = ft.ChiSqSelector(</span><br><span class="line">    numTopFeatures=<span class="number">6</span>, </span><br><span class="line">    outputCol=<span class="string">"selectedFeatures"</span>, </span><br><span class="line">    labelCol=<span class="string">'MOTHER_WEIGHT_GAIN'</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>采用梯度提升决策树预测增加的体重</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pyspark.ml.regression <span class="keyword">as</span> reg</span><br><span class="line"></span><br><span class="line">regressor = reg.GBTRegressor(</span><br><span class="line">    maxIter=<span class="number">15</span>, </span><br><span class="line">    maxDepth=<span class="number">3</span>,</span><br><span class="line">    labelCol=<span class="string">'MOTHER_WEIGHT_GAIN'</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pipeline = Pipeline(stages=[</span><br><span class="line">        featuresCreator, </span><br><span class="line">        selector,</span><br><span class="line">        regressor])</span><br><span class="line"></span><br><span class="line">weightGain = pipeline.fit(births_train)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">evaluator = ev.RegressionEvaluator(</span><br><span class="line">    predictionCol=<span class="string">"prediction"</span>, </span><br><span class="line">    labelCol=<span class="string">'MOTHER_WEIGHT_GAIN'</span>)</span><br><span class="line"></span><br><span class="line">print(evaluator.evaluate(</span><br><span class="line">     weightGain.transform(births_test), </span><br><span class="line">    &#123;evaluator.metricName: <span class="string">'r2'</span>&#125;))</span><br></pre></td></tr></table></figure>
+<pre><code>0.48862170400240335</code></pre>
+<p>可以看出，这个模型表行并不好，应该是和输入特征有关，如果没有更好的输入特征，该模型很难有更好的表现。</p>
+<h2 id="小结">小结</h2>
+<ul>
+<li>spark+ML使用转换器、评估器以及它们在管道中的作用<br>
+</li>
+<li>本文涉及到了属性提取和转换、逻辑回归、聚类和回归等机器学习方面的议题<br>
+</li>
+<li>本文简单介绍了超参优选</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>PySpark实战指南，Drabas and Lee著, 栾云杰等译</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spark/" rel="tag"># Spark</a>
+          
+            <a href="/tags/分布式计算/" rel="tag"># 分布式计算</a>
+          
+            <a href="/tags/机器学习/" rel="tag"># 机器学习</a>
+          
+            <a href="/tags/自然语言处理/" rel="tag"># 自然语言处理</a>
+          
+            <a href="/tags/主题提取/" rel="tag"># 主题提取</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/22/33_PySpark_MLlib/" rel="next" title="PySpark+MLlib简介">
+                <i class="fa fa-chevron-left"></i> PySpark+MLlib简介
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/22/32_PySpark数据准备/" rel="prev" title="PySpark数据准备">
+                PySpark数据准备 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#预测婴儿生存几率"><span class="nav-number">1.</span> <span class="nav-text">预测婴儿生存几率</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据加载"><span class="nav-number">1.1.</span> <span class="nav-text">数据加载</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据转换"><span class="nav-number">1.2.</span> <span class="nav-text">数据转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立评估模型"><span class="nav-number">1.3.</span> <span class="nav-text">建立评估模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建管道"><span class="nav-number">1.4.</span> <span class="nav-text">创建管道</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#模型拟合"><span class="nav-number">1.5.</span> <span class="nav-text">模型拟合</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#模型评估"><span class="nav-number">1.6.</span> <span class="nav-text">模型评估</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#保存模型"><span class="nav-number">1.7.</span> <span class="nav-text">保存模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#超参调优"><span class="nav-number">2.</span> <span class="nav-text">超参调优</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#网格搜索"><span class="nav-number">2.1.</span> <span class="nav-text">网格搜索</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#训练-验证集划分"><span class="nav-number">2.2.</span> <span class="nav-text">训练-验证集划分</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pyspark-ml的其他功能"><span class="nav-number">3.</span> <span class="nav-text">PySpark ML的其他功能</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#nlp相关的特征提取"><span class="nav-number">3.1.</span> <span class="nav-text">NLP相关的特征提取</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#离散化连续变量"><span class="nav-number">3.2.</span> <span class="nav-text">离散化连续变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#标准化连续特征"><span class="nav-number">3.3.</span> <span class="nav-text">标准化连续特征</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#随机森林进行分类"><span class="nav-number">4.</span> <span class="nav-text">随机森林进行分类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#聚类"><span class="nav-number">5.</span> <span class="nav-text">聚类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#簇查找"><span class="nav-number">5.1.</span> <span class="nav-text">簇查找</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#主题挖掘"><span class="nav-number">5.2.</span> <span class="nav-text">主题挖掘</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回归模型"><span class="nav-number">6.</span> <span class="nav-text">回归模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">7.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">8.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

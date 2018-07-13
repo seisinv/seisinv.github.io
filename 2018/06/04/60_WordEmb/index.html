@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="词编码,词类推,去歧视," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="由于训练词编码模型十分耗时，大多数机器学习实用主义者都是加载已经训练好的模型。本文同样是使用训练好的词向量，利用余弦相似度计算相似度，解决词类比问题（比如男人和女人类似于国王和王后）。另外，本文也修改词编码方式解决性别歧视问题。">
+<meta name="keywords" content="词编码,词类推,去歧视">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于词编码模型进行词类推和去歧视">
+<meta property="og:url" content="http://yoursite.com/2018/06/04/60_WordEmb/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="由于训练词编码模型十分耗时，大多数机器学习实用主义者都是加载已经训练好的模型。本文同样是使用训练好的词向量，利用余弦相似度计算相似度，解决词类比问题（比如男人和女人类似于国王和王后）。另外，本文也修改词编码方式解决性别歧视问题。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/60_WordEmb/cosine_sim.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/60_WordEmb/neutral.png">
+<meta property="og:image" content="http://yoursite.com/2018/06/04/60_WordEmb/equalize10.png">
+<meta property="og:updated_time" content="2018-06-04T14:10:47.120Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于词编码模型进行词类推和去歧视">
+<meta name="twitter:description" content="由于训练词编码模型十分耗时，大多数机器学习实用主义者都是加载已经训练好的模型。本文同样是使用训练好的词向量，利用余弦相似度计算相似度，解决词类比问题（比如男人和女人类似于国王和王后）。另外，本文也修改词编码方式解决性别歧视问题。">
+<meta name="twitter:image" content="http://yoursite.com/2018/06/04/60_WordEmb/cosine_sim.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/06/04/60_WordEmb/"/>
+
+
+
+
+
+  <title>基于词编码模型进行词类推和去歧视 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/04/60_WordEmb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">基于词编码模型进行词类推和去歧视</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-06-04T22:10:47+08:00">
+                2018-06-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>由于训练词编码模型十分耗时，大多数机器学习实用主义者都是<strong>加载已经训练好的模型</strong>。本文同样是使用训练好的词向量，利用余弦相似度计算相似度，解决<strong>词类比问题</strong>（比如男人和女人类似于国王和王后）。另外，本文也修改词编码方式<strong>解决性别歧视</strong>问题。 <a id="more"></a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> w2v_utils <span class="keyword">import</span> *</span><br></pre></td></tr></table></figure>
+<pre><code>Using TensorFlow backend.</code></pre>
+<p>本文使用50维的GolVe向量作为词向量。下面加载词编码模型。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">words, word_to_vec_map = read_glove_vecs(<span class="string">'model_data/glove.6B.50d.txt'</span>)</span><br></pre></td></tr></table></figure>
+<p>加载后得到：<br>
+- <code>words</code>: 单词表<br>
+- <code>word_to_vec_map</code>: 将单词映射到GloVe向量的字典</p>
+<p>你已经看到了，one-hot向量无法获取两个单词是否意思相近。而GloVe向量可以提供更多有意义的信息。</p>
+<h2 id="余弦相似度">余弦相似度</h2>
+<p>给定两个编码后的词向量<span class="math inline">\(u\)</span>和<span class="math inline">\(v\)</span>, 余弦相似度定义为：</p>
+<p><span class="math display">\[\text{CosineSimilarity(u, v)} = \frac {u . v} {||u||_2 ||v||_2} = cos(\theta) \tag{1}\]</span></p>
+<p>其中 <span class="math inline">\(u.v\)</span> 为两个向量之间的点积 (或内积), <span class="math inline">\(||u||_2\)</span> 是向量<span class="math inline">\(u\)</span>的模 (或长度) , <span class="math inline">\(\theta\)</span> 是两个向量 <span class="math inline">\(u\)</span> 和 <span class="math inline">\(v\)</span>的夹角. 相似度依赖于 <span class="math inline">\(u\)</span> 和 <span class="math inline">\(v\)</span>的夹角. 如果 <span class="math inline">\(u\)</span> 和 <span class="math inline">\(v\)</span> 相似, 那么余弦相似度接近1; 如果它们不相似, 余弦相似度很小.</p>
+<img src="/2018/06/04/60_WordEmb/cosine_sim.png" style="width:800px;height:250px;">
+<caption>
+<center>
+<strong>图 1</strong>: 两个向量的夹角度量它们的相似度
+</center>
+</caption>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: cosine_similarity</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">cosine_similarity</span><span class="params">(u, v)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Cosine similarity reflects the degree of similariy between u and v</span></span><br><span class="line"><span class="string">        </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">        u -- a word vector of shape (n,)          </span></span><br><span class="line"><span class="string">        v -- a word vector of shape (n,)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">        cosine_similarity -- the cosine similarity between u and v defined by the formula above.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    distance = <span class="number">0.0</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Compute the dot product between u and v (≈1 line)</span></span><br><span class="line">    dot = np.dot(u,v)</span><br><span class="line">    <span class="comment"># Compute the L2 norm of u (≈1 line)</span></span><br><span class="line">    norm_u = np.sqrt(np.sum(u*u))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Compute the L2 norm of v (≈1 line)</span></span><br><span class="line">    norm_v = np.sqrt(np.sum(v*v))</span><br><span class="line">    <span class="comment"># Compute the cosine similarity defined by formula (1) (≈1 line)</span></span><br><span class="line">    cosine_similarity = dot/norm_u/norm_v</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> cosine_similarity</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">father = word_to_vec_map[<span class="string">"father"</span>]</span><br><span class="line">mother = word_to_vec_map[<span class="string">"mother"</span>]</span><br><span class="line">ball = word_to_vec_map[<span class="string">"ball"</span>]</span><br><span class="line">crocodile = word_to_vec_map[<span class="string">"crocodile"</span>]</span><br><span class="line">france = word_to_vec_map[<span class="string">"france"</span>]</span><br><span class="line">italy = word_to_vec_map[<span class="string">"italy"</span>]</span><br><span class="line">paris = word_to_vec_map[<span class="string">"paris"</span>]</span><br><span class="line">rome = word_to_vec_map[<span class="string">"rome"</span>]</span><br><span class="line"></span><br><span class="line">print(<span class="string">"cosine_similarity(father, mother) = "</span>, cosine_similarity(father, mother))</span><br><span class="line">print(<span class="string">"cosine_similarity(ball, crocodile) = "</span>,cosine_similarity(ball, crocodile))</span><br><span class="line">print(<span class="string">"cosine_similarity(france - paris, rome - italy) = "</span>,cosine_similarity(france - paris, rome - italy))</span><br></pre></td></tr></table></figure>
+<pre><code>cosine_similarity(father, mother) =  0.890903844289
+cosine_similarity(ball, crocodile) =  0.274392462614
+cosine_similarity(france - paris, rome - italy) =  -0.675147930817</code></pre>
+<h2 id="词类推">词类推</h2>
+<p>在词类推任务中，需要完成<font color="brown">&quot;<em>a</em> is to <em>b</em> as <em>c</em> is to <strong>____</strong>&quot;</font>。一个例子是<font color="brown"> '<em>man</em> is to <em>woman</em> as <em>king</em> is to <em>queen</em>' </font>。具体的说，该任务是寻找<em>d</em>, 使得相关的词向量 <span class="math inline">\(e_a, e_b, e_c, e_d\)</span> 满足: <span class="math inline">\(e_b - e_a \approx e_d - e_c\)</span>. 这里使用余弦相似度计算 <span class="math inline">\(e_b - e_a\)</span> 和 <span class="math inline">\(e_d - e_c\)</span> 之间的相似度.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: complete_analogy</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">complete_analogy</span><span class="params">(word_a, word_b, word_c, word_to_vec_map)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Performs the word analogy task as explained above: a is to b as c is to ____. </span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    word_a -- a word, string</span></span><br><span class="line"><span class="string">    word_b -- a word, string</span></span><br><span class="line"><span class="string">    word_c -- a word, string</span></span><br><span class="line"><span class="string">    word_to_vec_map -- dictionary that maps words to their corresponding vectors. </span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    best_word --  the word such that v_b - v_a is close to v_best_word - v_c, as measured by cosine similarity</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># convert words to lower case</span></span><br><span class="line">    word_a, word_b, word_c = word_a.lower(), word_b.lower(), word_c.lower()</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Get the word embeddings v_a, v_b and v_c (≈1-3 lines)</span></span><br><span class="line">    e_a, e_b, e_c = word_to_vec_map[word_a], word_to_vec_map[word_b], word_to_vec_map[word_c]</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    words = word_to_vec_map.keys()</span><br><span class="line">    max_cosine_sim = <span class="number">-100</span>              <span class="comment"># Initialize max_cosine_sim to a large negative number</span></span><br><span class="line">    best_word = <span class="keyword">None</span>                   <span class="comment"># Initialize best_word with None, it will help keep track of the word to output</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># loop over the whole word vector set</span></span><br><span class="line">    <span class="keyword">for</span> w <span class="keyword">in</span> words:        </span><br><span class="line">        <span class="comment"># to avoid best_word being one of the input words, pass on them.</span></span><br><span class="line">        <span class="keyword">if</span> w <span class="keyword">in</span> [word_a, word_b, word_c] :</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">### START CODE HERE ###</span></span><br><span class="line">        <span class="comment"># Compute cosine similarity between the vector (e_b - e_a) and the vector ((w's vector representation) - e_c)  (≈1 line)</span></span><br><span class="line">        cosine_sim = cosine_similarity(e_b-e_a+e_c,word_to_vec_map[w])</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># If the cosine_sim is more than the max_cosine_sim seen so far,</span></span><br><span class="line">            <span class="comment"># then: set the new max_cosine_sim to the current cosine_sim and the best_word to the current word (≈3 lines)</span></span><br><span class="line">        <span class="keyword">if</span> cosine_sim &gt; max_cosine_sim:</span><br><span class="line">            max_cosine_sim = cosine_sim</span><br><span class="line">            best_word = w</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> best_word</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">triads_to_try = [(<span class="string">'italy'</span>, <span class="string">'italian'</span>, <span class="string">'spain'</span>), (<span class="string">'india'</span>, <span class="string">'delhi'</span>, <span class="string">'japan'</span>), (<span class="string">'man'</span>, <span class="string">'woman'</span>, <span class="string">'boy'</span>), (<span class="string">'small'</span>, <span class="string">'smaller'</span>, <span class="string">'large'</span>)]</span><br><span class="line"><span class="keyword">for</span> triad <span class="keyword">in</span> triads_to_try:</span><br><span class="line">    <span class="keyword">print</span> (<span class="string">'&#123;&#125; -&gt; &#123;&#125; :: &#123;&#125; -&gt; &#123;&#125;'</span>.format( *triad, complete_analogy(*triad,word_to_vec_map)))</span><br></pre></td></tr></table></figure>
+<pre><code>italy -&gt; italian :: spain -&gt; spanish
+india -&gt; delhi :: japan -&gt; tokyo
+man -&gt; woman :: boy -&gt; girl
+small -&gt; smaller :: large -&gt; larger</code></pre>
+<p><strong>小结</strong>：</p>
+<ul>
+<li>计算两个向量之间的相似度可以采用余弦相似度<br>
+</li>
+<li>在NLP中，第一步往往使用训练好的词向量</li>
+</ul>
+<h2 id="去除词向量中的歧视">去除词向量中的歧视</h2>
+<p>首先计算词向量中关于性别的向量，可以用<span class="math inline">\(g = e_{woman}-e_{man}\)</span>近似，当然，可以分别计算<span class="math inline">\(g_1 = e_{mother}-e_{father}\)</span>, <span class="math inline">\(g_2 = e_{girl}-e_{boy}\)</span>,，然后平均。本文采用简单的<span class="math inline">\(g = e_{woman}-e_{man}\)</span>在编码空间中表示“相别”的概念。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">g = word_to_vec_map[<span class="string">'woman'</span>] - word_to_vec_map[<span class="string">'man'</span>]</span><br><span class="line">print(g)</span><br></pre></td></tr></table></figure>
+<pre><code>[-0.087144    0.2182     -0.40986    -0.03922    -0.1032      0.94165
+ -0.06042     0.32988     0.46144    -0.35962     0.31102    -0.86824
+  0.96006     0.01073     0.24337     0.08193    -1.02722    -0.21122
+  0.695044   -0.00222     0.29106     0.5053     -0.099454    0.40445
+  0.30181     0.1355     -0.0606     -0.07131    -0.19245    -0.06115
+ -0.3204      0.07165    -0.13337    -0.25068714 -0.14293    -0.224957
+ -0.149       0.048882    0.12191    -0.27362    -0.165476   -0.20426
+  0.54376    -0.271425   -0.10245    -0.32108     0.2516     -0.33455
+ -0.04371     0.01258   ]</code></pre>
+<p>下面分别计算不同的单词和向量<span class="math inline">\(g\)</span>的余弦相似度。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">print</span> (<span class="string">'List of names and their similarities with constructed vector:'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># girls and boys name</span></span><br><span class="line">name_list = [<span class="string">'john'</span>, <span class="string">'marie'</span>, <span class="string">'sophie'</span>, <span class="string">'ronaldo'</span>, <span class="string">'priya'</span>, <span class="string">'rahul'</span>, <span class="string">'danielle'</span>, <span class="string">'reza'</span>, <span class="string">'katy'</span>, <span class="string">'yasmin'</span>]</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> w <span class="keyword">in</span> name_list:</span><br><span class="line">    <span class="keyword">print</span> (w, cosine_similarity(word_to_vec_map[w], g))</span><br></pre></td></tr></table></figure>
+<pre><code>List of names and their similarities with constructed vector:
+john -0.23163356146
+marie 0.315597935396
+sophie 0.318687898594
+ronaldo -0.312447968503
+priya 0.17632041839
+rahul -0.169154710392
+danielle 0.243932992163
+reza -0.079304296722
+katy 0.283106865957
+yasmin 0.233138577679</code></pre>
+<p>可以看出，女性的名称和<span class="math inline">\(g\)</span>的余弦相似度为正，男性的名称和<span class="math inline">\(g\)</span>的余弦相似度为负。</p>
+<p>下面再试试别的单词</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">print(<span class="string">'Other words and their similarities:'</span>)</span><br><span class="line">word_list = [<span class="string">'lipstick'</span>, <span class="string">'guns'</span>, <span class="string">'science'</span>, <span class="string">'arts'</span>, <span class="string">'literature'</span>, <span class="string">'warrior'</span>,<span class="string">'doctor'</span>, <span class="string">'tree'</span>, <span class="string">'receptionist'</span>, </span><br><span class="line">             <span class="string">'technology'</span>,  <span class="string">'fashion'</span>, <span class="string">'teacher'</span>, <span class="string">'engineer'</span>, <span class="string">'pilot'</span>, <span class="string">'computer'</span>, <span class="string">'singer'</span>]</span><br><span class="line"><span class="keyword">for</span> w <span class="keyword">in</span> word_list:</span><br><span class="line">    <span class="keyword">print</span> (w, cosine_similarity(word_to_vec_map[w], g))</span><br></pre></td></tr></table></figure>
+<pre><code>Other words and their similarities:
+lipstick 0.276919162564
+guns -0.18884855679
+science -0.0608290654093
+arts 0.00818931238588
+literature 0.0647250443346
+warrior -0.209201646411
+doctor 0.118952894109
+tree -0.0708939917548
+receptionist 0.330779417506
+technology -0.131937324476
+fashion 0.0356389462577
+teacher 0.179209234318
+engineer -0.0803928049452
+pilot 0.00107644989919
+computer -0.103303588739
+singer 0.185005181365</code></pre>
+<p>可以发现，结果带有明显的性别歧视。例如，计算机和男性相近，而文学和女性相近。</p>
+<p>线面采用<a href="https://arxiv.org/abs/1607.06520" target="_blank" rel="noopener">Boliukbasi et al., 2016</a>提出的方法减少这些向量的歧视性。注意到一些单词对，比如&quot;actor&quot;/&quot;actress&quot; 或者 &quot;grandmother&quot;/&quot;grandfather&quot;指定了性别，而其他的词，比如&quot;receptionist&quot; 或 &quot;technology&quot;，则是中性的，也即和性别无关。我们需要区别处理这两类单词。</p>
+<h3 id="对无性别意义的单词进行中性化处理">对无性别意义的单词进行中性化处理</h3>
+<p>下图显示如何进行中性化处理。如果用50维空间进行词编码，该50维可以分为两部分：歧视方向<span class="math inline">\(g\)</span>，和剩余的49维（或称为<span class="math inline">\(g_{\perp}\)</span>）。在线性代数中，49维向量<span class="math inline">\(g_{\perp}\)</span>和向量<span class="math inline">\(g\)</span>正交。中性化处理是指，将词向量在<span class="math inline">\(g\)</span>方向置零，只保留剩下的49维向量<span class="math inline">\(e_{receptionist}^{debiased}\)</span>。</p>
+<p>尽管<span class="math inline">\(g_{\perp}\)</span>是49维的，但是为了显示方便，这里用1维的轴表示。</p>
+<img src="/2018/06/04/60_WordEmb/neutral.png" style="width:800px;height:300px;">
+<caption>
+<center>
+<strong>图 2</strong>: &quot;receptionist&quot;的词向量在中性化处理前后对比.
+</center>
+</caption>
+<p>具体的计算步骤是：</p>
+<p><span class="math display">\[e^{bias\_component} = \frac{e \cdot g}{||g||_2^2} * g\tag{2}\]</span> <span class="math display">\[e^{debiased} = e - e^{bias\_component}\tag{3}\]</span></p>
+<p>实际上，上面的操作相当于将<span class="math inline">\(e\)</span>投影到方向<span class="math inline">\(g\)</span>上，得到<span class="math inline">\(e^{bias\_component}\)</span>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">neutralize</span><span class="params">(word, g, word_to_vec_map)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Removes the bias of "word" by projecting it on the space orthogonal to the bias axis. </span></span><br><span class="line"><span class="string">    This function ensures that gender neutral words are zero in the gender subspace.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">        word -- string indicating the word to debias</span></span><br><span class="line"><span class="string">        g -- numpy-array of shape (50,), corresponding to the bias axis (such as gender)</span></span><br><span class="line"><span class="string">        word_to_vec_map -- dictionary mapping words to their corresponding vectors.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">        e_debiased -- neutralized word vector representation of the input "word"</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Select word vector representation of "word". Use word_to_vec_map. (≈ 1 line)</span></span><br><span class="line">    e = word_to_vec_map[word]</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Compute e_biascomponent using the formula give above. (≈ 1 line)</span></span><br><span class="line">    e_biascomponent = np.dot(e, g)*g/np.sum(g**<span class="number">2</span>)</span><br><span class="line"> </span><br><span class="line">    <span class="comment"># Neutralize e by substracting e_biascomponent from it </span></span><br><span class="line">    <span class="comment"># e_debiased should be equal to its orthogonal projection. (≈ 1 line)</span></span><br><span class="line">    e_debiased = e - e_biascomponent</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> e_debiased</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">e = <span class="string">"receptionist"</span></span><br><span class="line">print(<span class="string">"cosine similarity between "</span> + e + <span class="string">" and g, before neutralizing: "</span>, cosine_similarity(word_to_vec_map[<span class="string">"receptionist"</span>], g))</span><br><span class="line"></span><br><span class="line">e_debiased = neutralize(<span class="string">"receptionist"</span>, g, word_to_vec_map)</span><br><span class="line">print(<span class="string">"cosine similarity between "</span> + e + <span class="string">" and g, after neutralizing: "</span>, cosine_similarity(e_debiased, g))</span><br></pre></td></tr></table></figure>
+<pre><code>cosine similarity between receptionist and g, before neutralizing:  0.330779417506
+cosine similarity between receptionist and g, after neutralizing:  -8.52425655987e-17</code></pre>
+<h3 id="对带性别意义的词中心化处理">对带性别意义的词中心化处理</h3>
+<p>去歧视也需要应用于像&quot;actress&quot; 和 &quot;actor&quot; 这样的单词对。该操作称为中心化，使得两个单词之间仅仅存在性别上的差异。一个具体的例子是：假如&quot;actress&quot; 和&quot;babysit&quot; 比&quot;actor&quot;和&quot;babysit&quot;之间更近。通过中性化处理，&quot;babysit&quot;和性别无关，但是无法保证&quot;actor&quot;和&quot;actress&quot; 到&quot;babysit&quot;的距离相等。中心化可以处理这个问题。</p>
+<p>中心化的基本想法是，保证该对单词到49维向量<span class="math inline">\(g_\perp\)</span>的距离相等。这样，也保证了这两个单词到<span class="math inline">\(e_{receptionist}^{debiased}\)</span>的距离相等，或者到其他任何中性化之后的词相等。</p>
+<p><img src="/2018/06/04/60_WordEmb/equalize10.png" style="width:800px;height:400px;"></p>
+<p>具体的计算公式为：</p>
+<p><span class="math display">\[ \mu = \frac{e_{w1} + e_{w2}}{2}\tag{4}\]</span></p>
+<p><span class="math display">\[ \mu_{B} = \frac {\mu \cdot \text{bias_axis}}{||\text{bias_axis}||_2^2} *\text{bias_axis}
+\tag{5}\]</span></p>
+<p><span class="math display">\[\mu_{\perp} = \mu - \mu_{B} \tag{6}\]</span></p>
+<p><span class="math display">\[ e_{w1B} = \frac {e_{w1} \cdot \text{bias_axis}}{||\text{bias_axis}||_2^2} *\text{bias_axis}
+\tag{7}\]</span> <span class="math display">\[ e_{w2B} = \frac {e_{w2} \cdot \text{bias_axis}}{||\text{bias_axis}||_2^2} *\text{bias_axis}
+\tag{8}\]</span></p>
+<p><span class="math display">\[e_{w1B}^{corrected} = \sqrt{ |{1 - ||\mu_{\perp} ||^2_2} |} * \frac{e_{\text{w1B}} - \mu_B} {|(e_{w1} - \mu_{\perp}) - \mu_B)|} \tag{9}\]</span></p>
+<p><span class="math display">\[e_{w2B}^{corrected} = \sqrt{ |{1 - ||\mu_{\perp} ||^2_2} |} * \frac{e_{\text{w2B}} - \mu_B} {|(e_{w2} - \mu_{\perp}) - \mu_B)|} \tag{10}\]</span></p>
+<p><span class="math display">\[e_1 = e_{w1B}^{corrected} + \mu_{\perp} \tag{11}\]</span> <span class="math display">\[e_2 = e_{w2B}^{corrected} + \mu_{\perp} \tag{12}\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">equalize</span><span class="params">(pair, bias_axis, word_to_vec_map)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Debias gender specific words by following the equalize method described in the figure above.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    pair -- pair of strings of gender specific words to debias, e.g. ("actress", "actor") </span></span><br><span class="line"><span class="string">    bias_axis -- numpy-array of shape (50,), vector corresponding to the bias axis, e.g. gender</span></span><br><span class="line"><span class="string">    word_to_vec_map -- dictionary mapping words to their corresponding vectors</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns</span></span><br><span class="line"><span class="string">    e_1 -- word vector corresponding to the first word</span></span><br><span class="line"><span class="string">    e_2 -- word vector corresponding to the second word</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Step 1: Select word vector representation of "word". Use word_to_vec_map. (≈ 2 lines)</span></span><br><span class="line">    w1, w2 = pair</span><br><span class="line">    e_w1, e_w2 = word_to_vec_map[w1],word_to_vec_map[w2]</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Step 2: Compute the mean of e_w1 and e_w2 (≈ 1 line)</span></span><br><span class="line">    mu = (e_w1 + e_w2)/<span class="number">2.0</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Step 3: Compute the projections of mu over the bias axis and the orthogonal axis (≈ 2 lines)</span></span><br><span class="line">    mu_B = np.dot(mu, bias_axis)*bias_axis/np.sum(bias_axis**<span class="number">2</span>)</span><br><span class="line">    mu_orth = mu - mu_B</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Step 4: Use equations (7) and (8) to compute e_w1B and e_w2B (≈2 lines)</span></span><br><span class="line">    e_w1B = np.dot(e_w1, bias_axis)*bias_axis/np.sum(bias_axis**<span class="number">2</span>)</span><br><span class="line">    e_w2B = np.dot(e_w2, bias_axis)*bias_axis/np.sum(bias_axis**<span class="number">2</span>)</span><br><span class="line">        </span><br><span class="line">    <span class="comment"># Step 5: Adjust the Bias part of e_w1B and e_w2B using the formulas (9) and (10) given above (≈2 lines)</span></span><br><span class="line">    corrected_e_w1B = np.sqrt(np.abs(<span class="number">1.0</span>-np.sum(mu_orth**<span class="number">2</span>)))*(e_w1B-mu_B)/np.abs(e_w1-mu_orth-mu_B)</span><br><span class="line">    corrected_e_w2B = np.sqrt(np.abs(<span class="number">1.0</span>-np.sum(mu_orth**<span class="number">2</span>)))*(e_w2B-mu_B)/np.abs(e_w2-mu_orth-mu_B)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Step 6: Debias by equalizing e1 and e2 to the sum of their corrected projections (≈2 lines)</span></span><br><span class="line">    e1 = corrected_e_w1B + mu_orth</span><br><span class="line">    e2 = corrected_e_w2B + mu_orth</span><br><span class="line">                                                                </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> e1, e2</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">print(<span class="string">"cosine similarities before equalizing:"</span>)</span><br><span class="line">print(<span class="string">"cosine_similarity(word_to_vec_map[\"man\"], gender) = "</span>, cosine_similarity(word_to_vec_map[<span class="string">"man"</span>], g))</span><br><span class="line">print(<span class="string">"cosine_similarity(word_to_vec_map[\"woman\"], gender) = "</span>, cosine_similarity(word_to_vec_map[<span class="string">"woman"</span>], g))</span><br><span class="line">print()</span><br><span class="line">e1, e2 = equalize((<span class="string">"man"</span>, <span class="string">"woman"</span>), g, word_to_vec_map)</span><br><span class="line">print(<span class="string">"cosine similarities after equalizing:"</span>)</span><br><span class="line">print(<span class="string">"cosine_similarity(e1, gender) = "</span>, cosine_similarity(e1, g))</span><br><span class="line">print(<span class="string">"cosine_similarity(e2, gender) = "</span>, cosine_similarity(e2, g))</span><br></pre></td></tr></table></figure>
+<pre><code>cosine similarities before equalizing:
+cosine_similarity(word_to_vec_map[&quot;man&quot;], gender) =  -0.117110957653
+cosine_similarity(word_to_vec_map[&quot;woman&quot;], gender) =  0.356666188463
+
+cosine similarities after equalizing:
+cosine_similarity(e1, gender) =  -0.716572752584
+cosine_similarity(e2, gender) =  0.739659647493</code></pre>
+<h2 id="小结">小结</h2>
+<ul>
+<li>在NLP中，第一步往往是加载已经训练好的词编码模型<br>
+</li>
+<li>相似度的计算方法很多，本文用的是余弦相似度<br>
+</li>
+<li>词编码模型和图像处理中的自编码模型类似，都是将高维空间映射到低维特征空间<br>
+</li>
+<li>去歧视在NLP中是一个不能忽视的工作，本文对性别的定义比较简单，可以进一步改进对性别的定义</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a><br>
+</li>
+<li>The debiasing algorithm is from Bolukbasi et al., 2016, <a href="https://papers.nips.cc/paper/6228-man-is-to-computer-programmer-as-woman-is-to-homemaker-debiasing-word-embeddings.pdf" target="_blank" rel="noopener">Man is to Computer Programmer as Woman is to Homemaker? Debiasing Word Embeddings</a><br>
+</li>
+<li>The GloVe word embeddings were due to Jeffrey Pennington, Richard Socher, and Christopher D. Manning. (https://nlp.stanford.edu/projects/glove/)</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/词编码/" rel="tag"># 词编码</a>
+          
+            <a href="/tags/词类推/" rel="tag"># 词类推</a>
+          
+            <a href="/tags/去歧视/" rel="tag"># 去歧视</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/05/27/75_tensorboard/" rel="next" title="Tensorboard可视化用法">
+                <i class="fa fa-chevron-left"></i> Tensorboard可视化用法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/04/61_WordEmb_Emojify/" rel="prev" title="基于词编码模型制作表情包">
+                基于词编码模型制作表情包 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#余弦相似度"><span class="nav-number">1.</span> <span class="nav-text">余弦相似度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#词类推"><span class="nav-number">2.</span> <span class="nav-text">词类推</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#去除词向量中的歧视"><span class="nav-number">3.</span> <span class="nav-text">去除词向量中的歧视</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#对无性别意义的单词进行中性化处理"><span class="nav-number">3.1.</span> <span class="nav-text">对无性别意义的单词进行中性化处理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#对带性别意义的词中心化处理"><span class="nav-number">3.2.</span> <span class="nav-text">对带性别意义的词中心化处理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="卷积神经网络,VGG模型,内容代价函数,风格代价函数,迁移学习," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="在深度学习中，大多数的应用都是优化神经网络参数。在风格转换中，将是优化图像的像素值。本文利用事先训练好的VGG模型提取图像特征，然后利用隐藏层的特征信息计算内容代价函数和风格代价函数，通过最小化这连个代价函数之和，优化合成图像的像素值，得到风格转换之后的新图像。">
+<meta name="keywords" content="卷积神经网络,VGG模型,内容代价函数,风格代价函数,迁移学习">
+<meta property="og:type" content="article">
+<meta property="og:title" content="风格转换">
+<meta property="og:url" content="http://yoursite.com/2018/03/13/56_StyleTrans/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="在深度学习中，大多数的应用都是优化神经网络参数。在风格转换中，将是优化图像的像素值。本文利用事先训练好的VGG模型提取图像特征，然后利用隐藏层的特征信息计算内容代价函数和风格代价函数，通过最小化这连个代价函数之和，优化合成图像的像素值，得到风格转换之后的新图像。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/louvre_generated.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/NST_LOSS.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/output_7_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/output_12_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/NST_GM.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/output_32_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/output_39_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/perspolis_vangogh.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/pasargad_kashi.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/circle_abstract.png">
+<meta property="og:updated_time" content="2018-03-13T02:30:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="风格转换">
+<meta name="twitter:description" content="在深度学习中，大多数的应用都是优化神经网络参数。在风格转换中，将是优化图像的像素值。本文利用事先训练好的VGG模型提取图像特征，然后利用隐藏层的特征信息计算内容代价函数和风格代价函数，通过最小化这连个代价函数之和，优化合成图像的像素值，得到风格转换之后的新图像。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/13/56_StyleTrans/louvre_generated.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/13/56_StyleTrans/"/>
+
+
+
+
+
+  <title>风格转换 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/13/56_StyleTrans/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">风格转换</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-13T10:30:46+08:00">
+                2018-03-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>在深度学习中，大多数的应用都是优化神经网络参数。在风格转换中，将是优化图像的像素值。本文利用事先训练好的VGG模型提取图像特征，然后利用隐藏层的特征信息计算内容代价函数和风格代价函数，通过最小化这连个代价函数之和，优化合成图像的像素值，得到风格转换之后的新图像。 <a id="more"></a></p>
+<h2 id="问题阐述">问题阐述</h2>
+<p>神经网络风格转换(Neural Style Transfer: NST)，是深度学习中十分有意思的一项技术。它将两张图像：一张为“内容&quot;图像(C)，一张为&quot;风格&quot;图像(S)，产生&quot;合成&quot;图像(G)。合成图像既有图像C的内容，又有图像S的风格。</p>
+<p><img src="/2018/03/13/56_StyleTrans/louvre_generated.png" style="width:750px;height:200px;"></p>
+<h2 id="迁移学习">迁移学习</h2>
+<p>风格转换使用事先训练好的模型，在此基础上构建新模型。将一种任务训练的模型应用到另一种任务的想法，常称之为迁移学习</p>
+<p>本文采用<a href="https://arxiv.org/abs/1508.06576" target="_blank" rel="noopener">VGG网络</a>，具体是VGG-19网络。该网络是通过ImageNet数据库训练出来的。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> scipy.io</span><br><span class="line"><span class="keyword">import</span> scipy.misc</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">from</span> matplotlib.pyplot <span class="keyword">import</span> imshow</span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">from</span> nst_utils <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">model = load_vgg_model(<span class="string">"pretrained-model/imagenet-vgg-verydeep-19.mat"</span>)</span><br><span class="line">print(model)</span><br></pre></td></tr></table></figure>
+<pre><code>{&#39;conv5_2&#39;: &lt;tf.Tensor &#39;Relu_13:0&#39; shape=(1, 19, 25, 512) dtype=float32&gt;, &#39;conv3_1&#39;: &lt;tf.Tensor &#39;Relu_4:0&#39; shape=(1, 75, 100, 256) dtype=float32&gt;, &#39;conv3_2&#39;: &lt;tf.Tensor &#39;Relu_5:0&#39; shape=(1, 75, 100, 256) dtype=float32&gt;, &#39;conv5_3&#39;: &lt;tf.Tensor &#39;Relu_14:0&#39; shape=(1, 19, 25, 512) dtype=float32&gt;, &#39;avgpool1&#39;: &lt;tf.Tensor &#39;AvgPool:0&#39; shape=(1, 150, 200, 64) dtype=float32&gt;, &#39;conv2_1&#39;: &lt;tf.Tensor &#39;Relu_2:0&#39; shape=(1, 150, 200, 128) dtype=float32&gt;, &#39;conv1_1&#39;: &lt;tf.Tensor &#39;Relu:0&#39; shape=(1, 300, 400, 64) dtype=float32&gt;, &#39;conv2_2&#39;: &lt;tf.Tensor &#39;Relu_3:0&#39; shape=(1, 150, 200, 128) dtype=float32&gt;, &#39;conv5_1&#39;: &lt;tf.Tensor &#39;Relu_12:0&#39; shape=(1, 19, 25, 512) dtype=float32&gt;, &#39;conv5_4&#39;: &lt;tf.Tensor &#39;Relu_15:0&#39; shape=(1, 19, 25, 512) dtype=float32&gt;, &#39;avgpool5&#39;: &lt;tf.Tensor &#39;AvgPool_4:0&#39; shape=(1, 10, 13, 512) dtype=float32&gt;, &#39;conv1_2&#39;: &lt;tf.Tensor &#39;Relu_1:0&#39; shape=(1, 300, 400, 64) dtype=float32&gt;, &#39;avgpool3&#39;: &lt;tf.Tensor &#39;AvgPool_2:0&#39; shape=(1, 38, 50, 256) dtype=float32&gt;, &#39;conv3_3&#39;: &lt;tf.Tensor &#39;Relu_6:0&#39; shape=(1, 75, 100, 256) dtype=float32&gt;, &#39;conv4_1&#39;: &lt;tf.Tensor &#39;Relu_8:0&#39; shape=(1, 38, 50, 512) dtype=float32&gt;, &#39;avgpool4&#39;: &lt;tf.Tensor &#39;AvgPool_3:0&#39; shape=(1, 19, 25, 512) dtype=float32&gt;, &#39;conv4_3&#39;: &lt;tf.Tensor &#39;Relu_10:0&#39; shape=(1, 38, 50, 512) dtype=float32&gt;, &#39;conv3_4&#39;: &lt;tf.Tensor &#39;Relu_7:0&#39; shape=(1, 75, 100, 256) dtype=float32&gt;, &#39;avgpool2&#39;: &lt;tf.Tensor &#39;AvgPool_1:0&#39; shape=(1, 75, 100, 128) dtype=float32&gt;, &#39;conv4_2&#39;: &lt;tf.Tensor &#39;Relu_9:0&#39; shape=(1, 38, 50, 512) dtype=float32&gt;, &#39;input&#39;: &lt;tf.Variable &#39;Variable:0&#39; shape=(1, 300, 400, 3) dtype=float32_ref&gt;, &#39;conv4_4&#39;: &lt;tf.Tensor &#39;Relu_11:0&#39; shape=(1, 38, 50, 512) dtype=float32&gt;}</code></pre>
+<p>模型存储在一个python字典中，关键字为变量名，对应的值为包含这个变量数值的张量。使用这个网络时，将图像喂进这个模型带即可。 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model[<span class="string">"input"</span>].assign(image)</span><br></pre></td></tr></table></figure></p>
+<p>如果想获得某一层的某些激励，比如层4_2，可以运行下面的对话： <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sess.run(model[<span class="string">"conv4_2"</span>])</span><br></pre></td></tr></table></figure></p>
+<h2 id="风格转换">风格转换</h2>
+<p>实现NST算法分为3步：</p>
+<ul>
+<li>建立内容代价函数 <span class="math inline">\(J_{content}(C,G)\)</span><br>
+</li>
+<li>建立风格代价函数 <span class="math inline">\(J_{style}(S,G)\)</span><br>
+</li>
+<li>结合这两个代价函数 <span class="math inline">\(J(G) = \alpha J_{content}(C,G) + \beta J_{style}(S,G)\)</span>.</li>
+</ul>
+<h3 id="计算内容代价函数">计算内容代价函数</h3>
+<p>CNN浅层对应的是简单的特征，深层对应的是复制的特征。对于风格转换这一应用而言，最好选择不深也不浅的层。</p>
+<p>假定C是事先训练好的VGG网络的输入，进行正传之后，假定 <span class="math inline">\(a^{(C)}\)</span> 是选定隐藏层激活函数输出，是维度为 <span class="math inline">\(n_H \times n_W \times n_C\)</span> 的张量. 对G重复以下过程: 以 G 作为输入进行正传. 令 <span class="math display">\[a^{(G)}\]</span> 为选定隐藏层的输出. 定义内容代价函数为:</p>
+<p><span class="math display">\[J_{content}(C,G) =  \frac{1}{4 \times n_H \times n_W \times n_C}\sum _{ \text{all entries}} (a^{(C)} - a^{(G)})^2\tag{1} \]</span></p>
+<p>其中 <span class="math inline">\(n_H, n_W\)</span> 和 <span class="math inline">\(n_C\)</span> 为选定隐藏层的高、宽和深度。<span class="math inline">\(a^{(C)}\)</span> 和 <span class="math inline">\(a^{(G)}\)</span> 都是选定隐藏层的输出.</p>
+<p><img src="/2018/03/13/56_StyleTrans/NST_LOSS.png" style="width:800px;height:400px;"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">content_image = scipy.misc.imread(<span class="string">"images/louvre.jpg"</span>)</span><br><span class="line">imshow(content_image)</span><br></pre></td></tr></table></figure>
+<pre><code>&lt;matplotlib.image.AxesImage at 0x7f26bd126f60&gt;</code></pre>
+<div class="figure">
+<img src="/2018/03/13/56_StyleTrans/output_7_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: compute_content_cost</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute_content_cost</span><span class="params">(a_C, a_G)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Computes the content cost</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    a_C -- tensor of dimension (1, n_H, n_W, n_C), hidden layer activations representing content of the image C </span></span><br><span class="line"><span class="string">    a_G -- tensor of dimension (1, n_H, n_W, n_C), hidden layer activations representing content of the image G</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    J_content -- scalar that you compute using equation 1 above.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Retrieve dimensions from a_G (≈1 line)</span></span><br><span class="line">    m, n_H, n_W, n_C = a_G.get_shape().as_list()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Reshape a_C and a_G (≈2 lines)</span></span><br><span class="line">    a_C_unrolled = tf.transpose(tf.reshape(a_C, [<span class="number">1</span>,n_H*n_W,n_C]))</span><br><span class="line">    a_G_unrolled = tf.transpose(tf.reshape(a_G, [<span class="number">1</span>,n_H*n_W,n_C]))</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># compute the cost with tensorflow (≈1 line)</span></span><br><span class="line">    J_content = (<span class="number">1</span>/(<span class="number">4</span>*n_H*n_W*n_C))*tf.reduce_sum(tf.square(tf.subtract(a_C_unrolled,a_G_unrolled)))</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> J_content</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test:</span><br><span class="line">    tf.set_random_seed(<span class="number">1</span>)</span><br><span class="line">    a_C = tf.random_normal([<span class="number">1</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>)</span><br><span class="line">    a_G = tf.random_normal([<span class="number">1</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>)</span><br><span class="line">    J_content = compute_content_cost(a_C, a_G)</span><br><span class="line">    print(<span class="string">"J_content = "</span> + str(J_content.eval()))</span><br></pre></td></tr></table></figure>
+<pre><code>J_content = 6.76559</code></pre>
+<p><strong>小结</strong></p>
+<ul>
+<li>内容代价函数取神经网络隐藏层的输出，并测量^{(C)}$ 和 <span class="math inline">\(a^{(G)}\)</span>的差异<br>
+</li>
+<li>当最小内容化代价函数，会使得<span class="math inline">\(G\)</span>和<span class="math inline">\(C\)</span>内容相似</li>
+</ul>
+<h3 id="计算风格代价函数">计算风格代价函数</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">style_image = scipy.misc.imread(<span class="string">"images/monet_800600.jpg"</span>)</span><br><span class="line">imshow(style_image)</span><br></pre></td></tr></table></figure>
+<pre><code>&lt;matplotlib.image.AxesImage at 0x7f26bc0989e8&gt;</code></pre>
+<div class="figure">
+<img src="/2018/03/13/56_StyleTrans/output_12_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<h4 id="风格矩阵">风格矩阵</h4>
+<p>风格矩阵也称为&quot;Gram&quot;矩阵。 在线性袋鼠中，Gram 矩阵 G 是一系列向量集合 <span class="math inline">\((v_{1},\dots ,v_{n})\)</span> 的点乘, 其元素 <span class="math inline">\({\displaystyle G_{ij} = v_{i}^T v_{j} = np.dot(v_{i}, v_{j}) }\)</span>. 换句话说， <span class="math inline">\(G_{ij}\)</span> 计算 <span class="math inline">\(v_i\)</span> 和<span class="math inline">\(v_j\)</span>的相似度: 如果它们十分相似, 则输出大的点乘结果, 也就是 <span class="math inline">\(G_{ij}\)</span>会比较大.</p>
+<p>Note that there is an unfortunate collision in the variable names used here. We are following common terminology used in the literature, but <span class="math inline">\(G\)</span> is used to denote the Style matrix (or Gram matrix) as well as to denote the generated image <span class="math inline">\(G\)</span>. We will try to make sure which <span class="math inline">\(G\)</span> we are referring to is always clear from the context.</p>
+<p>在风格转换中，Style 矩阵是计算 &quot;展开&quot; 之后矩阵和它的专制之间的乘积:</p>
+<p><img src="/2018/03/13/56_StyleTrans/NST_GM.png" style="width:900px;height:300px;"></p>
+<p>最终的矩阵维度为 <span class="math inline">\((n_C,n_C)\)</span>，其中 <span class="math inline">\(n_C\)</span> 是滤波器的而个数.<span class="math inline">\(G_{ij}\)</span>表示滤波器<span class="math inline">\(i\)</span> 和滤波器<span class="math inline">\(j\)</span>输出的相似度。</p>
+<p>Gram 矩阵的对角线元素<span class="math inline">\(G_{ii}\)</span> 测量的是滤波器 <span class="math inline">\(i\)</span> 的激活程度. 例如，假定滤波器 <span class="math inline">\(i\)</span> 探测是图像的垂直纹理，那么<span class="math inline">\(G_{ii}\)</span>测量的是整个图像中垂直纹理的普遍程度: 如果 <span class="math inline">\(G_{ii}\)</span> 很大, 表明这幅图像存在很多垂直纹理。</p>
+<p>通过获取不同类型的特征的普遍程度 (<span class="math inline">\(G_{ii}\)</span>)以及不同特征同时存在的程度(<span class="math inline">\(G_{ij}\)</span>), 风格矩阵 <span class="math inline">\(G\)</span> 定量测量了一幅图像的风格.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: gram_matrix</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">gram_matrix</span><span class="params">(A)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Argument:</span></span><br><span class="line"><span class="string">    A -- matrix of shape (n_C, n_H*n_W)</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    GA -- Gram matrix of A, of shape (n_C, n_C)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈1 line)</span></span><br><span class="line">    GA = tf.matmul(A,tf.transpose(A))</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> GA</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test:</span><br><span class="line">    tf.set_random_seed(<span class="number">1</span>)</span><br><span class="line">    A = tf.random_normal([<span class="number">3</span>, <span class="number">2</span>*<span class="number">1</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>)</span><br><span class="line">    GA = gram_matrix(A)</span><br><span class="line">    </span><br><span class="line">    print(<span class="string">"GA = "</span> + str(GA.eval()))</span><br></pre></td></tr></table></figure>
+<pre><code>GA = [[  6.42230511  -4.42912197  -2.09668207]
+ [ -4.42912197  19.46583748  19.56387138]
+ [ -2.09668207  19.56387138  20.6864624 ]]</code></pre>
+<h4 id="风格代价函数">风格代价函数</h4>
+<p>生成风格矩阵 (Gram 矩阵)之后,目标是减小 “风格”图像 S 和“合成”图像 G 之间Gram matrix之间的距离. 这里只使用一层的激励 <span class="math inline">\(a^{[l]}\)</span>, 对应的风格代价函数为:</p>
+<p><span class="math display">\[J_{style}^{[l]}(S,G) = \frac{1}{4 \times {n_C}^2 \times (n_H \times n_W)^2} \sum _{i=1}^{n_C}\sum_{j=1}^{n_C}(G^{(S)}_{ij} - G^{(G)}_{ij})^2\tag{2} \]</span></p>
+<p>其中 <span class="math inline">\(G^{(S)}\)</span> and <span class="math inline">\(G^{(G)}\)</span> 分别是风格图像S和合成图像的Gram矩阵, 输入是来自与同一特定隐藏层的激励.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: compute_layer_style_cost</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute_layer_style_cost</span><span class="params">(a_S, a_G)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    a_S -- tensor of dimension (1, n_H, n_W, n_C), hidden layer activations representing style of the image S </span></span><br><span class="line"><span class="string">    a_G -- tensor of dimension (1, n_H, n_W, n_C), hidden layer activations representing style of the image G</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    J_style_layer -- tensor representing a scalar value, style cost defined above by equation (2)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Retrieve dimensions from a_G (≈1 line)</span></span><br><span class="line">    m, n_H, n_W, n_C = a_G.get_shape().as_list()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Reshape the images to have them of shape (n_C, n_H*n_W) (≈2 lines)</span></span><br><span class="line">    a_S = tf.reshape(a_S, [n_H*n_W, n_C])</span><br><span class="line">    a_G = tf.reshape(a_G, [n_H*n_W, n_C])</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Computing gram_matrices for both images S and G (≈2 lines)</span></span><br><span class="line">    GS = gram_matrix(tf.transpose(a_S))</span><br><span class="line">    GG = gram_matrix(tf.transpose(a_G))</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Computing the loss (≈1 line)</span></span><br><span class="line">    J_style_layer = (<span class="number">1</span>/(<span class="number">4</span>*(n_C**<span class="number">2</span>)*((n_H*n_W)**<span class="number">2</span>)))*tf.reduce_sum(tf.square(tf.subtract(GS,GG)))</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> J_style_layer</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test:</span><br><span class="line">    tf.set_random_seed(<span class="number">1</span>)</span><br><span class="line">    a_S = tf.random_normal([<span class="number">1</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>)</span><br><span class="line">    a_G = tf.random_normal([<span class="number">1</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">3</span>], mean=<span class="number">1</span>, stddev=<span class="number">4</span>)</span><br><span class="line">    J_style_layer = compute_layer_style_cost(a_S, a_G)</span><br><span class="line">    </span><br><span class="line">    print(<span class="string">"J_style_layer = "</span> + str(J_style_layer.eval()))</span><br></pre></td></tr></table></figure>
+<pre><code>J_style_layer = 9.19028</code></pre>
+<h4 id="风格权值">风格权值</h4>
+<p>上面值考虑了一层的风格信息。实际上，可以考虑多层，并用合理的权值将它们合并成新的风格矩阵。例如下面的权值：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">STYLE_LAYERS = [</span><br><span class="line">    (<span class="string">'conv1_1'</span>, <span class="number">0.2</span>),</span><br><span class="line">    (<span class="string">'conv2_1'</span>, <span class="number">0.2</span>),</span><br><span class="line">    (<span class="string">'conv3_1'</span>, <span class="number">0.2</span>),</span><br><span class="line">    (<span class="string">'conv4_1'</span>, <span class="number">0.2</span>),</span><br><span class="line">    (<span class="string">'conv5_1'</span>, <span class="number">0.2</span>)]</span><br></pre></td></tr></table></figure>
+<p>风格代价函数可以通过下面的公式计算：</p>
+<p><span class="math display">\[J_{style}(S,G) = \sum_{l} \lambda^{[l]} J^{[l]}_{style}(S,G)\]</span></p>
+<p>其中<span class="math inline">\(\lambda^{[l]}\)</span> 值在变量 <code>STYLE_LAYERS</code>中给定。</p>
+<p>前面已经实现了函数compute_style_cost(...). 多次调用这个函数，然后对结果利用<code>STYLE_LAYERS</code>中的权系数加权求和，则得到最终的风格代价函数.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute_style_cost</span><span class="params">(model, STYLE_LAYERS)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Computes the overall style cost from several chosen layers</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    model -- our tensorflow model</span></span><br><span class="line"><span class="string">    STYLE_LAYERS -- A python list containing:</span></span><br><span class="line"><span class="string">                        - the names of the layers we would like to extract style from</span></span><br><span class="line"><span class="string">                        - a coefficient for each of them</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    J_style -- tensor representing a scalar value, style cost defined above by equation (2)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># initialize the overall style cost</span></span><br><span class="line">    J_style = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> layer_name, coeff <span class="keyword">in</span> STYLE_LAYERS:</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Select the output tensor of the currently selected layer</span></span><br><span class="line">        out = model[layer_name]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Set a_S to be the hidden layer activation from the layer we have selected, by running the session on out</span></span><br><span class="line">        a_S = sess.run(out)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Set a_G to be the hidden layer activation from same layer. Here, a_G references model[layer_name] </span></span><br><span class="line">        <span class="comment"># and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that</span></span><br><span class="line">        <span class="comment"># when we run the session, this will be the activations drawn from the appropriate layer, with G as input.</span></span><br><span class="line">        a_G = out</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Compute style_cost for the current layer</span></span><br><span class="line">        J_style_layer = compute_layer_style_cost(a_S, a_G)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Add coeff * J_style_layer of this layer to overall style cost</span></span><br><span class="line">        J_style += coeff * J_style_layer</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> J_style</span><br></pre></td></tr></table></figure>
+<p><strong>小结</strong></p>
+<ul>
+<li>隐藏层的输出形成Gamma矩阵，可以用来定量化图像的风格。通过结合更多隐藏层的信息，可以更好的代表图像的风格。相对而言，内容信息往往只需要一个隐藏层的信息。<br>
+</li>
+<li>最小化风格代价函数，就可以使得图像G变得和图像S的风格类似</li>
+</ul>
+<h3 id="定义总的代价函数">定义总的代价函数</h3>
+<p>最后结合内容代价函数和风格代价函数：</p>
+<p><span class="math display">\[J(G) = \alpha J_{content}(C,G) + \beta J_{style}(S,G)\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: total_cost</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">total_cost</span><span class="params">(J_content, J_style, alpha = <span class="number">10</span>, beta = <span class="number">40</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Computes the total cost function</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    J_content -- content cost coded above</span></span><br><span class="line"><span class="string">    J_style -- style cost coded above</span></span><br><span class="line"><span class="string">    alpha -- hyperparameter weighting the importance of the content cost</span></span><br><span class="line"><span class="string">    beta -- hyperparameter weighting the importance of the style cost</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    J -- total cost as defined by the formula above.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (≈1 line)</span></span><br><span class="line">    J = alpha*J_content + beta*J_style</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> J</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test:</span><br><span class="line">    np.random.seed(<span class="number">3</span>)</span><br><span class="line">    J_content = np.random.randn()    </span><br><span class="line">    J_style = np.random.randn()</span><br><span class="line">    J = total_cost(J_content, J_style)</span><br><span class="line">    print(<span class="string">"J = "</span> + str(J))</span><br></pre></td></tr></table></figure>
+<pre><code>J = 35.34667875478276</code></pre>
+<h2 id="最优化问题求解">最优化问题求解</h2>
+<p>解决风格转换这个优化问题的流程：</p>
+<ol style="list-style-type: decimal">
+<li>建立交互会话<br>
+</li>
+<li>加载内容图像<br>
+</li>
+<li>加载风格图像<br>
+</li>
+<li>对合成图像随机初始化<br>
+</li>
+<li>加载VGG16模型<br>
+</li>
+<li>建立Tensorflow计算图：<br>
+</li>
+</ol>
+<ul>
+<li>输入内容图像到VGG16模型，计算内容代价函数<br>
+</li>
+<li>输入风格图像到VGG16模型，计算风格代价函数<br>
+</li>
+<li>计算总代价函数<br>
+</li>
+<li>定义最优化对象和学习率<br>
+</li>
+</ul>
+<ol start="7" style="list-style-type: decimal">
+<li>初始化Tensoflow图，迭代多次，每次迭代更新合成图像</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Reset the graph</span></span><br><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Start interactive session</span></span><br><span class="line">sess = tf.InteractiveSession()</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">content_image = scipy.misc.imread(<span class="string">"images/louvre_small.jpg"</span>)</span><br><span class="line">content_image = reshape_and_normalize_image(content_image)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">style_image = scipy.misc.imread(<span class="string">"images/monet.jpg"</span>)</span><br><span class="line">style_image = reshape_and_normalize_image(style_image)</span><br></pre></td></tr></table></figure>
+<p>尽管是随机初始化合成图像，但是仍然让其和内容图像轻微相关，这样可以加快收敛速度。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">generated_image = generate_noise_image(content_image)</span><br><span class="line">imshow(generated_image[<span class="number">0</span>])</span><br></pre></td></tr></table></figure>
+<pre><code>&lt;matplotlib.image.AxesImage at 0x7f26b47a0ef0&gt;</code></pre>
+<div class="figure">
+<img src="/2018/03/13/56_StyleTrans/output_32_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">model = load_vgg_model(<span class="string">"pretrained-model/imagenet-vgg-verydeep-19.mat"</span>)<span class="comment"># Assign the content image to be the input of the VGG model.  </span></span><br><span class="line">sess.run(model[<span class="string">'input'</span>].assign(content_image))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Select the output tensor of layer conv4_2</span></span><br><span class="line">out = model[<span class="string">'conv4_2'</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Set a_C to be the hidden layer activation from the layer we have selected</span></span><br><span class="line">a_C = sess.run(out)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Set a_G to be the hidden layer activation from same layer. Here, a_G references model['conv4_2'] </span></span><br><span class="line"><span class="comment"># and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that</span></span><br><span class="line"><span class="comment"># when we run the session, this will be the activations drawn from the appropriate layer, with G as input.</span></span><br><span class="line">a_G = out</span><br><span class="line"></span><br><span class="line"><span class="comment"># Compute the content cost</span></span><br><span class="line">J_content = compute_content_cost(a_C, a_G)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Assign the input of the model to be the "style" image </span></span><br><span class="line">sess.run(model[<span class="string">'input'</span>].assign(style_image))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Compute the style cost</span></span><br><span class="line">J_style = compute_style_cost(model, STYLE_LAYERS)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">J = total_cost(J_content, J_style, alpha = <span class="number">10</span>, beta = <span class="number">40</span>)</span><br><span class="line"><span class="comment">### END CODE HERE ###</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># define optimizer (1 line)</span></span><br><span class="line">optimizer = tf.train.AdamOptimizer(<span class="number">2.0</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># define train_step (1 line)</span></span><br><span class="line">train_step = optimizer.minimize(J)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model_nn</span><span class="params">(sess, input_image, num_iterations = <span class="number">200</span>)</span>:</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize global variables (you need to run the session on the initializer)</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">    sess.run(tf.global_variables_initializer())</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Run the noisy input image (initial generated image) through the model. Use assign().</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">    sess.run(model[<span class="string">'input'</span>].assign(input_image))</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(num_iterations):</span><br><span class="line">    </span><br><span class="line">        <span class="comment"># Run the session on the train_step to minimize the total cost</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">        sess.run(train_step)</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Compute the generated image by running the session on the current model['input']</span></span><br><span class="line">        <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">        generated_image = sess.run(model[<span class="string">'input'</span>])</span><br><span class="line">        <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># Print every 20 iteration.</span></span><br><span class="line">        <span class="keyword">if</span> i%<span class="number">20</span> == <span class="number">0</span>:</span><br><span class="line">            Jt, Jc, Js = sess.run([J, J_content, J_style])</span><br><span class="line">            print(<span class="string">"Iteration "</span> + str(i) + <span class="string">" :"</span>)</span><br><span class="line">            print(<span class="string">"total cost = "</span> + str(Jt))</span><br><span class="line">            print(<span class="string">"content cost = "</span> + str(Jc))</span><br><span class="line">            print(<span class="string">"style cost = "</span> + str(Js))</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># save current generated image in the "/output" directory</span></span><br><span class="line">            save_image(<span class="string">"output/"</span> + str(i) + <span class="string">".png"</span>, generated_image)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># save last generated image</span></span><br><span class="line">    save_image(<span class="string">'output/generated_image.jpg'</span>, generated_image)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> generated_image</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model_nn(sess, generated_image)</span><br></pre></td></tr></table></figure>
+<pre><code>Iteration 0 :
+total cost = 5.05044e+09
+content cost = 7877.67
+style cost = 1.26259e+08
+Iteration 20 :
+total cost = 9.43268e+08
+content cost = 15186.7
+style cost = 2.35779e+07
+Iteration 40 :
+total cost = 4.8485e+08
+content cost = 16781.6
+style cost = 1.21171e+07
+Iteration 60 :
+total cost = 3.12545e+08
+content cost = 17461.7
+style cost = 7.80925e+06
+Iteration 80 :
+total cost = 2.2815e+08
+content cost = 17712.0
+style cost = 5.69931e+06
+Iteration 100 :
+total cost = 1.80677e+08
+content cost = 17890.9
+style cost = 4.51244e+06
+Iteration 120 :
+total cost = 1.49909e+08
+content cost = 18036.5
+style cost = 3.74322e+06
+Iteration 140 :
+total cost = 1.27689e+08
+content cost = 18177.1
+style cost = 3.18769e+06
+Iteration 160 :
+total cost = 1.1068e+08
+content cost = 18346.3
+style cost = 2.76241e+06
+Iteration 180 :
+total cost = 9.73357e+07
+content cost = 18494.7
+style cost = 2.42877e+06
+
+
+
+
+
+array([[[[ -47.71792221,  -61.1641922 ,   48.51462936],
+         [ -26.07180595,  -40.40233612,   27.00328827],
+         [ -41.76216888,  -28.87297058,   11.2408905 ],
+         ..., 
+         [ -26.77474403,   -9.46695232,   14.18441296],
+         [ -30.13972664,   -2.9527061 ,   23.84781837],
+         [ -42.01329422,   -3.99770045,   49.2837944 ]],
+
+        [[ -61.23310471,  -51.69762421,   25.06588936],
+         [ -33.09114456,  -31.019104  ,   -1.51566112],
+         [ -27.18595695,  -30.62489891,   15.16203022],
+         ..., 
+         [ -26.86737442,   -5.03994465,   25.80234337],
+         [ -21.55014229,  -17.15480995,   13.4730196 ],
+         [ -40.58264923,   -6.2516017 ,    9.34524155]],
+
+        [[ -52.44369888,  -51.62958527,   13.37559223],
+         [ -37.28992081,  -41.46131134,   -6.36986971],
+         [ -34.25578308,  -25.2586174 ,    7.30331039],
+         ..., 
+         [ -10.80900192,  -37.07257843,   12.52590942],
+         [ -12.47509098,  -21.10977364,   16.95155907],
+         [ -22.6830864 ,  -18.73592186,   14.01098919]],
+
+        ..., 
+        [[ -50.02674103,  -55.79088593,  -37.32922745],
+         [-100.31829071,  -79.61305237, -276.62878418],
+         [ -78.0174408 ,  -75.13472748, -146.70437622],
+         ..., 
+         [ -68.39966583,  -70.03903198,  -29.65413094],
+         [ -77.79780579,  -87.45067596,  -22.69526672],
+         [   2.17200041,  -39.03500748,   23.44343185]],
+
+        [[   2.34297109,  -76.23490143,   15.5947876 ],
+         [-178.27163696, -105.82906342,  -31.49833298],
+         [   5.69661808,  -74.80606079,  -21.2721138 ],
+         ..., 
+         [ -95.32102966,  -84.05321503,  -47.87338257],
+         [-101.48027039, -102.16370392,  -59.40892792],
+         [ -64.78777313,  -94.5881424 ,    1.77689016]],
+
+        [[  51.4371109 ,  -23.7560482 ,   54.0109787 ],
+         [  31.85521698,  -90.38259125,   26.47659111],
+         [  31.17397499,  -44.89522934,   17.38631058],
+         ..., 
+         [ -99.41970062, -108.16433716,  -18.3257637 ],
+         [-116.17845917, -143.79495239,  -27.66372681],
+         [ -24.16449928, -103.19832611,   21.24197769]]]], dtype=float32)</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">generate_image = scipy.misc.imread(<span class="string">"output/generated_image.jpg"</span>)</span><br><span class="line">imshow(generate_image)</span><br></pre></td></tr></table></figure>
+<pre><code>&lt;matplotlib.image.AxesImage at 0x7f26b40ca0f0&gt;</code></pre>
+<div class="figure">
+<img src="/2018/03/13/56_StyleTrans/output_39_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<p>其他的例子:</p>
+<ul>
+<li><p>The beautiful ruins of the ancient city of Persepolis (Iran) with the style of Van Gogh (The Starry Night) <img src="/2018/03/13/56_StyleTrans/perspolis_vangogh.png" style="width:750px;height:300px;"></p></li>
+<li><p>The tomb of Cyrus the great in Pasargadae with the style of a Ceramic Kashi from Ispahan. <img src="/2018/03/13/56_StyleTrans/pasargad_kashi.png" style="width:750px;height:300px;"></p></li>
+<li><p>A scientific study of a turbulent fluid with the style of a abstract blue fluid painting. <img src="/2018/03/13/56_StyleTrans/circle_abstract.png" style="width:750px;height:300px;"></p></li>
+</ul>
+<h2 id="结论">结论</h2>
+<p>本文介绍了如何对图像进行风格转换，和前面更新神经网络参数不同，这个应用是更新图像的像素值。</p>
+<ul>
+<li>风格转换是在给定内容图像和风格图像的基础上，合成新的图像<br>
+</li>
+<li>这个应用使用了实现训练好的神经网络来提取（隐藏层）图像特征<br>
+</li>
+<li>内容代价函数通过隐藏层的输出计算得到<br>
+</li>
+<li>风格函数则是通过计算一个（或多个）隐藏层输出的Gamma矩阵，最终加权求和计算总的风格代价函数<br>
+</li>
+<li>最优化内容和风格代价函数，得到最终合成的新图像</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a><br>
+</li>
+<li>Leon A. Gatys, Alexander S. Ecker, Matthias Bethge, (2015). A Neural Algorithm of Artistic Style (https://arxiv.org/abs/1508.06576)<br>
+</li>
+<li>Harish Narayanan, Convolutional neural networks for artistic style transfer. https://harishnarayanan.org/writing/artistic-style-transfer/<br>
+</li>
+<li>Log0, TensorFlow Implementation of &quot;A Neural Algorithm of Artistic Style&quot;. http://www.chioka.in/tensorflow-implementation-neural-algorithm-of-artistic-style<br>
+</li>
+<li>Karen Simonyan and Andrew Zisserman (2015). Very deep convolutional networks for large-scale image recognition (https://arxiv.org/pdf/1409.1556.pdf)<br>
+</li>
+<li>MatConvNet. http://www.vlfeat.org/matconvnet/pretrained/</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/卷积神经网络/" rel="tag"># 卷积神经网络</a>
+          
+            <a href="/tags/VGG模型/" rel="tag"># VGG模型</a>
+          
+            <a href="/tags/内容代价函数/" rel="tag"># 内容代价函数</a>
+          
+            <a href="/tags/风格代价函数/" rel="tag"># 风格代价函数</a>
+          
+            <a href="/tags/迁移学习/" rel="tag"># 迁移学习</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/13/55_FaceNet/" rel="next" title="人脸识别">
+                <i class="fa fa-chevron-left"></i> 人脸识别
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/22/07_linear_regression/" rel="prev" title="线性回归">
+                线性回归 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#问题阐述"><span class="nav-number">1.</span> <span class="nav-text">问题阐述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#迁移学习"><span class="nav-number">2.</span> <span class="nav-text">迁移学习</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#风格转换"><span class="nav-number">3.</span> <span class="nav-text">风格转换</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#计算内容代价函数"><span class="nav-number">3.1.</span> <span class="nav-text">计算内容代价函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算风格代价函数"><span class="nav-number">3.2.</span> <span class="nav-text">计算风格代价函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#风格矩阵"><span class="nav-number">3.2.1.</span> <span class="nav-text">风格矩阵</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#风格代价函数"><span class="nav-number">3.2.2.</span> <span class="nav-text">风格代价函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#风格权值"><span class="nav-number">3.2.3.</span> <span class="nav-text">风格权值</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#定义总的代价函数"><span class="nav-number">3.3.</span> <span class="nav-text">定义总的代价函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#最优化问题求解"><span class="nav-number">4.</span> <span class="nav-text">最优化问题求解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">5.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

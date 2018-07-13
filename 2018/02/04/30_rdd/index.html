@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Spark,RDD,数据结构,分布式数据集,分布式计算," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="弹性分布式数据集（RDD:Resilient Distributed Dataset）是Apache Spark的核心，它指的是一组不可变的Java虚拟机(JVM)对象的分布集，可以执行快速运算。该数据集有两个特点：一个特点是分布式，意味着数据集将被划分成块，并被分发到执行节点上，从而可以对这个数据集执行分布式快速计算；第二个特点是该数据集跟踪/记录每个数据块的所有转换，不仅可以加快计算速度，而且">
+<meta name="keywords" content="Spark,RDD,数据结构,分布式数据集,分布式计算">
+<meta property="og:type" content="article">
+<meta property="og:title" content="弹性分布式数据集">
+<meta property="og:url" content="http://yoursite.com/2018/02/04/30_rdd/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="弹性分布式数据集（RDD:Resilient Distributed Dataset）是Apache Spark的核心，它指的是一组不可变的Java虚拟机(JVM)对象的分布集，可以执行快速运算。该数据集有两个特点：一个特点是分布式，意味着数据集将被划分成块，并被分发到执行节点上，从而可以对这个数据集执行分布式快速计算；第二个特点是该数据集跟踪/记录每个数据块的所有转换，不仅可以加快计算速度，而且">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-02-04T02:54:09.480Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="弹性分布式数据集">
+<meta name="twitter:description" content="弹性分布式数据集（RDD:Resilient Distributed Dataset）是Apache Spark的核心，它指的是一组不可变的Java虚拟机(JVM)对象的分布集，可以执行快速运算。该数据集有两个特点：一个特点是分布式，意味着数据集将被划分成块，并被分发到执行节点上，从而可以对这个数据集执行分布式快速计算；第二个特点是该数据集跟踪/记录每个数据块的所有转换，不仅可以加快计算速度，而且">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/02/04/30_rdd/"/>
+
+
+
+
+
+  <title>弹性分布式数据集 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/04/30_rdd/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">弹性分布式数据集</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-04T10:54:09+08:00">
+                2018-02-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/高性能计算/" itemprop="url" rel="index">
+                    <span itemprop="name">高性能计算</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>弹性分布式数据集（RDD:Resilient Distributed Dataset）是Apache Spark的核心，它指的是一组<strong>不可变</strong>的<strong>Java虚拟机</strong>(JVM)对象的分布集，可以执行快速运算。该数据集有两个特点：一个特点是<strong>分布式</strong>，意味着数据集将被划分成块，并被分发到执行节点上，从而可以对这个数据集执行分布式快速计算；第二个特点是该数据集<strong>跟踪/记录</strong>每个数据块的所有转换，不仅可以加快计算速度，而且可以在发生错误和部分数据丢失的情况下提供回退操作，这样该数据集就可以重新计算数据。 <a id="more"></a></p>
+<p>在终端启动pyspark之后会<strong>自动</strong>创建SparkContext对象（别称为sc）和SQLContext（别称为sqlContext）。</p>
+<h2 id="创建rdd">创建RDD</h2>
+<p>在pyspark中，有两种方式创建RDD,一种是用并行化一个列表</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">data = sc.parallelize(</span><br><span class="line">    [(<span class="string">'Amber'</span>, <span class="number">22</span>), (<span class="string">'Alfred'</span>, <span class="number">23</span>), (<span class="string">'Skye'</span>,<span class="number">4</span>),(<span class="string">'Albert'</span>,<span class="number">12</span>),</span><br><span class="line">     (<span class="string">'Amber'</span>,<span class="number">2</span>)])</span><br><span class="line">data</span><br></pre></td></tr></table></figure>
+<pre><code>ParallelCollectionRDD[0] at parallelize at PythonRDD.scala:489</code></pre>
+<p>另一种是读取一个文件或者数据库中</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">data_from_file = sc.textFile(<span class="string">'/media/seisinv/Data/course/spark/notebook/VS14MORT.txt.gz'</span>,<span class="number">4</span>)</span><br><span class="line">data_from_file</span><br></pre></td></tr></table></figure>
+<pre><code>/media/seisinv/Data/course/spark/notebook/VS14MORT.txt.gz MapPartitionsRDD[1] at textFile at NativeMethodAccessorImpl.java:0</code></pre>
+<p>其中最后一个参数表示该数据集被划分的分区个数。</p>
+<blockquote>
+<ul>
+<li>需要注意的是，两种创建RDD的方式<strong>返回的对象类型不同</strong><br>
+</li>
+<li>Spark不仅可以<strong>支持不同文件系统</strong>，包括本地文件系统，如NTFS,FAT等，和分布式文件系统，如HDFS，S3，Cassandra。</li>
+</ul>
+</blockquote>
+<h3 id="schema">Schema</h3>
+<p>RDD是一种无Schema的数据结构，所以可以混合使用任何类型的数据结构，例如元组、字典、列表等。</p>
+<p>对数据集使用<span class="math inline">\(collect()\)</span>方法，相当于把该数据集送回驱动程序，可以访问对象中的数据，和在Python中一样。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">data_heterogenous = sc.parallelize(</span><br><span class="line">    [(<span class="string">'Ferrari'</span>, <span class="string">'fast'</span>), &#123;<span class="string">'Porsche'</span>: <span class="number">100000</span>&#125;, </span><br><span class="line">     [<span class="string">'Spain'</span>,<span class="string">'visited'</span>, <span class="number">4504</span>]]).collect()</span><br><span class="line">data_heterogenous[<span class="number">1</span>][<span class="string">'Porsche'</span>]</span><br></pre></td></tr></table></figure>
+<pre><code>100000</code></pre>
+<h3 id="读取文件">读取文件</h3>
+<p>从文本文件中读取数据，文件中的每一行形成RDD的一个元素。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">data_from_file.take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[&#39;                   1                                          2101  M1087 432311  4M4                2014U7CN                                    I64 238 070   24 0111I64                                                                                                                                                                           01 I64                                                                                                  01  11                                 100 601&#39;]</code></pre>
+<h3 id="自定义函数">自定义函数</h3>
+<p>既可以使用<span class="math inline">\(lambda\)</span>表达式，也可以使用函数，从RDD元素中提取信息。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">extractInformation</span><span class="params">(row)</span>:</span></span><br><span class="line">    <span class="keyword">import</span> re</span><br><span class="line">    <span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">    selected_indices = [</span><br><span class="line">         <span class="number">2</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">9</span>,<span class="number">10</span>,<span class="number">11</span>,<span class="number">12</span>,<span class="number">13</span>,<span class="number">14</span>,<span class="number">15</span>,<span class="number">16</span>,<span class="number">17</span>,<span class="number">18</span>,</span><br><span class="line">         <span class="number">19</span>,<span class="number">21</span>,<span class="number">22</span>,<span class="number">23</span>,<span class="number">24</span>,<span class="number">25</span>,<span class="number">27</span>,<span class="number">28</span>,<span class="number">29</span>,<span class="number">30</span>,<span class="number">32</span>,<span class="number">33</span>,<span class="number">34</span>,</span><br><span class="line">         <span class="number">36</span>,<span class="number">37</span>,<span class="number">38</span>,<span class="number">39</span>,<span class="number">40</span>,<span class="number">41</span>,<span class="number">42</span>,<span class="number">43</span>,<span class="number">44</span>,<span class="number">45</span>,<span class="number">46</span>,<span class="number">47</span>,<span class="number">48</span>,</span><br><span class="line">         <span class="number">49</span>,<span class="number">50</span>,<span class="number">51</span>,<span class="number">52</span>,<span class="number">53</span>,<span class="number">54</span>,<span class="number">55</span>,<span class="number">56</span>,<span class="number">58</span>,<span class="number">60</span>,<span class="number">61</span>,<span class="number">62</span>,<span class="number">63</span>,</span><br><span class="line">         <span class="number">64</span>,<span class="number">65</span>,<span class="number">66</span>,<span class="number">67</span>,<span class="number">68</span>,<span class="number">69</span>,<span class="number">70</span>,<span class="number">71</span>,<span class="number">72</span>,<span class="number">73</span>,<span class="number">74</span>,<span class="number">75</span>,<span class="number">76</span>,</span><br><span class="line">         <span class="number">77</span>,<span class="number">78</span>,<span class="number">79</span>,<span class="number">81</span>,<span class="number">82</span>,<span class="number">83</span>,<span class="number">84</span>,<span class="number">85</span>,<span class="number">87</span>,<span class="number">89</span></span><br><span class="line">    ]</span><br><span class="line"></span><br><span class="line">    <span class="string">'''</span></span><br><span class="line"><span class="string">        Input record schema</span></span><br><span class="line"><span class="string">        schema: n-m (o) -- xxx</span></span><br><span class="line"><span class="string">            n - position from</span></span><br><span class="line"><span class="string">            m - position to</span></span><br><span class="line"><span class="string">            o - number of characters</span></span><br><span class="line"><span class="string">            xxx - description</span></span><br><span class="line"><span class="string">        1. 1-19 (19) -- reserved positions</span></span><br><span class="line"><span class="string">        2. 20 (1) -- resident status</span></span><br><span class="line"><span class="string">        3. 21-60 (40) -- reserved positions</span></span><br><span class="line"><span class="string">        4. 61-62 (2) -- education code (1989 revision)</span></span><br><span class="line"><span class="string">        5. 63 (1) -- education code (2003 revision)</span></span><br><span class="line"><span class="string">        6. 64 (1) -- education reporting flag</span></span><br><span class="line"><span class="string">        7. 65-66 (2) -- month of death</span></span><br><span class="line"><span class="string">        8. 67-68 (2) -- reserved positions</span></span><br><span class="line"><span class="string">        9. 69 (1) -- sex</span></span><br><span class="line"><span class="string">        10. 70 (1) -- age: 1-years, 2-months, 4-days, 5-hours, 6-minutes, 9-not stated</span></span><br><span class="line"><span class="string">        11. 71-73 (3) -- number of units (years, months etc)</span></span><br><span class="line"><span class="string">        12. 74 (1) -- age substitution flag (if the age reported in positions 70-74 is calculated using dates of birth and death)</span></span><br><span class="line"><span class="string">        13. 75-76 (2) -- age recoded into 52 categories</span></span><br><span class="line"><span class="string">        14. 77-78 (2) -- age recoded into 27 categories</span></span><br><span class="line"><span class="string">        15. 79-80 (2) -- age recoded into 12 categories</span></span><br><span class="line"><span class="string">        16. 81-82 (2) -- infant age recoded into 22 categories</span></span><br><span class="line"><span class="string">        17. 83 (1) -- place of death</span></span><br><span class="line"><span class="string">        18. 84 (1) -- marital status</span></span><br><span class="line"><span class="string">        19. 85 (1) -- day of the week of death</span></span><br><span class="line"><span class="string">        20. 86-101 (16) -- reserved positions</span></span><br><span class="line"><span class="string">        21. 102-105 (4) -- current year</span></span><br><span class="line"><span class="string">        22. 106 (1) -- injury at work</span></span><br><span class="line"><span class="string">        23. 107 (1) -- manner of death</span></span><br><span class="line"><span class="string">        24. 108 (1) -- manner of disposition</span></span><br><span class="line"><span class="string">        25. 109 (1) -- autopsy</span></span><br><span class="line"><span class="string">        26. 110-143 (34) -- reserved positions</span></span><br><span class="line"><span class="string">        27. 144 (1) -- activity code</span></span><br><span class="line"><span class="string">        28. 145 (1) -- place of injury</span></span><br><span class="line"><span class="string">        29. 146-149 (4) -- ICD code</span></span><br><span class="line"><span class="string">        30. 150-152 (3) -- 358 cause recode</span></span><br><span class="line"><span class="string">        31. 153 (1) -- reserved position</span></span><br><span class="line"><span class="string">        32. 154-156 (3) -- 113 cause recode</span></span><br><span class="line"><span class="string">        33. 157-159 (3) -- 130 infant cause recode</span></span><br><span class="line"><span class="string">        34. 160-161 (2) -- 39 cause recode</span></span><br><span class="line"><span class="string">        35. 162 (1) -- reserved position</span></span><br><span class="line"><span class="string">        36. 163-164 (2) -- number of entity-axis conditions</span></span><br><span class="line"><span class="string">        37-56. 165-304 (140) -- list of up to 20 conditions</span></span><br><span class="line"><span class="string">        57. 305-340 (36) -- reserved positions</span></span><br><span class="line"><span class="string">        58. 341-342 (2) -- number of record axis conditions</span></span><br><span class="line"><span class="string">        59. 343 (1) -- reserved position</span></span><br><span class="line"><span class="string">        60-79. 344-443 (100) -- record axis conditions</span></span><br><span class="line"><span class="string">        80. 444 (1) -- reserve position</span></span><br><span class="line"><span class="string">        81. 445-446 (2) -- race</span></span><br><span class="line"><span class="string">        82. 447 (1) -- bridged race flag</span></span><br><span class="line"><span class="string">        83. 448 (1) -- race imputation flag</span></span><br><span class="line"><span class="string">        84. 449 (1) -- race recode (3 categories)</span></span><br><span class="line"><span class="string">        85. 450 (1) -- race recode (5 categories)</span></span><br><span class="line"><span class="string">        86. 461-483 (33) -- reserved positions</span></span><br><span class="line"><span class="string">        87. 484-486 (3) -- Hispanic origin</span></span><br><span class="line"><span class="string">        88. 487 (1) -- reserved</span></span><br><span class="line"><span class="string">        89. 488 (1) -- Hispanic origin/race recode</span></span><br><span class="line"><span class="string">     '''</span></span><br><span class="line"></span><br><span class="line">    record_split = re\</span><br><span class="line">        .compile(</span><br><span class="line">            <span class="string">r'([\s]&#123;19&#125;)([0-9]&#123;1&#125;)([\s]&#123;40&#125;)([0-9\s]&#123;2&#125;)([0-9\s]&#123;1&#125;)([0-9]&#123;1&#125;)([0-9]&#123;2&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([\s]&#123;2&#125;)([FM]&#123;1&#125;)([0-9]&#123;1&#125;)([0-9]&#123;3&#125;)([0-9\s]&#123;1&#125;)([0-9]&#123;2&#125;)([0-9]&#123;2&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([0-9]&#123;2&#125;)([0-9\s]&#123;2&#125;)([0-9]&#123;1&#125;)([SMWDU]&#123;1&#125;)([0-9]&#123;1&#125;)([\s]&#123;16&#125;)([0-9]&#123;4&#125;)'</span> +</span><br><span class="line">            <span class="string">r'([YNU]&#123;1&#125;)([0-9\s]&#123;1&#125;)([BCOU]&#123;1&#125;)([YNU]&#123;1&#125;)([\s]&#123;34&#125;)([0-9\s]&#123;1&#125;)([0-9\s]&#123;1&#125;)'</span> +</span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;4&#125;)([0-9]&#123;3&#125;)([\s]&#123;1&#125;)([0-9\s]&#123;3&#125;)([0-9\s]&#123;3&#125;)([0-9\s]&#123;2&#125;)([\s]&#123;1&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([0-9\s]&#123;2&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)([A-Z0-9\s]&#123;7&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;7&#125;)([\s]&#123;36&#125;)([A-Z0-9\s]&#123;2&#125;)([\s]&#123;1&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([A-Z0-9\s]&#123;5&#125;)([\s]&#123;1&#125;)([0-9\s]&#123;2&#125;)([0-9\s]&#123;1&#125;)'</span> + </span><br><span class="line">            <span class="string">r'([0-9\s]&#123;1&#125;)([0-9\s]&#123;1&#125;)([0-9\s]&#123;1&#125;)([\s]&#123;33&#125;)([0-9\s]&#123;3&#125;)([0-9\s]&#123;1&#125;)([0-9\s]&#123;1&#125;)'</span>)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        rs = np.array(record_split.split(row))[selected_indices]</span><br><span class="line">    <span class="keyword">except</span>:</span><br><span class="line">        rs = np.array([<span class="string">'-99'</span>] * len(selected_indices))</span><br><span class="line">    <span class="keyword">return</span> rs</span><br><span class="line"><span class="comment">#     return record_split.split(row)</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">data_from_file_conv = data_from_file.map(extractInformation)</span><br><span class="line">data_from_file_conv.map(<span class="keyword">lambda</span> row: row).take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[array([&#39;1&#39;, &#39;  &#39;, &#39;2&#39;, &#39;1&#39;, &#39;01&#39;, &#39;M&#39;, &#39;1&#39;, &#39;087&#39;, &#39; &#39;, &#39;43&#39;, &#39;23&#39;, &#39;11&#39;,
+        &#39;  &#39;, &#39;4&#39;, &#39;M&#39;, &#39;4&#39;, &#39;2014&#39;, &#39;U&#39;, &#39;7&#39;, &#39;C&#39;, &#39;N&#39;, &#39; &#39;, &#39; &#39;, &#39;I64 &#39;,
+        &#39;238&#39;, &#39;070&#39;, &#39;   &#39;, &#39;24&#39;, &#39;01&#39;, &#39;11I64  &#39;, &#39;       &#39;, &#39;       &#39;,
+        &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;,
+        &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;,
+        &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;       &#39;, &#39;01&#39;,
+        &#39;I64  &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;,
+        &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;,
+        &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;     &#39;, &#39;01&#39;, &#39; &#39;,
+        &#39; &#39;, &#39;1&#39;, &#39;1&#39;, &#39;100&#39;, &#39;6&#39;],
+       dtype=&#39;&lt;U40&#39;)]</code></pre>
+<h2 id="转换">转换</h2>
+<h3 id="map转换"><span class="math inline">\(map\)</span>转换</h3>
+<p><span class="math inline">\(map\)</span>方法应用在每个RDD元素上。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">data_2014 = data_from_file_conv.map(<span class="keyword">lambda</span> row: int(row[<span class="number">16</span>]))</span><br><span class="line">data_2014.take(<span class="number">10</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[2014, 2014, 2014, 2014, 2014, 2014, 2014, 2014, 2014, -99]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">data_2014_2 = data_from_file_conv.map(<span class="keyword">lambda</span> row: (row[<span class="number">16</span>], int(row[<span class="number">16</span>])))</span><br><span class="line">data_2014_2.take(<span class="number">10</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[(&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;2014&#39;, 2014),
+ (&#39;-99&#39;, -99)]</code></pre>
+<h3 id="filter转换"><span class="math inline">\(filter\)</span>转换</h3>
+<p>该方法可以从数据集中选择元素，并符合特定的标准。例如在上面的例子中统计2014年死于车祸的人数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">data_filtered = data_from_file_conv.filter(</span><br><span class="line">   <span class="keyword">lambda</span> row: row[<span class="number">16</span>]==<span class="string">'2014'</span> <span class="keyword">and</span> row[<span class="number">21</span>]==<span class="string">'0'</span>)</span><br><span class="line">data_filtered.count()</span><br></pre></td></tr></table></figure>
+<pre><code>22</code></pre>
+<h3 id="flatmap转换"><span class="math inline">\(flatMap\)</span>转换</h3>
+<p>和<span class="math inline">\(map\)</span>方法类似，但是返回一个扁平的结果，而不是一个列表，而且可以用于过滤一些格式不正确的记录。通过传递一个空列表，可以丢弃格式不正确的记录。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">data_2014_flat = data_from_file_conv.flatMap(<span class="keyword">lambda</span> row: (row[<span class="number">16</span>],int(row[<span class="number">16</span>])+<span class="number">1</span>))</span><br><span class="line">data_2014_flat.take(<span class="number">10</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[&#39;2014&#39;, 2015, &#39;2014&#39;, 2015, &#39;2014&#39;, 2015, &#39;2014&#39;, 2015, &#39;2014&#39;, 2015]</code></pre>
+<h3 id="distinct转换"><span class="math inline">\(distinct\)</span>转换</h3>
+<p>用于选择指定列中不同的值，并以列表的形式返回。例如检查上面那个数据集中是否只包含男性和女性，从而检查数据集解析是否正确。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">distinct_gender = data_from_file_conv.map(<span class="keyword">lambda</span> row: row[<span class="number">5</span>]).distinct()</span><br><span class="line">distinct_gender.collect()</span><br></pre></td></tr></table></figure>
+<pre><code>[&#39;-99&#39;, &#39;M&#39;, &#39;F&#39;]</code></pre>
+<h3 id="sample转换"><span class="math inline">\(sample\)</span>转换</h3>
+<p>该方法返回数据集的随机样本。第一个参数表示采样是否应该被替换，第二个参数表示随机返回的比例，第三个参数表示伪随机数产生器的种子。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">data_sample = data_from_file_conv.sample(<span class="keyword">False</span>, <span class="number">0.1</span>, <span class="number">666</span>)</span><br><span class="line">print(<span class="string">"Original dataset: &#123;0&#125;, sample: &#123;1&#125;"</span>\</span><br><span class="line">     .format(data_from_file_conv.count(), data_sample.count()))</span><br></pre></td></tr></table></figure>
+<pre><code>Original dataset: 2631171, sample: 263247</code></pre>
+<h3 id="leftouterjoin转换"><span class="math inline">\(leftOuterJoin\)</span>转换</h3>
+<p>根据两个数据集中都有的值来连接两个RDD，并返回左侧的RDD记录，而右侧的记录附在两个RDD匹配的地方。需要注意的是，这是一个高开销的方法，应该谨慎使用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">rdd1 = sc.parallelize([(<span class="string">'a'</span>, <span class="number">1</span>), (<span class="string">'b'</span>, <span class="number">4</span>), (<span class="string">'c'</span>, <span class="number">10</span>)])</span><br><span class="line">rdd2 = sc.parallelize([(<span class="string">'a'</span>, <span class="number">4</span>), (<span class="string">'a'</span>,<span class="number">1</span>), (<span class="string">'b'</span>, <span class="string">'6'</span>), (<span class="string">'d'</span>, <span class="number">15</span>)])</span><br><span class="line">rdd3 = rdd1.leftOuterJoin(rdd2)</span><br><span class="line">rdd3.take(<span class="number">5</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[(&#39;a&#39;, (1, 4)), (&#39;a&#39;, (1, 1)), (&#39;c&#39;, (10, None)), (&#39;b&#39;, (4, &#39;6&#39;))]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rdd4 = rdd1.join(rdd2)</span><br><span class="line">rdd4.take(<span class="number">5</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[(&#39;a&#39;, (1, 4)), (&#39;a&#39;, (1, 1)), (&#39;b&#39;, (4, &#39;6&#39;))]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rdd5 = rdd1.intersection(rdd2)</span><br><span class="line">rdd5.take(<span class="number">5</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[(&#39;a&#39;, 1)]</code></pre>
+<h3 id="repartition转换"><span class="math inline">\(repartition\)</span>转换</h3>
+<p>重新对数据集进行分区，改变数据集分区的数量。同样的，因为它重组了数据，因此开销很大。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rdd1 = rdd1.repartition(<span class="number">4</span>)</span><br><span class="line">len(rdd1.glom().collect())</span><br></pre></td></tr></table></figure>
+<pre><code>4</code></pre>
+<h2 id="操作">操作</h2>
+<p>和转换不同，操作执行数据集上的计划任务。</p>
+<h3 id="take方法"><span class="math inline">\(take\)</span>方法</h3>
+<p>这可能是最有用的方法，该方法只返回单个数据分区的前n行，对比之下，<span class="math inline">\(collect\)</span>方法返回的是整个RDD。如果想要一些随机记录，可以使用<span class="math inline">\(takeSample\)</span>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">data_first = data_from_file_conv.take(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">data_take_smapled = data_from_file_conv.takeSample(<span class="keyword">False</span>, <span class="number">1</span>, <span class="number">667</span>)</span><br></pre></td></tr></table></figure>
+<h3 id="collect方法"><span class="math inline">\(collect\)</span>方法</h3>
+<p>将所有RDD的元素返回给驱动程序。</p>
+<h3 id="reduce方法"><span class="math inline">\(reduce\)</span>方法</h3>
+<p>使用指定的方法减少RDD中的元素。例如计算总的元素数量。需要注意的是，传递给<span class="math inline">\(reduce\)</span>的函数需要<strong>在元素顺序改变和操作符顺序改变的情况下都不改变结果</strong>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">data_reduce = sc.parallelize([<span class="number">1</span>, <span class="number">2</span>, <span class="number">0.5</span>, <span class="number">0.1</span>, <span class="number">5</span>, <span class="number">0.2</span>], <span class="number">1</span>)</span><br><span class="line">works = data_reduce.reduce(<span class="keyword">lambda</span> x, y: x+y)</span><br><span class="line">works</span><br></pre></td></tr></table></figure>
+<pre><code>8.799999999999999</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">data_reduce = sc.parallelize([<span class="number">1</span>, <span class="number">2</span>, <span class="number">0.5</span>, <span class="number">0.1</span>, <span class="number">5</span>, <span class="number">0.2</span>], <span class="number">1</span>)</span><br><span class="line">divs = data_reduce.reduce(<span class="keyword">lambda</span> x, y: x/y)</span><br><span class="line">divs</span><br></pre></td></tr></table></figure>
+<pre><code>10.0</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">data_reduce = sc.parallelize([<span class="number">1</span>, <span class="number">2</span>, <span class="number">0.5</span>, <span class="number">0.1</span>, <span class="number">5</span>, <span class="number">0.2</span>], <span class="number">4</span>)</span><br><span class="line">divs = data_reduce.reduce(<span class="keyword">lambda</span> x, y: x/y)</span><br><span class="line">divs</span><br></pre></td></tr></table></figure>
+<pre><code>0.1</code></pre>
+<p><span class="math inline">\(reduceByKey\)</span>和<span class="math inline">\(reduce\)</span>方法类似，不同在于它是在键-键匹配的基础上进行操作。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">data_key = sc.parallelize(</span><br><span class="line">    [(<span class="string">'a'</span>, <span class="number">4</span>), (<span class="string">'a'</span>,<span class="number">1</span>), (<span class="string">'b'</span>, <span class="number">6</span>), (<span class="string">'d'</span>, <span class="number">15</span>),</span><br><span class="line">    (<span class="string">'a'</span>, <span class="number">5</span>), (<span class="string">'d'</span>, <span class="number">1</span>)],<span class="number">4</span>)</span><br><span class="line">data_key.reduceByKey(<span class="keyword">lambda</span> x, y: x+y).collect()</span><br></pre></td></tr></table></figure>
+<pre><code>[(&#39;b&#39;, 6), (&#39;a&#39;, 10), (&#39;d&#39;, 16)]</code></pre>
+<h3 id="count方法"><span class="math inline">\(count\)</span>方法</h3>
+<p>统计RDD中元素的总数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">data_reduce.count()</span><br></pre></td></tr></table></figure>
+<pre><code>6</code></pre>
+<p>该方法和下面的方法产生同样的结果，但是不需要把整个数据集移动到驱动程序</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">len(data_reduce.collect())</span><br></pre></td></tr></table></figure>
+<pre><code>6</code></pre>
+<p>如果数据是key-value形式，可以使用<span class="math inline">\(countByKey\)</span>方法获取不同键的数量</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">data_key.countByKey().items()</span><br></pre></td></tr></table></figure>
+<pre><code>dict_items([(&#39;a&#39;, 3), (&#39;b&#39;, 1), (&#39;d&#39;, 2)])</code></pre>
+<h3 id="saveastextfile方法"><span class="math inline">\(saveAsTextFile\)</span>方法</h3>
+<p>将RDD保存为文本文件，每个文件一个分区</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">data_key.saveAsTextFile(<span class="string">'/media/seisinv/Data/course/spark/notebook/data_key.txt'</span>)</span><br></pre></td></tr></table></figure>
+<p>要读取这个文件，需要解析它，因为所有的行都被视为字符串</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">parseInput</span><span class="params">(row)</span>:</span></span><br><span class="line">    <span class="keyword">import</span> re</span><br><span class="line">    </span><br><span class="line">    pattern = re.compile(<span class="string">r'\(\'([a-z])\', ([0-9])\)'</span>)</span><br><span class="line">    row_split = pattern.split(row)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> (row_split[<span class="number">0</span>], int(row_split[<span class="number">1</span>]))</span><br><span class="line">    </span><br><span class="line">data_key_reread = sc \</span><br><span class="line">    .textFile(<span class="string">'/media/seisinv/Data/course/spark/notebook/data_key.txt'</span>) \</span><br><span class="line">    .map(parseInput)</span><br><span class="line"><span class="comment">#data_key_reread.collect()</span></span><br><span class="line"><span class="comment">#data_key_reread.take(5)</span></span><br></pre></td></tr></table></figure>
+<h3 id="foreach方法"><span class="math inline">\(foreach\)</span>方法</h3>
+<p>对RDD的每个元素，用迭代的方法应用相同的函数，和<span class="math inline">\(map\)</span>比较，该方法按照一个接一个的方式处理，当需要将数据保存到pyspark不支持的数据库时，该方法很有用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">f</span><span class="params">(x)</span>:</span></span><br><span class="line">    print(x)</span><br><span class="line">data_key.foreach(f)</span><br></pre></td></tr></table></figure>
+<h2 id="小结">小结</h2>
+<blockquote>
+<ol style="list-style-type: decimal">
+<li>RDD是Spark的核心，是最基本的数据结构<br>
+</li>
+<li>Spark中的转换是惰性的，只有在调用操作之后才真正起作用<br>
+</li>
+<li>Python的RDD比Scala慢很多，因此引入下一种数据结构：DataFrame</li>
+</ol>
+</blockquote>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>PySpark实战指南，Drabas and Lee著, 栾云杰等译</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Spark/" rel="tag"># Spark</a>
+          
+            <a href="/tags/RDD/" rel="tag"># RDD</a>
+          
+            <a href="/tags/数据结构/" rel="tag"># 数据结构</a>
+          
+            <a href="/tags/分布式数据集/" rel="tag"># 分布式数据集</a>
+          
+            <a href="/tags/分布式计算/" rel="tag"># 分布式计算</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/31/20_pca/" rel="next" title="主成分分析">
+                <i class="fa fa-chevron-left"></i> 主成分分析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/04/31_dataframe/" rel="prev" title="DataFrame">
+                DataFrame <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建rdd"><span class="nav-number">1.</span> <span class="nav-text">创建RDD</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#schema"><span class="nav-number">1.1.</span> <span class="nav-text">Schema</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#读取文件"><span class="nav-number">1.2.</span> <span class="nav-text">读取文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#自定义函数"><span class="nav-number">1.3.</span> <span class="nav-text">自定义函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#转换"><span class="nav-number">2.</span> <span class="nav-text">转换</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#map转换"><span class="nav-number">2.1.</span> <span class="nav-text">\(map\)转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#filter转换"><span class="nav-number">2.2.</span> <span class="nav-text">\(filter\)转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#flatmap转换"><span class="nav-number">2.3.</span> <span class="nav-text">\(flatMap\)转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#distinct转换"><span class="nav-number">2.4.</span> <span class="nav-text">\(distinct\)转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sample转换"><span class="nav-number">2.5.</span> <span class="nav-text">\(sample\)转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#leftouterjoin转换"><span class="nav-number">2.6.</span> <span class="nav-text">\(leftOuterJoin\)转换</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#repartition转换"><span class="nav-number">2.7.</span> <span class="nav-text">\(repartition\)转换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#操作"><span class="nav-number">3.</span> <span class="nav-text">操作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#take方法"><span class="nav-number">3.1.</span> <span class="nav-text">\(take\)方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#collect方法"><span class="nav-number">3.2.</span> <span class="nav-text">\(collect\)方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#reduce方法"><span class="nav-number">3.3.</span> <span class="nav-text">\(reduce\)方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#count方法"><span class="nav-number">3.4.</span> <span class="nav-text">\(count\)方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#saveastextfile方法"><span class="nav-number">3.5.</span> <span class="nav-text">\(saveAsTextFile\)方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#foreach方法"><span class="nav-number">3.6.</span> <span class="nav-text">\(foreach\)方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小结"><span class="nav-number">4.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

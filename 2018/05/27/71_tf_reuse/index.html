@@ -1,0 +1,2209 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="神经网络,模型的持久化," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文介绍Tensorflow中如何持久化（保存和加载）模型，以及持久化的工作原理和持久化所涉及的文件格式。并通过一个简单的加法实例，说明持久化的具体实现和工作机制。">
+<meta name="keywords" content="神经网络,模型的持久化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tensorflow模型的持久化">
+<meta property="og:url" content="http://yoursite.com/2018/05/27/71_tf_reuse/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文介绍Tensorflow中如何持久化（保存和加载）模型，以及持久化的工作原理和持久化所涉及的文件格式。并通过一个简单的加法实例，说明持久化的具体实现和工作机制。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-05-27T01:03:05.976Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tensorflow模型的持久化">
+<meta name="twitter:description" content="本文介绍Tensorflow中如何持久化（保存和加载）模型，以及持久化的工作原理和持久化所涉及的文件格式。并通过一个简单的加法实例，说明持久化的具体实现和工作机制。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/05/27/71_tf_reuse/"/>
+
+
+
+
+
+  <title>Tensorflow模型的持久化 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/27/71_tf_reuse/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Tensorflow模型的持久化</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-05-27T09:03:06+08:00">
+                2018-05-27
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Tensorflow/" itemprop="url" rel="index">
+                    <span itemprop="name">Tensorflow</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文介绍Tensorflow中如何持久化（保存和加载）模型，以及持久化的工作原理和持久化所涉及的文件格式。并通过一个简单的加法实例，说明持久化的具体实现和工作机制。 <a id="more"></a></p>
+<h2 id="模型持久化的实现">模型持久化的实现</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line">v1 = tf.Variable(tf.constant(<span class="number">1.0</span>, shape=[<span class="number">1</span>], name=<span class="string">'v1'</span>))</span><br><span class="line">v2 = tf.Variable(tf.constant(<span class="number">2.0</span>, shape=[<span class="number">1</span>], name=<span class="string">'v2'</span>))</span><br><span class="line"></span><br><span class="line">result = v1+v2</span><br><span class="line"></span><br><span class="line">init_op = tf.global_variables_initializer()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 声明tf.train.Saver类用于保存模型</span></span><br><span class="line">saver = tf.train.Saver()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    sess.run(init_op)</span><br><span class="line">    saver.save(sess, <span class="string">'model/model_test.ckpt'</span>)</span><br></pre></td></tr></table></figure>
+<p>上述代码执行后，会生成3个文件，分别是</p>
+<ol style="list-style-type: decimal">
+<li>后缀为meta的文件。保存的是计算图的结构，也可以理解为神经网络的结构<br>
+</li>
+<li>后缀为ckpt的文件。保存每个变量的取值<br>
+</li>
+<li>checkpoint文件。保存当前目录下所有的模型文件列表</li>
+</ol>
+<h3 id="持久化所有变量">持久化所有变量</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加载持久化的图</span></span><br><span class="line">saver = tf.train.import_meta_graph(<span class="string">'model/model_test.ckpt.meta'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    saver.restore(sess,<span class="string">'model/model_test.ckpt'</span>)</span><br><span class="line">    print(sess.run(result))</span><br></pre></td></tr></table></figure>
+<pre><code>INFO:tensorflow:Restoring parameters from model/model_test.ckpt
+[ 3.]</code></pre>
+<h3 id="持久化部分变量">持久化部分变量</h3>
+<p>应用场景：已经训练好了一个5层网络，想尝试一个6层网络，可以讲前面训练好的5层网络直接加载到新的模型，然后仅仅训练第6层网络。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">v1 = tf.Variable(tf.constant(<span class="number">1.0</span>, shape=[<span class="number">1</span>], name=<span class="string">'v1'</span>))</span><br><span class="line">v2 = tf.Variable(tf.constant(<span class="number">2.0</span>, shape=[<span class="number">1</span>], name=<span class="string">'v2'</span>))</span><br><span class="line"></span><br><span class="line">result = v1+v2</span><br><span class="line"></span><br><span class="line">init_op = tf.global_variables_initializer()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 只持久化变量v1</span></span><br><span class="line">saver = tf.train.Saver([v1])</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    sess.run(init_op)</span><br><span class="line">    saver.save(sess, <span class="string">'model/model_test.ckpt'</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加载持久化的图</span></span><br><span class="line">saver = tf.train.import_meta_graph(<span class="string">'model/model_test.ckpt.meta'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    saver.restore(sess,<span class="string">'model/model_test.ckpt'</span>)</span><br><span class="line">    print(sess.run(v1))</span><br></pre></td></tr></table></figure>
+<pre><code>INFO:tensorflow:Restoring parameters from model/model_test.ckpt
+[1.]</code></pre>
+<h3 id="变量重命名">变量重命名</h3>
+<p>应用场景：在对模型进行滑动平均操作后，直接将结果赋值给原来的变量，方便该变量继续在后面的操作中使用。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line">v = tf.Variable(<span class="number">0</span>, dtype=tf.float32, name=<span class="string">'v'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 当前只有一个变量v:0</span></span><br><span class="line"><span class="keyword">for</span> variables <span class="keyword">in</span> tf.global_variables():</span><br><span class="line">    print(variables.name)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用tf.train.ExponentialMovingAverage滑动平均类</span></span><br><span class="line">ema = tf.train.ExponentialMovingAverage(<span class="number">0.99</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 申明滑动平均模型之后，生成影子变量v/ExponentialMovingAverage:0</span></span><br><span class="line">maintain_averages_op = ema.apply(tf.global_variables())</span><br><span class="line"></span><br><span class="line"><span class="comment"># 同时输出两个变量</span></span><br><span class="line"><span class="keyword">for</span> variables <span class="keyword">in</span> tf.global_variables():</span><br><span class="line">    print(variables.name, variables.shape)</span><br><span class="line">    </span><br><span class="line">saver = tf.train.Saver()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    init_op = tf.global_variables_initializer()</span><br><span class="line">    sess.run(init_op)</span><br><span class="line">    </span><br><span class="line">    sess.run(tf.assign(v, <span class="number">10</span>))</span><br><span class="line">    </span><br><span class="line">    sess.run(maintain_averages_op)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 保存这两个变量</span></span><br><span class="line">    saver.save(sess, <span class="string">'model/model_test.ckpt'</span>)</span><br><span class="line">    </span><br><span class="line">    print(sess.run([v,ema.average(v)]))</span><br></pre></td></tr></table></figure>
+<pre><code>v:0
+v:0 ()
+v/ExponentialMovingAverage:0 ()
+[10.0, 0.099999905]</code></pre>
+<p><strong>重命名滑动平均变量</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">v = tf.Variable(<span class="number">0</span>, dtype=tf.float32, name=<span class="string">'v'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用变量重命名将原来变量v的滑动平均值直接赋值给v</span></span><br><span class="line">saver = tf.train.Saver(&#123;<span class="string">"v/ExponentialMovingAverage"</span>: v&#125;)</span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    saver.restore(sess, <span class="string">"model/model_test.ckpt"</span>)</span><br><span class="line">    print(sess.run(v))</span><br></pre></td></tr></table></figure>
+<pre><code>INFO:tensorflow:Restoring parameters from model/model_test.ckpt
+0.099999905</code></pre>
+<p>为了方便加载时重命名滑动平均变量，tf.train.ExponentialMovingAverage类提供了variable_to_restore函数生成tf.train.Saver类所需要的变量重命名字典。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line">v = tf.Variable(<span class="number">0</span>, dtype=tf.float32, name=<span class="string">'v'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> variables <span class="keyword">in</span> tf.global_variables():</span><br><span class="line">    print(variables.name)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用tf.train.ExponentialMovingAverage滑动平均类</span></span><br><span class="line">ema = tf.train.ExponentialMovingAverage(<span class="number">0.99</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用滑动平均类自带的函数生成所需要的变量重命名字典</span></span><br><span class="line">print(ema.variables_to_restore())</span><br><span class="line"></span><br><span class="line"><span class="comment"># 打印变量重命名字典</span></span><br><span class="line">saver = tf.train.Saver(ema.variables_to_restore())</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    saver.restore(sess, <span class="string">'model/model_test.ckpt'</span>)</span><br><span class="line">    print(sess.run(v))</span><br></pre></td></tr></table></figure>
+<pre><code>v:0
+{&#39;v/ExponentialMovingAverage&#39;: &lt;tf.Variable &#39;v:0&#39; shape=() dtype=float32_ref&gt;}
+INFO:tensorflow:Restoring parameters from model/model_test.ckpt
+0.099999905</code></pre>
+<h3 id="变量保存为常量">变量保存为常量</h3>
+<p>应用场景：在测试过程中，只需要知道如何从神经网络的输入层经过向前传播计算输出层，不需要变量初始化、模型保存等辅助的信息，因此，可以将变量以常量的形式保存，这样整个计算图可以统一地放在一个文件中。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> tensorflow.python.framework <span class="keyword">import</span> graph_util</span><br><span class="line"></span><br><span class="line">v1 = tf.Variable(tf.constant(<span class="number">1.0</span>, shape=[<span class="number">1</span>]), name=<span class="string">'v1'</span>)</span><br><span class="line">v2 = tf.Variable(tf.constant(<span class="number">2.0</span>, shape=[<span class="number">1</span>]), name=<span class="string">'v2'</span>)</span><br><span class="line"></span><br><span class="line">result = v1 + v2</span><br><span class="line"></span><br><span class="line">init_op = tf.global_variables_initializer()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    sess.run(init_op)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 导出当前计算图的GraphDef部分，只需要这一部分就可以完成输入到输出的计算过程</span></span><br><span class="line">    graph_def = tf.get_default_graph().as_graph_def()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 将图中的变量及其取值转化为常量，同时将不必要的节点去掉。最后一个参数表示需要保存的节点名称，而不是变量的名称</span></span><br><span class="line">    output_graph_def = graph_util.convert_variables_to_constants(sess, graph_def, [<span class="string">'add'</span>])</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 将到处的模型存入文件</span></span><br><span class="line">    <span class="keyword">with</span> tf.gfile.GFile(<span class="string">'model/model_test.pb'</span>, <span class="string">'wb'</span>) <span class="keyword">as</span> f:</span><br><span class="line">        f.write(output_graph_def.SerializeToString())</span><br></pre></td></tr></table></figure>
+<pre><code>INFO:tensorflow:Froze 2 variables.
+Converted 2 variables to const ops.</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    model_filename = <span class="string">'model/model_test.pb'</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 读取保存的模型文件，并解析为对应的GraphDef Protocol Buffer</span></span><br><span class="line">    <span class="keyword">with</span> tf.gfile.FastGFile(model_filename, <span class="string">'rb'</span>) <span class="keyword">as</span> f:</span><br><span class="line">        graph_def = tf.GraphDef()</span><br><span class="line">        graph_def.ParseFromString(f.read())</span><br><span class="line">        </span><br><span class="line">    <span class="comment"># 将保存的图加载到当前图中，最后一个参数表示返回的张量名称，而不是节点名称</span></span><br><span class="line">    result = tf.import_graph_def(graph_def, return_elements=[<span class="string">"add: 0"</span>])</span><br><span class="line">    print(sess.run(result))</span><br></pre></td></tr></table></figure>
+<pre><code>[array([3.], dtype=float32)]</code></pre>
+<h2 id="持久化原理及数据格式">持久化原理及数据格式</h2>
+<p>Tensorflow通过元图（MetaGraph）来记录计算图中<em>节点的信息</em>以及运行计算图中节点所需要的<em>元数据</em>。而元图是由MetaGraphDef Protocal Buffer定义的，保存MetaGraphDef信息的文件默认以.meta后缀名。下面用一个简单的求和例子说明元图的工作原理以及MetaGraphDef类型的定义。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line">v1 = tf.Variable(tf.constant(<span class="number">1.0</span>, shape=[<span class="number">1</span>]), name=<span class="string">'v1'</span>)</span><br><span class="line">v2 = tf.Variable(tf.constant(<span class="number">2.0</span>, shape=[<span class="number">1</span>]), name=<span class="string">'v2'</span>)</span><br><span class="line">result = v1 + v2</span><br><span class="line"></span><br><span class="line">saver = tf.train.Saver()</span><br><span class="line"></span><br><span class="line">saver.export_meta_graph(<span class="string">'model/model_test.ckpt.meta.jason'</span>, as_text=<span class="keyword">True</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>meta_info_def {
+  stripped_op_list {
+    op {
+      name: &quot;Add&quot;
+      input_arg {
+        name: &quot;x&quot;
+        type_attr: &quot;T&quot;
+      }
+      input_arg {
+        name: &quot;y&quot;
+        type_attr: &quot;T&quot;
+      }
+      output_arg {
+        name: &quot;z&quot;
+        type_attr: &quot;T&quot;
+      }
+      attr {
+        name: &quot;T&quot;
+        type: &quot;type&quot;
+        allowed_values {
+          list {
+            type: DT_HALF
+            type: DT_FLOAT
+            type: DT_DOUBLE
+            type: DT_UINT8
+            type: DT_INT8
+            type: DT_INT16
+            type: DT_INT32
+            type: DT_INT64
+            type: DT_COMPLEX64
+            type: DT_COMPLEX128
+            type: DT_STRING
+          }
+        }
+      }
+    }
+    op {
+      name: &quot;Assign&quot;
+      input_arg {
+        name: &quot;ref&quot;
+        type_attr: &quot;T&quot;
+        is_ref: true
+      }
+      input_arg {
+        name: &quot;value&quot;
+        type_attr: &quot;T&quot;
+      }
+      output_arg {
+        name: &quot;output_ref&quot;
+        type_attr: &quot;T&quot;
+        is_ref: true
+      }
+      attr {
+        name: &quot;T&quot;
+        type: &quot;type&quot;
+      }
+      attr {
+        name: &quot;validate_shape&quot;
+        type: &quot;bool&quot;
+        default_value {
+          b: true
+        }
+      }
+      attr {
+        name: &quot;use_locking&quot;
+        type: &quot;bool&quot;
+        default_value {
+          b: true
+        }
+      }
+      allows_uninitialized_input: true
+    }
+    op {
+      name: &quot;Const&quot;
+      output_arg {
+        name: &quot;output&quot;
+        type_attr: &quot;dtype&quot;
+      }
+      attr {
+        name: &quot;value&quot;
+        type: &quot;tensor&quot;
+      }
+      attr {
+        name: &quot;dtype&quot;
+        type: &quot;type&quot;
+      }
+    }
+    op {
+      name: &quot;Identity&quot;
+      input_arg {
+        name: &quot;input&quot;
+        type_attr: &quot;T&quot;
+      }
+      output_arg {
+        name: &quot;output&quot;
+        type_attr: &quot;T&quot;
+      }
+      attr {
+        name: &quot;T&quot;
+        type: &quot;type&quot;
+      }
+    }
+    op {
+      name: &quot;NoOp&quot;
+    }
+    op {
+      name: &quot;RestoreV2&quot;
+      input_arg {
+        name: &quot;prefix&quot;
+        type: DT_STRING
+      }
+      input_arg {
+        name: &quot;tensor_names&quot;
+        type: DT_STRING
+      }
+      input_arg {
+        name: &quot;shape_and_slices&quot;
+        type: DT_STRING
+      }
+      output_arg {
+        name: &quot;tensors&quot;
+        type_list_attr: &quot;dtypes&quot;
+      }
+      attr {
+        name: &quot;dtypes&quot;
+        type: &quot;list(type)&quot;
+        has_minimum: true
+        minimum: 1
+      }
+      is_stateful: true
+    }
+    op {
+      name: &quot;SaveV2&quot;
+      input_arg {
+        name: &quot;prefix&quot;
+        type: DT_STRING
+      }
+      input_arg {
+        name: &quot;tensor_names&quot;
+        type: DT_STRING
+      }
+      input_arg {
+        name: &quot;shape_and_slices&quot;
+        type: DT_STRING
+      }
+      input_arg {
+        name: &quot;tensors&quot;
+        type_list_attr: &quot;dtypes&quot;
+      }
+      attr {
+        name: &quot;dtypes&quot;
+        type: &quot;list(type)&quot;
+        has_minimum: true
+        minimum: 1
+      }
+      is_stateful: true
+    }
+    op {
+      name: &quot;VariableV2&quot;
+      output_arg {
+        name: &quot;ref&quot;
+        type_attr: &quot;dtype&quot;
+        is_ref: true
+      }
+      attr {
+        name: &quot;shape&quot;
+        type: &quot;shape&quot;
+      }
+      attr {
+        name: &quot;dtype&quot;
+        type: &quot;type&quot;
+      }
+      attr {
+        name: &quot;container&quot;
+        type: &quot;string&quot;
+        default_value {
+          s: &quot;&quot;
+        }
+      }
+      attr {
+        name: &quot;shared_name&quot;
+        type: &quot;string&quot;
+        default_value {
+          s: &quot;&quot;
+        }
+      }
+      is_stateful: true
+    }
+  }
+  tensorflow_version: &quot;1.4.0-rc1&quot;
+  tensorflow_git_version: &quot;v1.4.0-rc0-21-g1e25994&quot;
+}
+graph_def {
+  node {
+    name: &quot;Const&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: 1
+            }
+          }
+          float_val: 1.0
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;v1&quot;
+    op: &quot;VariableV2&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;container&quot;
+      value {
+        s: &quot;&quot;
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;shape&quot;
+      value {
+        shape {
+          dim {
+            size: 1
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;shared_name&quot;
+      value {
+        s: &quot;&quot;
+      }
+    }
+  }
+  node {
+    name: &quot;v1/Assign&quot;
+    op: &quot;Assign&quot;
+    input: &quot;v1&quot;
+    input: &quot;Const&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;_class&quot;
+      value {
+        list {
+          s: &quot;loc:@v1&quot;
+        }
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;use_locking&quot;
+      value {
+        b: true
+      }
+    }
+    attr {
+      key: &quot;validate_shape&quot;
+      value {
+        b: true
+      }
+    }
+  }
+  node {
+    name: &quot;v1/read&quot;
+    op: &quot;Identity&quot;
+    input: &quot;v1&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;_class&quot;
+      value {
+        list {
+          s: &quot;loc:@v1&quot;
+        }
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;Const_1&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: 1
+            }
+          }
+          float_val: 2.0
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;v2&quot;
+    op: &quot;VariableV2&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;container&quot;
+      value {
+        s: &quot;&quot;
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;shape&quot;
+      value {
+        shape {
+          dim {
+            size: 1
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;shared_name&quot;
+      value {
+        s: &quot;&quot;
+      }
+    }
+  }
+  node {
+    name: &quot;v2/Assign&quot;
+    op: &quot;Assign&quot;
+    input: &quot;v2&quot;
+    input: &quot;Const_1&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;_class&quot;
+      value {
+        list {
+          s: &quot;loc:@v2&quot;
+        }
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;use_locking&quot;
+      value {
+        b: true
+      }
+    }
+    attr {
+      key: &quot;validate_shape&quot;
+      value {
+        b: true
+      }
+    }
+  }
+  node {
+    name: &quot;v2/read&quot;
+    op: &quot;Identity&quot;
+    input: &quot;v2&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;_class&quot;
+      value {
+        list {
+          s: &quot;loc:@v2&quot;
+        }
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;add&quot;
+    op: &quot;Add&quot;
+    input: &quot;v1/read&quot;
+    input: &quot;v2/read&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/Const&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_STRING
+          tensor_shape {
+          }
+          string_val: &quot;model&quot;
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/SaveV2/tensor_names&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 2
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_STRING
+          tensor_shape {
+            dim {
+              size: 2
+            }
+          }
+          string_val: &quot;v1&quot;
+          string_val: &quot;v2&quot;
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/SaveV2/shape_and_slices&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 2
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_STRING
+          tensor_shape {
+            dim {
+              size: 2
+            }
+          }
+          string_val: &quot;&quot;
+          string_val: &quot;&quot;
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/SaveV2&quot;
+    op: &quot;SaveV2&quot;
+    input: &quot;save/Const&quot;
+    input: &quot;save/SaveV2/tensor_names&quot;
+    input: &quot;save/SaveV2/shape_and_slices&quot;
+    input: &quot;v1&quot;
+    input: &quot;v2&quot;
+    attr {
+      key: &quot;dtypes&quot;
+      value {
+        list {
+          type: DT_FLOAT
+          type: DT_FLOAT
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/control_dependency&quot;
+    op: &quot;Identity&quot;
+    input: &quot;save/Const&quot;
+    input: &quot;^save/SaveV2&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;_class&quot;
+      value {
+        list {
+          s: &quot;loc:@save/Const&quot;
+        }
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+          }
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/RestoreV2/tensor_names&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_STRING
+          tensor_shape {
+            dim {
+              size: 1
+            }
+          }
+          string_val: &quot;v1&quot;
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/RestoreV2/shape_and_slices&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_STRING
+          tensor_shape {
+            dim {
+              size: 1
+            }
+          }
+          string_val: &quot;&quot;
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/RestoreV2&quot;
+    op: &quot;RestoreV2&quot;
+    input: &quot;save/Const&quot;
+    input: &quot;save/RestoreV2/tensor_names&quot;
+    input: &quot;save/RestoreV2/shape_and_slices&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            unknown_rank: true
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtypes&quot;
+      value {
+        list {
+          type: DT_FLOAT
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/Assign&quot;
+    op: &quot;Assign&quot;
+    input: &quot;v1&quot;
+    input: &quot;save/RestoreV2&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;_class&quot;
+      value {
+        list {
+          s: &quot;loc:@v1&quot;
+        }
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;use_locking&quot;
+      value {
+        b: true
+      }
+    }
+    attr {
+      key: &quot;validate_shape&quot;
+      value {
+        b: true
+      }
+    }
+  }
+  node {
+    name: &quot;save/RestoreV2_1/tensor_names&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_STRING
+          tensor_shape {
+            dim {
+              size: 1
+            }
+          }
+          string_val: &quot;v2&quot;
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/RestoreV2_1/shape_and_slices&quot;
+    op: &quot;Const&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtype&quot;
+      value {
+        type: DT_STRING
+      }
+    }
+    attr {
+      key: &quot;value&quot;
+      value {
+        tensor {
+          dtype: DT_STRING
+          tensor_shape {
+            dim {
+              size: 1
+            }
+          }
+          string_val: &quot;&quot;
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/RestoreV2_1&quot;
+    op: &quot;RestoreV2&quot;
+    input: &quot;save/Const&quot;
+    input: &quot;save/RestoreV2_1/tensor_names&quot;
+    input: &quot;save/RestoreV2_1/shape_and_slices&quot;
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            unknown_rank: true
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;dtypes&quot;
+      value {
+        list {
+          type: DT_FLOAT
+        }
+      }
+    }
+  }
+  node {
+    name: &quot;save/Assign_1&quot;
+    op: &quot;Assign&quot;
+    input: &quot;v2&quot;
+    input: &quot;save/RestoreV2_1&quot;
+    attr {
+      key: &quot;T&quot;
+      value {
+        type: DT_FLOAT
+      }
+    }
+    attr {
+      key: &quot;_class&quot;
+      value {
+        list {
+          s: &quot;loc:@v2&quot;
+        }
+      }
+    }
+    attr {
+      key: &quot;_output_shapes&quot;
+      value {
+        list {
+          shape {
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+    }
+    attr {
+      key: &quot;use_locking&quot;
+      value {
+        b: true
+      }
+    }
+    attr {
+      key: &quot;validate_shape&quot;
+      value {
+        b: true
+      }
+    }
+  }
+  node {
+    name: &quot;save/restore_all&quot;
+    op: &quot;NoOp&quot;
+    input: &quot;^save/Assign&quot;
+    input: &quot;^save/Assign_1&quot;
+  }
+  versions {
+    producer: 24
+  }
+}
+saver_def {
+  filename_tensor_name: &quot;save/Const:0&quot;
+  save_tensor_name: &quot;save/control_dependency:0&quot;
+  restore_op_name: &quot;save/restore_all&quot;
+  max_to_keep: 5
+  keep_checkpoint_every_n_hours: 10000.0
+  version: V2
+}
+collection_def {
+  key: &quot;trainable_variables&quot;
+  value {
+    bytes_list {
+      value: &quot;\n\004v1:0\022\tv1/Assign\032\tv1/read:02\007Const:0&quot;
+      value: &quot;\n\004v2:0\022\tv2/Assign\032\tv2/read:02\tConst_1:0&quot;
+    }
+  }
+}
+collection_def {
+  key: &quot;variables&quot;
+  value {
+    bytes_list {
+      value: &quot;\n\004v1:0\022\tv1/Assign\032\tv1/read:02\007Const:0&quot;
+      value: &quot;\n\004v2:0\022\tv2/Assign\032\tv2/read:02\tConst_1:0&quot;
+    }
+  }
+}</code></pre>
+<p>除了持久化Tensorflow计算图的结构，Tensorflow中的取值也很重要。名为model.ckpt.data和<span class="math inline">\(model.ckpt.data-*****-of*****\)</span>的文件保存的就是所有变量的取值。其中model.ckpt.data文件是通过SSTable格式存储的，可以大致理解为是一个(key, value)字典列表。以下例子展示如何使用tf.train.NewCheckpointReader类查看保存的变量信息</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line">v1 = tf.Variable(tf.constant(<span class="number">1.0</span>, shape=[<span class="number">1</span>], name=<span class="string">"v1"</span>))</span><br><span class="line">v2 = tf.Variable(tf.constant(<span class="number">2.0</span>, shape=[<span class="number">1</span>], name=<span class="string">"v2"</span>))</span><br><span class="line"></span><br><span class="line">result = v1+v2</span><br><span class="line"></span><br><span class="line">init_op = tf.global_variables_initializer()</span><br><span class="line"></span><br><span class="line">saver = tf.train.Saver()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    sess.run(init_op)</span><br><span class="line">    print(sess.run(result))</span><br><span class="line">    saver.save(sess, <span class="string">'model/model_test.ckpt'</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>[3.]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">saver = tf.train.import_meta_graph(<span class="string">'model/model_test.ckpt.meta'</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    saver.restore(sess, <span class="string">'model/model_test.ckpt'</span>)</span><br><span class="line">    print(sess.run(tf.get_default_graph().get_tensor_by_name(<span class="string">"add:0"</span>)))</span><br></pre></td></tr></table></figure>
+<pre><code>INFO:tensorflow:Restoring parameters from model/model_test.ckpt
+[3.]</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 可以省去后面的.data和.index</span></span><br><span class="line">reader = tf.train.NewCheckpointReader(<span class="string">'model/model_test.ckpt'</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取所有变量列表。</span></span><br><span class="line">global_variables = reader.get_variable_to_shape_map()</span><br><span class="line"><span class="keyword">for</span> variable_name <span class="keyword">in</span> global_variables:</span><br><span class="line">    print(variable_name, global_variable[variable_name])</span><br><span class="line">    </span><br><span class="line">print(<span class="string">"value for variable v1 is"</span>, reader.get_tensor(<span class="string">"Variable_1"</span>))</span><br></pre></td></tr></table></figure>
+<pre><code>Variable_1 [1]
+Variable [1]
+value for variable v1 is [2.]</code></pre>
+<p>最后一个文件的名字是固定的——checkpoint。该文件是由tf.train.Saver类自动生成的，维护了tf.train.Saver类持久化的所有模型文件名。当某个模型文件删除时，这个模型所对应的文件名也会从checkpoint文件中删除。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>郑泽宇、梁博文和顾思宇，Tensorflow: 实战Google深度学习框架（第二版）</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/神经网络/" rel="tag"># 神经网络</a>
+          
+            <a href="/tags/模型的持久化/" rel="tag"># 模型的持久化</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/05/27/74_tensorflow_data_prep/" rel="next" title="Tensorflow数据格式及多线程处理">
+                <i class="fa fa-chevron-left"></i> Tensorflow数据格式及多线程处理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/05/27/75_tensorboard/" rel="prev" title="Tensorboard可视化用法">
+                Tensorboard可视化用法 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#模型持久化的实现"><span class="nav-number">1.</span> <span class="nav-text">模型持久化的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#持久化所有变量"><span class="nav-number">1.1.</span> <span class="nav-text">持久化所有变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#持久化部分变量"><span class="nav-number">1.2.</span> <span class="nav-text">持久化部分变量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#变量重命名"><span class="nav-number">1.3.</span> <span class="nav-text">变量重命名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#变量保存为常量"><span class="nav-number">1.4.</span> <span class="nav-text">变量保存为常量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#持久化原理及数据格式"><span class="nav-number">2.</span> <span class="nav-text">持久化原理及数据格式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

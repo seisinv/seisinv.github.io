@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="深度神经网络,机器学习框架," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文介绍一种十分通用的深度学习编程框架：Tensorflow。该变成框架主要包含两个对象：张量和操作。通过这两个对象可以建立一个计算图，再启动会话以执行该计算图。对深度神经网络应用来说，只需要在会话中运行“optimizer”对象，Tensoflow就可以自动运行反传和模型更新，十分便捷。">
+<meta name="keywords" content="深度神经网络,机器学习框架">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tensorflow简单教程">
+<meta property="og:url" content="http://yoursite.com/2018/03/09/48-TFTutorial/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文介绍一种十分通用的深度学习编程框架：Tensorflow。该变成框架主要包含两个对象：张量和操作。通过这两个对象可以建立一个计算图，再启动会话以执行该计算图。对深度神经网络应用来说，只需要在会话中运行“optimizer”对象，Tensoflow就可以自动运行反传和模型更新，十分便捷。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/09/48-TFTutorial/onehot.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/09/48-TFTutorial/hands.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/09/48-TFTutorial/output_28_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/09/48-TFTutorial/output_46_1.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/09/48-TFTutorial/output_49_1.png">
+<meta property="og:updated_time" content="2018-03-09T02:59:26.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tensorflow简单教程">
+<meta name="twitter:description" content="本文介绍一种十分通用的深度学习编程框架：Tensorflow。该变成框架主要包含两个对象：张量和操作。通过这两个对象可以建立一个计算图，再启动会话以执行该计算图。对深度神经网络应用来说，只需要在会话中运行“optimizer”对象，Tensoflow就可以自动运行反传和模型更新，十分便捷。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/09/48-TFTutorial/onehot.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/09/48-TFTutorial/"/>
+
+
+
+
+
+  <title>Tensorflow简单教程 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/09/48-TFTutorial/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Tensorflow简单教程</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-09T10:59:40+08:00">
+                2018-03-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文介绍一种十分通用的深度学习编程框架：Tensorflow。该变成框架主要包含两个对象：张量和操作。通过这两个对象可以建立一个计算图，再启动会话以执行该计算图。对深度神经网络应用来说，只需要在会话中运行“optimizer”对象，Tensoflow就可以自动运行反传和模型更新，十分便捷。 <a id="more"></a></p>
+<h2 id="基本用法">基本用法</h2>
+<p>对单个样本，计算代价函数： <span class="math display">\[loss = \mathcal{L}(\hat{y}, y) = (\hat y^{(i)} - y^{(i)})^2 \tag{1}\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> math</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> h5py</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">from</span> tensorflow.python.framework <span class="keyword">import</span> ops</span><br><span class="line"><span class="keyword">from</span> tf_utils <span class="keyword">import</span> load_dataset, random_mini_batches, convert_to_one_hot, predict</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br><span class="line">np.random.seed(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">y_hat = tf.constant(<span class="number">36</span>, name=<span class="string">'y_hat'</span>)            <span class="comment"># Define y_hat constant. Set to 36.</span></span><br><span class="line">y = tf.constant(<span class="number">39</span>, name=<span class="string">'y'</span>)                    <span class="comment"># Define y. Set to 39</span></span><br><span class="line"></span><br><span class="line">loss = tf.Variable((y - y_hat)**<span class="number">2</span>, name=<span class="string">'loss'</span>)  <span class="comment"># Create a variable for the loss</span></span><br><span class="line"></span><br><span class="line">init = tf.global_variables_initializer()         <span class="comment"># When init is run later (session.run(init)),</span></span><br><span class="line">                                                 <span class="comment"># the loss variable will be initialized and ready to be computed</span></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> session:                    <span class="comment"># Create a session and print the output</span></span><br><span class="line">    session.run(init)                            <span class="comment"># Initializes the variables</span></span><br><span class="line">    print(session.run(loss))                     <span class="comment"># Prints the loss</span></span><br></pre></td></tr></table></figure>
+<pre><code>9</code></pre>
+<p>在Tensorflow下编写和运行程序有以下几步：</p>
+<ol style="list-style-type: decimal">
+<li>建立张量或变量<br>
+</li>
+<li>编写张量之间的操作<br>
+</li>
+<li>初始化张量<br>
+</li>
+<li>建立一个session<br>
+</li>
+<li>运行这个session，此时会执行前面编写的操作</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a = tf.constant(<span class="number">2</span>)</span><br><span class="line">b = tf.constant(<span class="number">10</span>)</span><br><span class="line">c = tf.multiply(a,b)</span><br><span class="line">print(c)</span><br></pre></td></tr></table></figure>
+<pre><code>Tensor(&quot;Mul:0&quot;, shape=(), dtype=int32)</code></pre>
+<p>从上面可以看出，你并没有看到20，而是输出一个没有维度信息的张量。上面的语句只是把操作放进了“运算图”中，并没有执行运算。为了执行运算，需要建立一个session，然后运行这个session。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sess = tf.Session()</span><br><span class="line">print(sess.run(c))</span><br></pre></td></tr></table></figure>
+<pre><code>20</code></pre>
+<p>下面介绍<strong>placeholder</strong>的用法，placeholder是一个对象，它的值可以稍后指定。为了对这个placeholder设定值，可以使用&quot;feed dictionary&quot;(变量feed_dict)。下面是一个简单的例子:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Change the value of x in the feed_dict</span></span><br><span class="line"></span><br><span class="line">x = tf.placeholder(tf.int64, name = <span class="string">'x'</span>)</span><br><span class="line">print(sess.run(<span class="number">2</span> * x, feed_dict = &#123;x: <span class="number">3</span>&#125;))</span><br><span class="line">sess.close()</span><br></pre></td></tr></table></figure>
+<pre><code>6</code></pre>
+<h3 id="线性函数">线性函数</h3>
+<p>计算 <span class="math inline">\(Y = WX + b\)</span>, 其中 <span class="math inline">\(W\)</span> 和 <span class="math inline">\(X\)</span> 都是随机向量</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: linear_function</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">linear_function</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implements a linear function: </span></span><br><span class="line"><span class="string">            Initializes W to be a random tensor of shape (4,3)</span></span><br><span class="line"><span class="string">            Initializes X to be a random tensor of shape (3,1)</span></span><br><span class="line"><span class="string">            Initializes b to be a random tensor of shape (4,1)</span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    result -- runs the session for Y = WX + b </span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    np.random.seed(<span class="number">1</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (4 lines of code)</span></span><br><span class="line">    X = tf.constant(np.random.randn(<span class="number">3</span>, <span class="number">1</span>), name=<span class="string">'X'</span>)</span><br><span class="line">    W = tf.constant(np.random.randn(<span class="number">4</span>, <span class="number">3</span>), name=<span class="string">'W'</span>)</span><br><span class="line">    b = tf.constant(np.random.randn(<span class="number">4</span>, <span class="number">1</span>), name=<span class="string">'b'</span>)</span><br><span class="line">    Y = tf.add(tf.matmul(W, X), b)</span><br><span class="line">    <span class="comment">### END CODE HERE ### </span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create the session using tf.Session() and run it with sess.run(...) on the variable you want to calculate</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    sess = tf.Session()</span><br><span class="line">    result = sess.run(Y)</span><br><span class="line">    <span class="comment">### END CODE HERE ### </span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># close the session </span></span><br><span class="line">    sess.close()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">print( <span class="string">"result = "</span> + str(linear_function()))</span><br></pre></td></tr></table></figure>
+<pre><code>result = [[-2.15657382]
+ [ 2.95891446]
+ [-1.08926781]
+ [-0.84538042]]</code></pre>
+<h3 id="计算sigmoid函数">计算sigmoid函数</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: sigmoid</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sigmoid</span><span class="params">(z)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Computes the sigmoid of z</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    z -- input value, scalar or vector</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    results -- the sigmoid of z</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### ( approx. 4 lines of code)</span></span><br><span class="line">    <span class="comment"># Create a placeholder for x. Name it 'x'.</span></span><br><span class="line">    x = tf.placeholder(tf.float32, name=<span class="string">'x'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># compute sigmoid(x)</span></span><br><span class="line">    sigmoid = tf.sigmoid(x)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Create a session, and run it. Please use the method 2 explained above. </span></span><br><span class="line">    <span class="comment"># You should use a feed_dict to pass z's value to x. </span></span><br><span class="line">    <span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">        <span class="comment"># Run session and call the output "result"</span></span><br><span class="line">        result = sess.run(sigmoid, feed_dict=&#123;x: z&#125;)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> result</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">print</span> (<span class="string">"sigmoid(0) = "</span> + str(sigmoid(<span class="number">0</span>)))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"sigmoid(12) = "</span> + str(sigmoid(<span class="number">12</span>)))</span><br></pre></td></tr></table></figure>
+<pre><code>sigmoid(0) = 0.5
+sigmoid(12) = 0.999994</code></pre>
+<h3 id="计算代价函数">计算代价函数</h3>
+<p>对2层神经网络，代价函数是 <span class="math inline">\(a^{[2](i)}\)</span> 和 <span class="math inline">\(y^{(i)}\)</span>的函数， for i=1...m: <span class="math display">\[ J = - \frac{1}{m}  \sum_{i = 1}^m  \large ( \small y^{(i)} \log a^{ [2] (i)} + (1-y^{(i)})\log (1-a^{ [2] (i)} )\large )\small\tag{2}\]</span></p>
+<p>Tensoflow只需要一行代码 - <code>tf.nn.sigmoid_cross_entropy_with_logits(logits = ...,  labels = ...)</code> 计算的是： <span class="math display">\[- \frac{1}{m}  \sum_{i = 1}^m  \large ( \small y^{(i)} \log \sigma(z^{[2](i)}) + (1-y^{(i)})\log (1-\sigma(z^{[2](i)})\large )\small\tag{2}\]</span></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: cost</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">cost</span><span class="params">(logits, labels)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Computes the cost using the sigmoid cross entropy</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    logits -- vector containing z, output of the last linear unit (before the final sigmoid activation)</span></span><br><span class="line"><span class="string">    labels -- vector of labels y (1 or 0) </span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Note: What we've been calling "z" and "y" in this class are respectively called "logits" and "labels" </span></span><br><span class="line"><span class="string">    in the TensorFlow documentation. So logits will feed into z, and labels into y. </span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    cost -- runs the session of the cost (formula (2))</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### </span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create the placeholders for "logits" (z) and "labels" (y) (approx. 2 lines)</span></span><br><span class="line">    z = tf.placeholder(tf.float32, name=<span class="string">'z'</span>)</span><br><span class="line">    y = tf.placeholder(tf.float32, name=<span class="string">'y'</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Use the loss function (approx. 1 line)</span></span><br><span class="line">    cost = tf.nn.sigmoid_cross_entropy_with_logits(logits=z, labels=y)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create a session (approx. 1 line). See method 1 above.</span></span><br><span class="line">    sess = tf.Session()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Run the session (approx. 1 line).</span></span><br><span class="line">    cost = sess.run(cost, feed_dict=&#123;z: logits, y:labels&#125;)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Close the session (approx. 1 line). See method 1 above.</span></span><br><span class="line">    sess.close()</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> cost</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">logits = sigmoid(np.array([<span class="number">0.2</span>,<span class="number">0.4</span>,<span class="number">0.7</span>,<span class="number">0.9</span>]))</span><br><span class="line">cost = cost(logits, np.array([<span class="number">0</span>,<span class="number">0</span>,<span class="number">1</span>,<span class="number">1</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"cost = "</span> + str(cost))</span><br></pre></td></tr></table></figure>
+<pre><code>cost = [ 1.00538719  1.03664088  0.41385433  0.39956614]</code></pre>
+<h3 id="one-hot编码">One Hot编码</h3>
+<p>在深度学习中，经常会有向量y从 0 到 C-1变化, 其中 C 是类别数.如果C 为4的话，需要转化成下面的形式：:</p>
+<p><img src="/2018/03/09/48-TFTutorial/onehot.png" style="width:600px;height:150px;"></p>
+<p>上面称为&quot;one hot&quot; 编码, 这个名字起源于每一列只有一个元素是热点（为1）. 为实现这个功能，numpy可能需要几行代码，而tensorflow只需要一行,:</p>
+<ul>
+<li>tf.one_hot(labels, depth, axis)</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: one_hot_matrix</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">one_hot_matrix</span><span class="params">(labels, C)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Creates a matrix where the i-th row corresponds to the ith class number and the jth column</span></span><br><span class="line"><span class="string">                     corresponds to the jth training example. So if example j had a label i. Then entry (i,j) </span></span><br><span class="line"><span class="string">                     will be 1. </span></span><br><span class="line"><span class="string">                     </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    labels -- vector containing the labels </span></span><br><span class="line"><span class="string">    C -- number of classes, the depth of the one hot dimension</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    one_hot -- one hot matrix</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create a tf.constant equal to C (depth), name it 'C'. (approx. 1 line)</span></span><br><span class="line">    C = tf.constant(C, name=<span class="string">'C'</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Use tf.one_hot, be careful with the axis (approx. 1 line)</span></span><br><span class="line">    one_hot_matrix = tf.one_hot(indices=labels, depth=C, axis=<span class="number">0</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create the session (approx. 1 line)</span></span><br><span class="line">    sess = tf.Session()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Run the session (approx. 1 line)</span></span><br><span class="line">    one_hot = sess.run(one_hot_matrix)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Close the session (approx. 1 line). See method 1 above.</span></span><br><span class="line">    sess.close()</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> one_hot</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">labels = np.array([<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">0</span>,<span class="number">2</span>,<span class="number">1</span>])</span><br><span class="line">one_hot = one_hot_matrix(labels, C = <span class="number">4</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"one_hot = "</span> + str(one_hot))</span><br></pre></td></tr></table></figure>
+<pre><code>one_hot = [[ 0.  0.  0.  1.  0.  0.]
+ [ 1.  0.  0.  0.  0.  1.]
+ [ 0.  1.  0.  0.  1.  0.]
+ [ 0.  0.  1.  0.  0.  0.]]</code></pre>
+<h3 id="初始化0和1">初始化0和1</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: ones</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">ones</span><span class="params">(shape)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Creates an array of ones of dimension shape</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    shape -- shape of the array you want to create</span></span><br><span class="line"><span class="string">        </span></span><br><span class="line"><span class="string">    Returns: </span></span><br><span class="line"><span class="string">    ones -- array containing only ones</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create "ones" tensor using tf.ones(...). (approx. 1 line)</span></span><br><span class="line">    ones = tf.ones(shape)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create the session (approx. 1 line)</span></span><br><span class="line">    sess = tf.Session()</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Run the session to compute 'ones' (approx. 1 line)</span></span><br><span class="line">    ones = sess.run(ones)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Close the session (approx. 1 line). See method 1 above.</span></span><br><span class="line">    sess.close()</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    <span class="keyword">return</span> ones</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">print</span> (<span class="string">"ones = "</span> + str(ones([<span class="number">3</span>])))</span><br></pre></td></tr></table></figure>
+<pre><code>ones = [ 1.  1.  1.]</code></pre>
+<h2 id="建立第一个神经网络">建立第一个神经网络</h2>
+<ul>
+<li><strong>训练集</strong>: 1080 张代表0-5的图 (64 × 64) (每个数字180 张图).</li>
+<li><strong>测试集</strong>: 120 张代表0-5的图 (64 × 64 )(每个数字20 张图).</li>
+</ul>
+<img src="/2018/03/09/48-TFTutorial/hands.png" style="width:800px;height:350px;">
+<caption>
+<center>
+<u><font color="purple"> <strong>Figure 1</strong></font></u><font color="purple">: SIGNS dataset <br> <font color="black">
+</font></font></center>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Loading the dataset</span></span><br><span class="line">X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_dataset()</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Example of a picture</span></span><br><span class="line">index = <span class="number">0</span></span><br><span class="line">plt.imshow(X_train_orig[index])</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"y = "</span> + str(np.squeeze(Y_train_orig[:, index])))</span><br></pre></td></tr></table></figure>
+<pre><code>y = 5</code></pre>
+<div class="figure">
+<img src="/2018/03/09/48-TFTutorial/output_28_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Flatten the training and test images</span></span><br><span class="line">X_train_flatten = X_train_orig.reshape(X_train_orig.shape[<span class="number">0</span>], <span class="number">-1</span>).T</span><br><span class="line">X_test_flatten = X_test_orig.reshape(X_test_orig.shape[<span class="number">0</span>], <span class="number">-1</span>).T</span><br><span class="line"><span class="comment"># Normalize image vectors</span></span><br><span class="line">X_train = X_train_flatten/<span class="number">255.</span></span><br><span class="line">X_test = X_test_flatten/<span class="number">255.</span></span><br><span class="line"><span class="comment"># Convert training and test labels to one hot matrices</span></span><br><span class="line">Y_train = convert_to_one_hot(Y_train_orig, <span class="number">6</span>)</span><br><span class="line">Y_test = convert_to_one_hot(Y_test_orig, <span class="number">6</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> (<span class="string">"number of training examples = "</span> + str(X_train.shape[<span class="number">1</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"number of test examples = "</span> + str(X_test.shape[<span class="number">1</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"X_train shape: "</span> + str(X_train.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Y_train shape: "</span> + str(Y_train.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"X_test shape: "</span> + str(X_test.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Y_test shape: "</span> + str(Y_test.shape))</span><br></pre></td></tr></table></figure>
+<pre><code>number of training examples = 1080
+number of test examples = 120
+X_train shape: (12288, 1080)
+Y_train shape: (6, 1080)
+X_test shape: (12288, 120)
+Y_test shape: (6, 120)</code></pre>
+<p><strong>模型</strong>：<em>LINEAR -&gt; RELU -&gt; LINEAR -&gt; RELU -&gt; LINEAR -&gt; SOFTMAX</em>. 与二分类使用 SIGMOID 作为输出层不同， 多分类问题使用 SOFTMAX.</p>
+<h3 id="建立占位符">建立占位符</h3>
+<p>首先建立X和Y的占位符，然后在运行会话时，将训练数据集传进占位符。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: create_placeholders</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">create_placeholders</span><span class="params">(n_x, n_y)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Creates the placeholders for the tensorflow session.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    n_x -- scalar, size of an image vector (num_px * num_px = 64 * 64 * 3 = 12288)</span></span><br><span class="line"><span class="string">    n_y -- scalar, number of classes (from 0 to 5, so -&gt; 6)</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    X -- placeholder for the data input, of shape [n_x, None] and dtype "float"</span></span><br><span class="line"><span class="string">    Y -- placeholder for the input labels, of shape [n_y, None] and dtype "float"</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Tips:</span></span><br><span class="line"><span class="string">    - You will use None because it let's us be flexible on the number of examples you will for the placeholders.</span></span><br><span class="line"><span class="string">      In fact, the number of examples during test/train is different.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 2 lines)</span></span><br><span class="line">    X = tf.placeholder(tf.float32, shape=[n_x, <span class="keyword">None</span>], name=<span class="string">'X'</span>)</span><br><span class="line">    Y = tf.placeholder(tf.float32, shape=[n_y, <span class="keyword">None</span>], name=<span class="string">'Y'</span>)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> X, Y</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">X, Y = create_placeholders(<span class="number">12288</span>, <span class="number">6</span>)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"X = "</span> + str(X))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Y = "</span> + str(Y))</span><br></pre></td></tr></table></figure>
+<pre><code>X = Tensor(&quot;X_1:0&quot;, shape=(12288, ?), dtype=float32)
+Y = Tensor(&quot;Y:0&quot;, shape=(6, ?), dtype=float32)</code></pre>
+<h3 id="参数初始化">参数初始化</h3>
+<p>采用Xavier初始化权系数，零初始化偏置量</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: initialize_parameters</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">initialize_parameters</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Initializes parameters to build a neural network with tensorflow. The shapes are:</span></span><br><span class="line"><span class="string">                        W1 : [25, 12288]</span></span><br><span class="line"><span class="string">                        b1 : [25, 1]</span></span><br><span class="line"><span class="string">                        W2 : [12, 25]</span></span><br><span class="line"><span class="string">                        b2 : [12, 1]</span></span><br><span class="line"><span class="string">                        W3 : [6, 12]</span></span><br><span class="line"><span class="string">                        b3 : [6, 1]</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- a dictionary of tensors containing W1, b1, W2, b2, W3, b3</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    tf.set_random_seed(<span class="number">1</span>)                   <span class="comment"># so that your "random" numbers match ours</span></span><br><span class="line">        </span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 6 lines of code)</span></span><br><span class="line">    W1 = tf.get_variable(<span class="string">"W1"</span>, [<span class="number">25</span>, <span class="number">12288</span>], initializer=tf.contrib.layers.xavier_initializer(seed=<span class="number">1</span>))</span><br><span class="line">    b1 = tf.get_variable(<span class="string">"b1"</span>, [<span class="number">25</span>, <span class="number">1</span>], initializer=tf.zeros_initializer())</span><br><span class="line">    W2 = tf.get_variable(<span class="string">"W2"</span>, [<span class="number">12</span>, <span class="number">25</span>], initializer=tf.contrib.layers.xavier_initializer(seed=<span class="number">1</span>))</span><br><span class="line">    b2 = tf.get_variable(<span class="string">"b2"</span>, [<span class="number">12</span>, <span class="number">1</span>], initializer=tf.zeros_initializer())</span><br><span class="line">    W3 = tf.get_variable(<span class="string">"W3"</span>, [<span class="number">6</span>, <span class="number">12</span>], initializer=tf.contrib.layers.xavier_initializer(seed=<span class="number">1</span>))</span><br><span class="line">    b3 = tf.get_variable(<span class="string">"b3"</span>, [<span class="number">6</span>, <span class="number">1</span>], initializer=tf.zeros_initializer())</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    parameters = &#123;<span class="string">"W1"</span>: W1,</span><br><span class="line">                  <span class="string">"b1"</span>: b1,</span><br><span class="line">                  <span class="string">"W2"</span>: W2,</span><br><span class="line">                  <span class="string">"b2"</span>: b2,</span><br><span class="line">                  <span class="string">"W3"</span>: W3,</span><br><span class="line">                  <span class="string">"b3"</span>: b3&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    parameters = initialize_parameters()</span><br><span class="line">    print(<span class="string">"W1 = "</span> + str(parameters[<span class="string">"W1"</span>]))</span><br><span class="line">    print(<span class="string">"b1 = "</span> + str(parameters[<span class="string">"b1"</span>]))</span><br><span class="line">    print(<span class="string">"W2 = "</span> + str(parameters[<span class="string">"W2"</span>]))</span><br><span class="line">    print(<span class="string">"b2 = "</span> + str(parameters[<span class="string">"b2"</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>W1 = &lt;tf.Variable &#39;W1:0&#39; shape=(25, 12288) dtype=float32_ref&gt;
+b1 = &lt;tf.Variable &#39;b1:0&#39; shape=(25, 1) dtype=float32_ref&gt;
+W2 = &lt;tf.Variable &#39;W2:0&#39; shape=(12, 25) dtype=float32_ref&gt;
+b2 = &lt;tf.Variable &#39;b2:0&#39; shape=(12, 1) dtype=float32_ref&gt;</code></pre>
+<h3 id="正传播">正传播</h3>
+<p>需要注意的是，和之前使用numpy实现正传不同，tensorflow的线性层最终输出为z3，这是因为最后要使用z3作为输入计算代价函数，所以不需要提前计算a3。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: forward_propagation</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">forward_propagation</span><span class="params">(X, parameters)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implements the forward propagation for the model: LINEAR -&gt; RELU -&gt; LINEAR -&gt; RELU -&gt; LINEAR -&gt; SOFTMAX</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input dataset placeholder, of shape (input size, number of examples)</span></span><br><span class="line"><span class="string">    parameters -- python dictionary containing your parameters "W1", "b1", "W2", "b2", "W3", "b3"</span></span><br><span class="line"><span class="string">                  the shapes are given in initialize_parameters</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    Z3 -- the output of the last LINEAR unit</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Retrieve the parameters from the dictionary "parameters" </span></span><br><span class="line">    W1 = parameters[<span class="string">'W1'</span>]</span><br><span class="line">    b1 = parameters[<span class="string">'b1'</span>]</span><br><span class="line">    W2 = parameters[<span class="string">'W2'</span>]</span><br><span class="line">    b2 = parameters[<span class="string">'b2'</span>]</span><br><span class="line">    W3 = parameters[<span class="string">'W3'</span>]</span><br><span class="line">    b3 = parameters[<span class="string">'b3'</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (approx. 5 lines)              # Numpy Equivalents:</span></span><br><span class="line">    Z1 = tf.add(tf.matmul(W1, X), b1)                                             <span class="comment"># Z1 = np.dot(W1, X) + b1</span></span><br><span class="line">    A1 = tf.nn.relu(Z1)                                              <span class="comment"># A1 = relu(Z1)</span></span><br><span class="line">    Z2 = tf.add(tf.matmul(W2, A1), b2)                                              <span class="comment"># Z2 = np.dot(W2, a1) + b2</span></span><br><span class="line">    A2 = tf.nn.relu(Z2)                                              <span class="comment"># A2 = relu(Z2)</span></span><br><span class="line">    Z3 = tf.add(tf.matmul(W3, A2), b3)                                              <span class="comment"># Z3 = np.dot(W3,Z2) + b3</span></span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> Z3</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    X, Y = create_placeholders(<span class="number">12288</span>, <span class="number">6</span>)</span><br><span class="line">    parameters = initialize_parameters()</span><br><span class="line">    Z3 = forward_propagation(X, parameters)</span><br><span class="line">    print(<span class="string">"Z3 = "</span> + str(Z3))</span><br></pre></td></tr></table></figure>
+<pre><code>Z3 = Tensor(&quot;Add_2:0&quot;, shape=(6, ?), dtype=float32)</code></pre>
+<h3 id="计算代价函数-1">计算代价函数</h3>
+<p>需要注意的是，tensorflow中只需要一行代码计算： <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = ..., labels = ...))</span><br></pre></td></tr></table></figure></p>
+<p>但是需要&quot;<code>logits</code>&quot; 和 &quot;<code>labels</code>&quot;的输入维度是(样本数, 分类数)。另外<code>tf.reduce_mean</code>是对所有样本求和。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: compute_cost </span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">compute_cost</span><span class="params">(Z3, Y)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Computes the cost</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    Z3 -- output of forward propagation (output of the last LINEAR unit), of shape (6, number of examples)</span></span><br><span class="line"><span class="string">    Y -- "true" labels vector placeholder, same shape as Z3</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    cost - Tensor of the cost function</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># to fit the tensorflow requirement for tf.nn.softmax_cross_entropy_with_logits(...,...)</span></span><br><span class="line">    logits = tf.transpose(Z3)</span><br><span class="line">    labels = tf.transpose(Y)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line of code)</span></span><br><span class="line">    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits,</span><br><span class="line">                                                                 labels=labels))</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> cost</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">    X, Y = create_placeholders(<span class="number">12288</span>, <span class="number">6</span>)</span><br><span class="line">    parameters = initialize_parameters()</span><br><span class="line">    Z3 = forward_propagation(X, parameters)</span><br><span class="line">    cost = compute_cost(Z3, Y)</span><br><span class="line">    print(<span class="string">"cost = "</span> + str(cost))</span><br></pre></td></tr></table></figure>
+<pre><code>cost = Tensor(&quot;Mean:0&quot;, shape=(), dtype=float32)</code></pre>
+<h3 id="反传及参数更新">反传及参数更新</h3>
+<p>这是使用编程框架的优势所在，所有的反传和模型更新只需要几行代码。</p>
+<p>计算代价函数之后，就可以建立一个“优化”对象。在会话开始运行之后，调用这个对象，就会根据选择的优化方法和学习率优化这个目标函数</p>
+<p>例如，使用梯度下降法： <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">optimizer = tf.train.GradientDescentOptimizer(learning_rate = learning_rate).minimize(cost)</span><br></pre></td></tr></table></figure></p>
+<p>运行优化算法： <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_ , c = sess.run([optimizer, cost], feed_dict=&#123;X: minibatch_X, Y: minibatch_Y&#125;)</span><br></pre></td></tr></table></figure></p>
+<p>上面的语句则会实现反传及参数更新。</p>
+<h3 id="建立模型">建立模型</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model</span><span class="params">(X_train, Y_train, X_test, Y_test, learning_rate = <span class="number">0.0001</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">          num_epochs = <span class="number">1500</span>, minibatch_size = <span class="number">32</span>, print_cost = True)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implements a three-layer tensorflow neural network: LINEAR-&gt;RELU-&gt;LINEAR-&gt;RELU-&gt;LINEAR-&gt;SOFTMAX.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X_train -- training set, of shape (input size = 12288, number of training examples = 1080)</span></span><br><span class="line"><span class="string">    Y_train -- test set, of shape (output size = 6, number of training examples = 1080)</span></span><br><span class="line"><span class="string">    X_test -- training set, of shape (input size = 12288, number of training examples = 120)</span></span><br><span class="line"><span class="string">    Y_test -- test set, of shape (output size = 6, number of test examples = 120)</span></span><br><span class="line"><span class="string">    learning_rate -- learning rate of the optimization</span></span><br><span class="line"><span class="string">    num_epochs -- number of epochs of the optimization loop</span></span><br><span class="line"><span class="string">    minibatch_size -- size of a minibatch</span></span><br><span class="line"><span class="string">    print_cost -- True to print the cost every 100 epochs</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    parameters -- parameters learnt by the model. They can then be used to predict.</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    ops.reset_default_graph()                         <span class="comment"># to be able to rerun the model without overwriting tf variables</span></span><br><span class="line">    tf.set_random_seed(<span class="number">1</span>)                             <span class="comment"># to keep consistent results</span></span><br><span class="line">    seed = <span class="number">3</span>                                          <span class="comment"># to keep consistent results</span></span><br><span class="line">    (n_x, m) = X_train.shape                          <span class="comment"># (n_x: input size, m : number of examples in the train set)</span></span><br><span class="line">    n_y = Y_train.shape[<span class="number">0</span>]                            <span class="comment"># n_y : output size</span></span><br><span class="line">    costs = []                                        <span class="comment"># To keep track of the cost</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create Placeholders of shape (n_x, n_y)</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">    X, Y = create_placeholders(n_x, n_y)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Initialize parameters</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">    parameters = initialize_parameters()</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Forward propagation: Build the forward propagation in the tensorflow graph</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">    Z3 = forward_propagation(X, parameters)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Cost function: Add cost function to tensorflow graph</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">    cost = compute_cost(Z3, Y)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Backpropagation: Define the tensorflow optimizer. Use an AdamOptimizer.</span></span><br><span class="line">    <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)</span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Initialize all the variables</span></span><br><span class="line">    init = tf.global_variables_initializer()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Start the session to compute the tensorflow graph</span></span><br><span class="line">    <span class="keyword">with</span> tf.Session() <span class="keyword">as</span> sess:</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Run the initialization</span></span><br><span class="line">        sess.run(init)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># Do the training loop</span></span><br><span class="line">        <span class="keyword">for</span> epoch <span class="keyword">in</span> range(num_epochs):</span><br><span class="line"></span><br><span class="line">            epoch_cost = <span class="number">0.</span>                       <span class="comment"># Defines a cost related to an epoch</span></span><br><span class="line">            num_minibatches = int(m / minibatch_size) <span class="comment"># number of minibatches of size minibatch_size in the train set</span></span><br><span class="line">            seed = seed + <span class="number">1</span></span><br><span class="line">            minibatches = random_mini_batches(X_train, Y_train, minibatch_size, seed)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> minibatch <span class="keyword">in</span> minibatches:</span><br><span class="line"></span><br><span class="line">                <span class="comment"># Select a minibatch</span></span><br><span class="line">                (minibatch_X, minibatch_Y) = minibatch</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># IMPORTANT: The line that runs the graph on a minibatch.</span></span><br><span class="line">                <span class="comment"># Run the session to execute the "optimizer" and the "cost", the feedict should contain a minibatch for (X,Y).</span></span><br><span class="line">                <span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">                _ , minibatch_cost = sess.run([optimizer, cost], </span><br><span class="line">                                             feed_dict=&#123;X: minibatch_X, </span><br><span class="line">                                                        Y: minibatch_Y&#125;)</span><br><span class="line">                <span class="comment">### END CODE HERE ###</span></span><br><span class="line">                </span><br><span class="line">                epoch_cost += minibatch_cost / num_minibatches</span><br><span class="line"></span><br><span class="line">            <span class="comment"># Print the cost every epoch</span></span><br><span class="line">            <span class="keyword">if</span> print_cost == <span class="keyword">True</span> <span class="keyword">and</span> epoch % <span class="number">100</span> == <span class="number">0</span>:</span><br><span class="line">                <span class="keyword">print</span> (<span class="string">"Cost after epoch %i: %f"</span> % (epoch, epoch_cost))</span><br><span class="line">            <span class="keyword">if</span> print_cost == <span class="keyword">True</span> <span class="keyword">and</span> epoch % <span class="number">5</span> == <span class="number">0</span>:</span><br><span class="line">                costs.append(epoch_cost)</span><br><span class="line">                </span><br><span class="line">        <span class="comment"># plot the cost</span></span><br><span class="line">        plt.plot(np.squeeze(costs))</span><br><span class="line">        plt.ylabel(<span class="string">'cost'</span>)</span><br><span class="line">        plt.xlabel(<span class="string">'iterations (per tens)'</span>)</span><br><span class="line">        plt.title(<span class="string">"Learning rate ="</span> + str(learning_rate))</span><br><span class="line">        plt.show()</span><br><span class="line"></span><br><span class="line">        <span class="comment"># lets save the parameters in a variable</span></span><br><span class="line">        parameters = sess.run(parameters)</span><br><span class="line">        <span class="keyword">print</span> (<span class="string">"Parameters have been trained!"</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Calculate the correct predictions</span></span><br><span class="line">        correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Calculate accuracy on the test set</span></span><br><span class="line">        accuracy = tf.reduce_mean(tf.cast(correct_prediction, <span class="string">"float"</span>))</span><br><span class="line"></span><br><span class="line">        <span class="keyword">print</span> (<span class="string">"Train Accuracy:"</span>, accuracy.eval(&#123;X: X_train, Y: Y_train&#125;))</span><br><span class="line">        <span class="keyword">print</span> (<span class="string">"Test Accuracy:"</span>, accuracy.eval(&#123;X: X_test, Y: Y_test&#125;))</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> parameters</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">parameters = model(X_train, Y_train, X_test, Y_test)</span><br></pre></td></tr></table></figure>
+<pre><code>Cost after epoch 0: 1.855702
+Cost after epoch 100: 1.016458
+Cost after epoch 200: 0.733102
+Cost after epoch 300: 0.572940
+Cost after epoch 400: 0.468774
+Cost after epoch 500: 0.381021
+Cost after epoch 600: 0.313822
+Cost after epoch 700: 0.254158
+Cost after epoch 800: 0.203829
+Cost after epoch 900: 0.166421
+Cost after epoch 1000: 0.141486
+Cost after epoch 1100: 0.107580
+Cost after epoch 1200: 0.086270
+Cost after epoch 1300: 0.059371
+Cost after epoch 1400: 0.052228</code></pre>
+<div class="figure">
+<img src="/2018/03/09/48-TFTutorial/output_46_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<pre><code>Parameters have been trained!
+Train Accuracy: 0.999074
+Test Accuracy: 0.716667</code></pre>
+<p><strong>小结</strong>：模型过拟合，可以采用L2正则化或者dropout方法缓解过拟合问题</p>
+<h3 id="测试用户的图像">测试用户的图像</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> scipy</span><br><span class="line"><span class="keyword">from</span> PIL <span class="keyword">import</span> Image</span><br><span class="line"><span class="keyword">from</span> scipy <span class="keyword">import</span> ndimage</span><br><span class="line"></span><br><span class="line"><span class="comment">## START CODE HERE ## (PUT YOUR IMAGE NAME) </span></span><br><span class="line">my_image = <span class="string">"thumbs_up.jpg"</span></span><br><span class="line"><span class="comment">## END CODE HERE ##</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># We preprocess your image to fit your algorithm.</span></span><br><span class="line">fname = <span class="string">"images/"</span> + my_image</span><br><span class="line">image = np.array(ndimage.imread(fname, flatten=<span class="keyword">False</span>))</span><br><span class="line">my_image = scipy.misc.imresize(image, size=(<span class="number">64</span>,<span class="number">64</span>)).reshape((<span class="number">1</span>, <span class="number">64</span>*<span class="number">64</span>*<span class="number">3</span>)).T</span><br><span class="line">my_image_prediction = predict(my_image, parameters)</span><br><span class="line"></span><br><span class="line">plt.imshow(image)</span><br><span class="line">print(<span class="string">"Your algorithm predicts: y = "</span> + str(np.squeeze(my_image_prediction)))</span><br></pre></td></tr></table></figure>
+<pre><code>Your algorithm predicts: y = 3</code></pre>
+<div class="figure">
+<img src="/2018/03/09/48-TFTutorial/output_49_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<p><strong>小结</strong>：上面的测试数据分类错误，这是因为训练数据集中没有这样的数据，于是出现了<strong>数据分布不匹配</strong>的问题。这是深度学习中一个非常经典的问题。</p>
+<h2 id="结论">结论</h2>
+<ol style="list-style-type: decimal">
+<li>Tensorflow是一种广泛使用的深度学习编程框架，它主要包含两个对象类：张量和操作<br>
+</li>
+<li>使用Tensorflow必须遵循这样几步：<br>
+</li>
+</ol>
+<ul>
+<li>建立计算图，包括张量（变量、占位符等）和操作（加法、乘法等）<br>
+</li>
+<li>建立一个会话<br>
+</li>
+<li>初始化会话<br>
+</li>
+<li>运行会话以执行计算图<br>
+</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>计算图可以执行多次，如model()函数所示<br>
+</li>
+<li>在Tensorflow中，当运行“optimizer”对象之后，反传和模型更新是自动运行的。</li>
+</ol>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a></li>
+</ul>
+</caption>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/深度神经网络/" rel="tag"># 深度神经网络</a>
+          
+            <a href="/tags/机器学习框架/" rel="tag"># 机器学习框架</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/08/47_NNOpt/" rel="next" title="深度神经网络中的优化算法">
+                <i class="fa fa-chevron-left"></i> 深度神经网络中的优化算法
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/10/50_CNN/" rel="prev" title="Numpy搭建卷积神经网络">
+                Numpy搭建卷积神经网络 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#基本用法"><span class="nav-number">1.</span> <span class="nav-text">基本用法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#线性函数"><span class="nav-number">1.1.</span> <span class="nav-text">线性函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算sigmoid函数"><span class="nav-number">1.2.</span> <span class="nav-text">计算sigmoid函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算代价函数"><span class="nav-number">1.3.</span> <span class="nav-text">计算代价函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#one-hot编码"><span class="nav-number">1.4.</span> <span class="nav-text">One Hot编码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#初始化0和1"><span class="nav-number">1.5.</span> <span class="nav-text">初始化0和1</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建立第一个神经网络"><span class="nav-number">2.</span> <span class="nav-text">建立第一个神经网络</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#建立占位符"><span class="nav-number">2.1.</span> <span class="nav-text">建立占位符</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参数初始化"><span class="nav-number">2.2.</span> <span class="nav-text">参数初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#正传播"><span class="nav-number">2.3.</span> <span class="nav-text">正传播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算代价函数-1"><span class="nav-number">2.4.</span> <span class="nav-text">计算代价函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#反传及参数更新"><span class="nav-number">2.5.</span> <span class="nav-text">反传及参数更新</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立模型"><span class="nav-number">2.6.</span> <span class="nav-text">建立模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试用户的图像"><span class="nav-number">2.7.</span> <span class="nav-text">测试用户的图像</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">3.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

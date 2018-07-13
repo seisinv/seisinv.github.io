@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="卷积神经网络,Keras,梯度消失," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="本文将介绍如何构建一种非常深的卷积神经网络，该网络称为剩余网络（ResNets）。理论上讲，非常深的网络可以刻画非常复杂的函数，但是实际上受梯度消失的影响，训练速度很慢，难以训练。本文介绍ResNets这种十分经典的深度卷积神经网络架构，并通过Keras编程框架一步一步构建ResNets网络。">
+<meta name="keywords" content="卷积神经网络,Keras,梯度消失">
+<meta property="og:type" content="article">
+<meta property="og:title" content="剩余网络（ResNets）">
+<meta property="og:url" content="http://yoursite.com/2018/03/10/53_ResNets/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="本文将介绍如何构建一种非常深的卷积神经网络，该网络称为剩余网络（ResNets）。理论上讲，非常深的网络可以刻画非常复杂的函数，但是实际上受梯度消失的影响，训练速度很慢，难以训练。本文介绍ResNets这种十分经典的深度卷积神经网络架构，并通过Keras编程框架一步一步构建ResNets网络。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/10/53_ResNets/vanishing_grad_kiank.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/10/53_ResNets/skip_connection_kiank.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/10/53_ResNets/idblock2_kiank.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/10/53_ResNets/idblock3_kiank.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/10/53_ResNets/convblock_kiank.png">
+<meta property="og:image" content="http://yoursite.com/2018/03/10/53_ResNets/resnet_kiank.png">
+<meta property="og:updated_time" content="2018-03-10T02:23:22.270Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="剩余网络（ResNets）">
+<meta name="twitter:description" content="本文将介绍如何构建一种非常深的卷积神经网络，该网络称为剩余网络（ResNets）。理论上讲，非常深的网络可以刻画非常复杂的函数，但是实际上受梯度消失的影响，训练速度很慢，难以训练。本文介绍ResNets这种十分经典的深度卷积神经网络架构，并通过Keras编程框架一步一步构建ResNets网络。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/10/53_ResNets/vanishing_grad_kiank.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/10/53_ResNets/"/>
+
+
+
+
+
+  <title>剩余网络（ResNets） | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/10/53_ResNets/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">剩余网络（ResNets）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-10T10:23:22+08:00">
+                2018-03-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文将介绍如何构建一种非常深的卷积神经网络，该网络称为剩余网络（ResNets）。理论上讲，非常深的网络可以刻画非常复杂的函数，但是实际上受梯度消失的影响，训练速度很慢，难以训练。本文介绍ResNets这种十分经典的深度卷积神经网络架构，并通过Keras编程框架一步一步构建ResNets网络。 <a id="more"></a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">###### import numpy as np</span></span><br><span class="line"><span class="keyword">from</span> keras <span class="keyword">import</span> layers</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Input, Add, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Conv2D, AveragePooling2D, MaxPooling2D, GlobalMaxPooling2D</span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> Model, load_model</span><br><span class="line"><span class="keyword">from</span> keras.preprocessing <span class="keyword">import</span> image</span><br><span class="line"><span class="keyword">from</span> keras.utils <span class="keyword">import</span> layer_utils</span><br><span class="line"><span class="keyword">from</span> keras.utils.data_utils <span class="keyword">import</span> get_file</span><br><span class="line"><span class="keyword">from</span> keras.applications.imagenet_utils <span class="keyword">import</span> preprocess_input</span><br><span class="line"><span class="comment">#import pydot</span></span><br><span class="line"><span class="keyword">from</span> IPython.display <span class="keyword">import</span> SVG</span><br><span class="line"><span class="keyword">from</span> keras.utils.vis_utils <span class="keyword">import</span> model_to_dot</span><br><span class="line"><span class="keyword">from</span> keras.utils <span class="keyword">import</span> plot_model</span><br><span class="line"><span class="keyword">from</span> resnets_utils <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> keras.initializers <span class="keyword">import</span> glorot_uniform</span><br><span class="line"><span class="keyword">import</span> scipy.misc</span><br><span class="line"><span class="keyword">from</span> matplotlib.pyplot <span class="keyword">import</span> imshow</span><br><span class="line">%matplotlib inline</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> keras.backend <span class="keyword">as</span> K</span><br><span class="line">K.set_image_data_format(<span class="string">'channels_last'</span>)</span><br><span class="line">K.set_learning_phase(<span class="number">1</span>)</span><br></pre></td></tr></table></figure>
+<h2 id="极深神经网络存在的问题">极深神经网络存在的问题</h2>
+<p>极深神经网络的主要优点是可以刻画十分复杂的函数。它可以从不同的抽象层面学习数据的特征，从边缘（浅层）到非常复杂的特征（深层）。但是网络越深，并不一定有帮助。训练这种网络十分重要的一个障碍是梯度消失：极深的网络往往梯度下降很快，直到接近于0，导致梯度下降法收敛十分缓慢。具体地讲，在梯度下降过程中，当信号从最后一层反传到第一层，需要在每一步乘以加权矩阵，因此梯度极有可能指数级下降到0（或者极少情况下指数级上升直到爆炸）。</p>
+<p>在训练过程中，很有可能观察到：在训练过程中，浅层的梯度很快降到0，导致浅层更新很慢。</p>
+<img src="/2018/03/10/53_ResNets/vanishing_grad_kiank.png" style="width:450px;height:220px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>图 1</strong> </font></u><font color="purple"> : <strong>梯度消失</strong> <br> 在网络的训练过程中，浅层的学习速度下降很快。
+</font></center>
+</caption>
+<p>下面介绍如何使用剩余网络解决这个问题。</p>
+<h2 id="构建剩余网络">构建剩余网络</h2>
+<p>在ResNets中，shortcut或者skip连接允许梯度直接反传到浅层。</p>
+<img src="/2018/03/10/53_ResNets/skip_connection_kiank.png" style="width:650px;height:200px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>图 2</strong> </font></u><font color="purple"> : ResNet模块<strong>skip-connection</strong> <br>
+</font></center>
+</caption>
+<p>左图显示网络的主路径，右图在主路径上增加了一条捷径。将这些ResNet模块一级接一级，可以形成很深的网络。</p>
+<p>带捷径的ResNet块使得每个模块很容易学到单位函数。也就意味着增加更多的ResNet模块不会增加太多影响训练性能的风险。（有证据表明：容易学到单位矩阵可以帮助解决梯度消失问题，也是ResNet性能强的原因。）</p>
+<p>取决于输入/输入的维度是否相同，ResNet模块有两种主要的类型。</p>
+<h3 id="单位模块">单位模块</h3>
+<p>单位模块是ResNets的标准模块，对应与输入激励 (比如<span class="math inline">\(a^{[l]}\)</span>) 和(比如 <span class="math inline">\(a^{[l+2]}\)</span>)维度相同. 下面是ResNet中的单位模块:</p>
+<img src="/2018/03/10/53_ResNets/idblock2_kiank.png" style="width:650px;height:150px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>图 3</strong> </font></u><font color="purple"> : <strong>单位模块.</strong> 跳跃连接层（“跳过”2 层）.
+</font></center>
+</caption>
+<p>上面的路径是“捷径”，下面的路径是“主路径”。改图显式地画出了每一层中的CONV2D和ReLU。为了加快训练速度，同时也增加了BatchNorm。</p>
+<p>下面的程序实际上实现了一种更加强大的单位模块，跳过3层。</p>
+<img src="/2018/03/10/53_ResNets/idblock3_kiank.png" style="width:650px;height:150px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>Figure 4</strong> </font></u><font color="purple"> : <strong>单位模块.</strong> 跳跃连接层（ &quot;跳过&quot; 3 层）.
+</font></center>
+</caption>
+<p>单位模块包括：</p>
+<p>主路径的第一个部分：</p>
+<ul>
+<li>第一个CONV2D滤波器<span class="math inline">\(F_1\)</span> 大小为(1,1)，步长为 (1,1). padding 类型为 &quot;valid&quot; ，命名为 <code>conv_name_base + '2a'</code>. 0 为随机初始化的种子点.<br>
+</li>
+<li>第一个BatchNorm归一化深度方向. 命名为 <code>bn_name_base + '2a'</code>.<br>
+</li>
+<li>应用 ReLU 激活函数. 没有命名也没有超参参数.</li>
+</ul>
+<p>主路径的第二部分: - 第二个CONV2D 滤波器 <span class="math inline">\(F_2\)</span> 大小为<span class="math inline">\((f,f)\)</span> ，步长为 (1,1). padding 类型为&quot;same&quot;，命名为 <code>conv_name_base + '2b'</code>. 0 为随机初始化的种子点.<br>
+- 第二个 BatchNorm 归一化深度方向. 命名为 <code>bn_name_base + '2b'</code>.<br>
+- 应用 ReLU 激活函数. 没有命名也没有超参.</p>
+<p>主路径的第三部分: - 第三个 CONV2D 滤波器 <span class="math inline">\(F_3\)</span> 大小为 (1,1)，步长为 (1,1). padding 类型为 &quot;valid&quot; ，命名为 <code>conv_name_base + '2c'</code>. 0 为随机初始化种子点.<br>
+- 第三个 BatchNorm 归一化深度方向. 命名为 <code>bn_name_base + '2c'</code>. 注意到这一部分没有激活函数.</p>
+<p>最后一步: - 主路径输出和输入求和.<br>
+- 应用ReLU激活函数，没有命名也没有超参.</p>
+<p>在Keras中： - 实现Conv2D，参考<a href="https://keras.io/layers/convolutional/#conv2d" target="_blank" rel="noopener">这里</a><br>
+- 实现BatchNorm，参考<a href="https://faroit.github.io/keras-docs/1.2.2/layers/normalization/" target="_blank" rel="noopener">这里</a>，（axis：整形，表示沿这个方向归一化，一般沿深度方向归一）<br>
+- 实现激活函数，使用<code>Activation('relu')(X)</code><br>
+- 将捷径加入主路径输出，参考<a href="https://keras.io/layers/merge/#add" target="_blank" rel="noopener">这里</a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: identity_block</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">identity_block</span><span class="params">(X, f, filters, stage, block)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implementation of the identity block as defined in Figure 3</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input tensor of shape (m, n_H_prev, n_W_prev, n_C_prev)</span></span><br><span class="line"><span class="string">    f -- integer, specifying the shape of the middle CONV's window for the main path</span></span><br><span class="line"><span class="string">    filters -- python list of integers, defining the number of filters in the CONV layers of the main path</span></span><br><span class="line"><span class="string">    stage -- integer, used to name the layers, depending on their position in the network</span></span><br><span class="line"><span class="string">    block -- string/character, used to name the layers, depending on their position in the network</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    X -- output of the identity block, tensor of shape (n_H, n_W, n_C)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># defining name basis</span></span><br><span class="line">    conv_name_base = <span class="string">'res'</span> + str(stage) + block + <span class="string">'_branch'</span></span><br><span class="line">    bn_name_base = <span class="string">'bn'</span> + str(stage) + block + <span class="string">'_branch'</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Retrieve Filters</span></span><br><span class="line">    F1, F2, F3 = filters</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Save the input value. You'll need this later to add back to the main path. </span></span><br><span class="line">    X_shortcut = X</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># First component of main path</span></span><br><span class="line">    X = Conv2D(filters = F1, kernel_size = (<span class="number">1</span>, <span class="number">1</span>), strides = (<span class="number">1</span>,<span class="number">1</span>), padding = <span class="string">'valid'</span>, name = conv_name_base + <span class="string">'2a'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = bn_name_base + <span class="string">'2a'</span>)(X)</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Second component of main path (≈3 lines)</span></span><br><span class="line">    X = Conv2D(filters = F2, kernel_size = (f, f), strides = (<span class="number">1</span>,<span class="number">1</span>), padding = <span class="string">'same'</span>, name = conv_name_base + <span class="string">'2b'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = bn_name_base + <span class="string">'2b'</span>)(X)</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Third component of main path (≈2 lines)</span></span><br><span class="line">    X = Conv2D(filters = F3, kernel_size = (<span class="number">1</span>, <span class="number">1</span>), strides = (<span class="number">1</span>,<span class="number">1</span>), padding = <span class="string">'valid'</span>, name = conv_name_base + <span class="string">'2c'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = bn_name_base + <span class="string">'2c'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Final step: Add shortcut value to main path, and pass it through a RELU activation (≈2 lines)</span></span><br><span class="line">    X = Add()([X, X_shortcut])</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> X</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test:</span><br><span class="line">    np.random.seed(<span class="number">1</span>)</span><br><span class="line">    A_prev = tf.placeholder(<span class="string">"float"</span>, [<span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">6</span>])</span><br><span class="line">    X = np.random.randn(<span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">6</span>)</span><br><span class="line">    A = identity_block(A_prev, f = <span class="number">2</span>, filters = [<span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>], stage = <span class="number">1</span>, block = <span class="string">'a'</span>)</span><br><span class="line">    test.run(tf.global_variables_initializer())</span><br><span class="line">    out = test.run([A], feed_dict=&#123;A_prev: X, K.learning_phase(): <span class="number">0</span>&#125;)</span><br><span class="line">    print(<span class="string">"out = "</span> + str(out[<span class="number">0</span>][<span class="number">1</span>][<span class="number">1</span>][<span class="number">0</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>out = [ 0.94822985  0.          1.16101444  2.747859    0.          1.36677003]</code></pre>
+<h3 id="卷积模块">卷积模块</h3>
+<p>&quot;卷积模块&quot; 是ResNet中的另一种类型. 该模块用于输入输出维度不匹配的情况。和单位模块的区别在于捷径上是一个CONV2D层:</p>
+<img src="/2018/03/10/53_ResNets/convblock_kiank.png" style="width:650px;height:150px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>图 4</strong> </font></u><font color="purple"> : <strong>卷积模块</strong>
+</font></center>
+</caption>
+<p>捷径上的 CONV2D 层用来对<span class="math inline">\(x\)</span>重整为不同的维度, 使得捷径上的输出和主路径上的输出维度匹配，能够求和。捷径上的CONV2D 层不使用非线性激活函数. 其主要功能就是维度匹配.</p>
+<p>卷积模块包括：</p>
+<p>主路径的第一个部分：</p>
+<ul>
+<li>第一个CONV2D滤波器<span class="math inline">\(F_1\)</span> 大小为(1,1)，步长为 (1,1). padding 类型为 &quot;valid&quot; ，命名为 <code>conv_name_base + '2a'</code>. 0 为随机初始化的种子点.<br>
+</li>
+<li>第一个BatchNorm归一化深度方向. 命名为 <code>bn_name_base + '2a'</code>.<br>
+</li>
+<li>应用 ReLU 激活函数. 没有命名也没有超参参数.</li>
+</ul>
+<p>主路径的第二部分: - 第二个CONV2D 滤波器 <span class="math inline">\(F_2\)</span> 大小为<span class="math inline">\((f,f)\)</span> ，步长为 (1,1). padding 类型为&quot;same&quot;，命名为 <code>conv_name_base + '2b'</code>. 0 为随机初始化的种子点.<br>
+- 第二个 BatchNorm 归一化深度方向. 命名为 <code>bn_name_base + '2b'</code>.<br>
+- 应用 ReLU 激活函数. 没有命名也没有超参.</p>
+<p>主路径的第三部分: - 第三个 CONV2D 滤波器 <span class="math inline">\(F_3\)</span> 大小为 (1,1)，步长为 (1,1). padding 类型为 &quot;valid&quot; ，命名为 <code>conv_name_base + '2c'</code>. 0 为随机初始化种子点.<br>
+- 第三个 BatchNorm 归一化深度方向. 命名为 <code>bn_name_base + '2c'</code>. 注意到这一部分没有激活函数.</p>
+<p>捷径： - CONV2D 滤波器 <span class="math inline">\(F_3\)</span> 大小为 (1,1) ，步长为 (s,s). padding 类型为 &quot;valid&quot; 命名为 <code>conv_name_base + '1'</code>.<br>
+- BatchNorm 归一化深度方向. 命名为 <code>bn_name_base + '1'</code>.</p>
+<p>最后一步: - 主路径输出和捷径输入求和.<br>
+- 应用ReLU激活函数，没有命名也没有超参.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: convolutional_block</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">convolutional_block</span><span class="params">(X, f, filters, stage, block, s = <span class="number">2</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implementation of the convolutional block as defined in Figure 4</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    X -- input tensor of shape (m, n_H_prev, n_W_prev, n_C_prev)</span></span><br><span class="line"><span class="string">    f -- integer, specifying the shape of the middle CONV's window for the main path</span></span><br><span class="line"><span class="string">    filters -- python list of integers, defining the number of filters in the CONV layers of the main path</span></span><br><span class="line"><span class="string">    stage -- integer, used to name the layers, depending on their position in the network</span></span><br><span class="line"><span class="string">    block -- string/character, used to name the layers, depending on their position in the network</span></span><br><span class="line"><span class="string">    s -- Integer, specifying the stride to be used</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    X -- output of the convolutional block, tensor of shape (n_H, n_W, n_C)</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># defining name basis</span></span><br><span class="line">    conv_name_base = <span class="string">'res'</span> + str(stage) + block + <span class="string">'_branch'</span></span><br><span class="line">    bn_name_base = <span class="string">'bn'</span> + str(stage) + block + <span class="string">'_branch'</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Retrieve Filters</span></span><br><span class="line">    F1, F2, F3 = filters</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Save the input value</span></span><br><span class="line">    X_shortcut = X</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">##### MAIN PATH #####</span></span><br><span class="line">    <span class="comment"># First component of main path </span></span><br><span class="line">    X = Conv2D(F1, (<span class="number">1</span>, <span class="number">1</span>), strides = (s,s), name = conv_name_base + <span class="string">'2a'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = bn_name_base + <span class="string">'2a'</span>)(X)</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Second component of main path (≈3 lines)</span></span><br><span class="line">    X = Conv2D(F2, (f, f), strides = (<span class="number">1</span>,<span class="number">1</span>), name = conv_name_base + <span class="string">'2b'</span>, padding = <span class="string">'same'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = bn_name_base + <span class="string">'2b'</span>)(X)</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Third component of main path (≈2 lines)</span></span><br><span class="line">    X = Conv2D(F3, (<span class="number">1</span>, <span class="number">1</span>), strides = (<span class="number">1</span>,<span class="number">1</span>), name = conv_name_base + <span class="string">'2c'</span>, padding = <span class="string">'valid'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = bn_name_base + <span class="string">'2c'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment">##### SHORTCUT PATH #### (≈2 lines)</span></span><br><span class="line">    X_shortcut = Conv2D(F3, (<span class="number">1</span>, <span class="number">1</span>), strides = (s,s), name = conv_name_base + <span class="string">'1'</span>, padding = <span class="string">'valid'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X_shortcut)</span><br><span class="line">    X_shortcut = BatchNormalization(axis = <span class="number">3</span>, name = bn_name_base + <span class="string">'1'</span>)(X_shortcut)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Final step: Add shortcut value to main path, and pass it through a RELU activation (≈2 lines)</span></span><br><span class="line">    X = Add()([X_shortcut,X])</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> X</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">tf.reset_default_graph()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> tf.Session() <span class="keyword">as</span> test:</span><br><span class="line">    np.random.seed(<span class="number">1</span>)</span><br><span class="line">    A_prev = tf.placeholder(<span class="string">"float"</span>, [<span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">6</span>])</span><br><span class="line">    X = np.random.randn(<span class="number">3</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">6</span>)</span><br><span class="line">    A = convolutional_block(A_prev, f = <span class="number">2</span>, filters = [<span class="number">2</span>, <span class="number">4</span>, <span class="number">6</span>], stage = <span class="number">1</span>, block = <span class="string">'a'</span>)</span><br><span class="line">    test.run(tf.global_variables_initializer())</span><br><span class="line">    out = test.run([A], feed_dict=&#123;A_prev: X, K.learning_phase(): <span class="number">0</span>&#125;)</span><br><span class="line">    print(<span class="string">"out = "</span> + str(out[<span class="number">0</span>][<span class="number">1</span>][<span class="number">1</span>][<span class="number">0</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>out = [ 0.09018463  1.23489773  0.46822017  0.0367176   0.          0.65516603]</code></pre>
+<h2 id="构建第一个resnet模型50层">构建第一个ResNet模型（50层）</h2>
+<p>现在已经实现了所有构建ResNet模型的组成部分. 图中&quot;ID BLOCK&quot; 代表 &quot;单位模块&quot;， &quot;ID BLOCK x3&quot; 表示链接 3 个单位模块.</p>
+<img src="/2018/03/10/53_ResNets/resnet_kiank.png" style="width:850px;height:150px;">
+<caption>
+<center>
+<u> <font color="purple"> <strong>图 5</strong> </font></u><font color="purple"> : <strong>ResNet-50 模型</strong>
+</font></center>
+</caption>
+<p>ResNet-50 模型细节: - Zero-padding pads the input with a pad of (3,3) - Stage 1: - The 2D Convolution has 64 filters of shape (7,7) and uses a stride of (2,2). Its name is &quot;conv1&quot;. - BatchNorm is applied to the channels axis of the input. - MaxPooling uses a (3,3) window and a (2,2) stride. - Stage 2: - The convolutional block uses three set of filters of size [64,64,256], &quot;f&quot; is 3, &quot;s&quot; is 1 and the block is &quot;a&quot;. - The 2 identity blocks use three set of filters of size [64,64,256], &quot;f&quot; is 3 and the blocks are &quot;b&quot; and &quot;c&quot;. - Stage 3: - The convolutional block uses three set of filters of size [128,128,512], &quot;f&quot; is 3, &quot;s&quot; is 2 and the block is &quot;a&quot;. - The 3 identity blocks use three set of filters of size [128,128,512], &quot;f&quot; is 3 and the blocks are &quot;b&quot;, &quot;c&quot; and &quot;d&quot;. - Stage 4: - The convolutional block uses three set of filters of size [256, 256, 1024], &quot;f&quot; is 3, &quot;s&quot; is 2 and the block is &quot;a&quot;. - The 5 identity blocks use three set of filters of size [256, 256, 1024], &quot;f&quot; is 3 and the blocks are &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot; and &quot;f&quot;. - Stage 5: - The convolutional block uses three set of filters of size [512, 512, 2048], &quot;f&quot; is 3, &quot;s&quot; is 2 and the block is &quot;a&quot;. - The 2 identity blocks use three set of filters of size [512, 512, 2048], &quot;f&quot; is 3 and the blocks are &quot;b&quot; and &quot;c&quot;. - The 2D Average Pooling uses a window of shape (2,2) and its name is &quot;avg_pool&quot;. - The flatten doesn't have any hyperparameters or name. - The Fully Connected (Dense) layer reduces its input to the number of classes using a softmax activation. Its name should be <code>'fc' + str(classes)</code>.</p>
+<p>函数说明: - Average pooling <a href="https://keras.io/layers/pooling/#averagepooling2d" target="_blank" rel="noopener">see reference</a></p>
+<p>Here're some other functions we used in the code below: - Conv2D: <a href="https://keras.io/layers/convolutional/#conv2d" target="_blank" rel="noopener">See reference</a> - BatchNorm: <a href="https://keras.io/layers/normalization/#batchnormalization" target="_blank" rel="noopener">See reference</a> (axis: Integer, the axis that should be normalized (typically the features axis)) - Zero padding: <a href="https://keras.io/layers/convolutional/#zeropadding2d" target="_blank" rel="noopener">See reference</a> - Max pooling: <a href="https://keras.io/layers/pooling/#maxpooling2d" target="_blank" rel="noopener">See reference</a> - Fully conected layer: <a href="https://keras.io/layers/core/#dense" target="_blank" rel="noopener">See reference</a> - Addition: <a href="https://keras.io/layers/merge/#add" target="_blank" rel="noopener">See reference</a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: ResNet50</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">ResNet50</span><span class="params">(input_shape = <span class="params">(<span class="number">64</span>, <span class="number">64</span>, <span class="number">3</span>)</span>, classes = <span class="number">6</span>)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implementation of the popular ResNet50 the following architecture:</span></span><br><span class="line"><span class="string">    CONV2D -&gt; BATCHNORM -&gt; RELU -&gt; MAXPOOL -&gt; CONVBLOCK -&gt; IDBLOCK*2 -&gt; CONVBLOCK -&gt; IDBLOCK*3</span></span><br><span class="line"><span class="string">    -&gt; CONVBLOCK -&gt; IDBLOCK*5 -&gt; CONVBLOCK -&gt; IDBLOCK*2 -&gt; AVGPOOL -&gt; TOPLAYER</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    input_shape -- shape of the images of the dataset</span></span><br><span class="line"><span class="string">    classes -- integer, number of classes</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    model -- a Model() instance in Keras</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Define the input as a tensor with shape input_shape</span></span><br><span class="line">    X_input = Input(input_shape)</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Zero-Padding</span></span><br><span class="line">    X = ZeroPadding2D((<span class="number">3</span>, <span class="number">3</span>))(X_input)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Stage 1</span></span><br><span class="line">    X = Conv2D(<span class="number">64</span>, (<span class="number">7</span>, <span class="number">7</span>), strides = (<span class="number">2</span>, <span class="number">2</span>), name = <span class="string">'conv1'</span>, kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = <span class="string">'bn_conv1'</span>)(X)</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line">    X = MaxPooling2D((<span class="number">3</span>, <span class="number">3</span>), strides=(<span class="number">2</span>, <span class="number">2</span>))(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Stage 2</span></span><br><span class="line">    X = convolutional_block(X, f = <span class="number">3</span>, filters = [<span class="number">64</span>, <span class="number">64</span>, <span class="number">256</span>], stage = <span class="number">2</span>, block=<span class="string">'a'</span>, s = <span class="number">1</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">64</span>, <span class="number">64</span>, <span class="number">256</span>], stage=<span class="number">2</span>, block=<span class="string">'b'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">64</span>, <span class="number">64</span>, <span class="number">256</span>], stage=<span class="number">2</span>, block=<span class="string">'c'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Stage 3 (≈4 lines)</span></span><br><span class="line">    X = convolutional_block(X, f = <span class="number">3</span>, filters = [<span class="number">128</span>, <span class="number">128</span>, <span class="number">512</span>], stage = <span class="number">3</span>, block=<span class="string">'a'</span>, s = <span class="number">2</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">128</span>, <span class="number">128</span>, <span class="number">512</span>], stage=<span class="number">3</span>, block=<span class="string">'b'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">128</span>, <span class="number">128</span>, <span class="number">512</span>], stage=<span class="number">3</span>, block=<span class="string">'c'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">128</span>, <span class="number">128</span>, <span class="number">512</span>], stage=<span class="number">3</span>, block=<span class="string">'d'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Stage 4 (≈6 lines)</span></span><br><span class="line">    X = convolutional_block(X, f = <span class="number">3</span>, filters = [<span class="number">256</span>, <span class="number">256</span>, <span class="number">1024</span>], stage = <span class="number">4</span>, block=<span class="string">'a'</span>, s = <span class="number">2</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">256</span>, <span class="number">256</span>, <span class="number">1024</span>], stage=<span class="number">4</span>, block=<span class="string">'b'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">256</span>, <span class="number">256</span>, <span class="number">1024</span>], stage=<span class="number">4</span>, block=<span class="string">'c'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">256</span>, <span class="number">256</span>, <span class="number">1024</span>], stage=<span class="number">4</span>, block=<span class="string">'d'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">256</span>, <span class="number">256</span>, <span class="number">1024</span>], stage=<span class="number">4</span>, block=<span class="string">'e'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">256</span>, <span class="number">256</span>, <span class="number">1024</span>], stage=<span class="number">4</span>, block=<span class="string">'f'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Stage 5 (≈3 lines)</span></span><br><span class="line">    X = convolutional_block(X, f = <span class="number">3</span>, filters = [<span class="number">512</span>, <span class="number">512</span>, <span class="number">2048</span>], stage = <span class="number">5</span>, block=<span class="string">'a'</span>, s = <span class="number">2</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">512</span>, <span class="number">512</span>, <span class="number">2048</span>], stage=<span class="number">5</span>, block=<span class="string">'b'</span>)</span><br><span class="line">    X = identity_block(X, <span class="number">3</span>, [<span class="number">512</span>, <span class="number">512</span>, <span class="number">2048</span>], stage=<span class="number">5</span>, block=<span class="string">'c'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># AVGPOOL (≈1 line). Use "X = AveragePooling2D(...)(X)"</span></span><br><span class="line">    X = AveragePooling2D(pool_size=(<span class="number">2</span>,<span class="number">2</span>))(X)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># output layer</span></span><br><span class="line">    X = Flatten()(X)</span><br><span class="line">    X = Dense(classes, activation=<span class="string">'softmax'</span>, name=<span class="string">'fc'</span> + str(classes), kernel_initializer = glorot_uniform(seed=<span class="number">0</span>))(X)</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    <span class="comment"># Create model</span></span><br><span class="line">    model = Model(inputs = X_input, outputs = X, name=<span class="string">'ResNet50'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> model</span><br></pre></td></tr></table></figure>
+<p>建立模型计算图</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model = ResNet50(input_shape = (<span class="number">64</span>, <span class="number">64</span>, <span class="number">3</span>), classes = <span class="number">6</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model.compile(optimizer=<span class="string">'adam'</span>, loss=<span class="string">'categorical_crossentropy'</span>, metrics=[<span class="string">'accuracy'</span>])</span><br></pre></td></tr></table></figure>
+<p>加载数据</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_dataset()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Normalize image vectors</span></span><br><span class="line">X_train = X_train_orig/<span class="number">255.</span></span><br><span class="line">X_test = X_test_orig/<span class="number">255.</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Convert training and test labels to one hot matrices</span></span><br><span class="line">Y_train = convert_to_one_hot(Y_train_orig, <span class="number">6</span>).T</span><br><span class="line">Y_test = convert_to_one_hot(Y_test_orig, <span class="number">6</span>).T</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> (<span class="string">"number of training examples = "</span> + str(X_train.shape[<span class="number">0</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"number of test examples = "</span> + str(X_test.shape[<span class="number">0</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"X_train shape: "</span> + str(X_train.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Y_train shape: "</span> + str(Y_train.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"X_test shape: "</span> + str(X_test.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Y_test shape: "</span> + str(Y_test.shape))</span><br></pre></td></tr></table></figure>
+<pre><code>number of training examples = 1080
+number of test examples = 120
+X_train shape: (1080, 64, 64, 3)
+Y_train shape: (1080, 6)
+X_test shape: (120, 64, 64, 3)
+Y_test shape: (120, 6)</code></pre>
+<p>训练模型</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">model.fit(X_train, Y_train, epochs = <span class="number">2</span>, batch_size = <span class="number">32</span>)</span><br></pre></td></tr></table></figure>
+<pre><code>Epoch 1/2
+1080/1080 [==============================] - 144s - loss: 3.0147 - acc: 0.2380   
+Epoch 2/2
+1080/1080 [==============================] - 143s - loss: 2.2702 - acc: 0.3167   
+
+
+
+
+
+&lt;keras.callbacks.History at 0x7ffae689afd0&gt;</code></pre>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">preds = model.evaluate(X_test, Y_test)</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Loss = "</span> + str(preds[<span class="number">0</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Test Accuracy = "</span> + str(preds[<span class="number">1</span>]))</span><br></pre></td></tr></table></figure>
+<pre><code>120/120 [==============================] - 5s     
+Loss = 2.14528711637
+Test Accuracy = 0.166666666667</code></pre>
+<p>增加更多的迭代次数，可以进一步改善性能。</p>
+<h2 id="结论">结论</h2>
+<ul>
+<li>由于梯度消失，直接加深网络在实际中不会起作用。<br>
+</li>
+<li>跳跃连接层缓解了梯度消失问题，也使ResNet快容易学到单位函数；<br>
+</li>
+<li>ResNet模块有两种类型：单位模块和卷积模块。<br>
+</li>
+<li>通过连接更多的ResNet模块可以构建极深剩余网络。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a><br>
+</li>
+<li>Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun - <a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener">Deep Residual Learning for Image Recognition (2015)</a><br>
+</li>
+<li>Francois Chollet's github repository: https://github.com/fchollet/deep-learning-models/blob/master/resnet50.py</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/卷积神经网络/" rel="tag"># 卷积神经网络</a>
+          
+            <a href="/tags/Keras/" rel="tag"># Keras</a>
+          
+            <a href="/tags/梯度消失/" rel="tag"># 梯度消失</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/10/52_CNNKeras/" rel="next" title="Keras搭建卷积神经网络">
+                <i class="fa fa-chevron-left"></i> Keras搭建卷积神经网络
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/13/54_ObjDect/" rel="prev" title="YOLO算法进行目标检测">
+                YOLO算法进行目标检测 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#极深神经网络存在的问题"><span class="nav-number">1.</span> <span class="nav-text">极深神经网络存在的问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#构建剩余网络"><span class="nav-number">2.</span> <span class="nav-text">构建剩余网络</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#单位模块"><span class="nav-number">2.1.</span> <span class="nav-text">单位模块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#卷积模块"><span class="nav-number">2.2.</span> <span class="nav-text">卷积模块</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#构建第一个resnet模型50层"><span class="nav-number">3.</span> <span class="nav-text">构建第一个ResNet模型（50层）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">4.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>

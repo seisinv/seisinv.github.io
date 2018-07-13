@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="卷积神经网络,Keras," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Keras是一种比Tensorflow更加高层次的深度学习编程框架，可以快速的构建深度神经网络，测试学习模型性能。本文介绍如何使用Keras搭建一个简单的卷积神经网络。">
+<meta name="keywords" content="卷积神经网络,Keras">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Keras搭建卷积神经网络">
+<meta property="og:url" content="http://yoursite.com/2018/03/10/52_CNNKeras/index.html">
+<meta property="og:site_name" content="Home of a Explorer">
+<meta property="og:description" content="Keras是一种比Tensorflow更加高层次的深度学习编程框架，可以快速的构建深度神经网络，测试学习模型性能。本文介绍如何使用Keras搭建一个简单的卷积神经网络。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/2018/03/10/52_CNNKeras/output_13_1.png">
+<meta property="og:updated_time" content="2018-03-10T02:22:12.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Keras搭建卷积神经网络">
+<meta name="twitter:description" content="Keras是一种比Tensorflow更加高层次的深度学习编程框架，可以快速的构建深度神经网络，测试学习模型性能。本文介绍如何使用Keras搭建一个简单的卷积神经网络。">
+<meta name="twitter:image" content="http://yoursite.com/2018/03/10/52_CNNKeras/output_13_1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/10/52_CNNKeras/"/>
+
+
+
+
+
+  <title>Keras搭建卷积神经网络 | Home of a Explorer</title><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <!-- hexo-inject:begin --><!-- hexo-inject:end --><div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Home of a Explorer</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off"
+             placeholder="搜索..." spellcheck="false"
+             type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/10/52_CNNKeras/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Seisinv">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/head3.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Home of a Explorer">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Keras搭建卷积神经网络</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-10T10:22:18+08:00">
+                2018-03-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Keras是一种比Tensorflow更加高层次的深度学习编程框架，可以快速的构建深度神经网络，测试学习模型性能。本文介绍如何使用Keras搭建一个简单的卷积神经网络。 <a id="more"></a></p>
+<h2 id="数据加载">数据加载</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> keras <span class="keyword">import</span> layers</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> Input, Dense, Activation, ZeroPadding2D, BatchNormalization, Flatten, Conv2D</span><br><span class="line"><span class="keyword">from</span> keras.layers <span class="keyword">import</span> AveragePooling2D, MaxPooling2D, Dropout, GlobalMaxPooling2D, GlobalAveragePooling2D</span><br><span class="line"><span class="keyword">from</span> keras.models <span class="keyword">import</span> Model</span><br><span class="line"><span class="keyword">from</span> keras.preprocessing <span class="keyword">import</span> image</span><br><span class="line"><span class="keyword">from</span> keras.utils <span class="keyword">import</span> layer_utils</span><br><span class="line"><span class="keyword">from</span> keras.utils.data_utils <span class="keyword">import</span> get_file</span><br><span class="line"><span class="keyword">from</span> keras.applications.imagenet_utils <span class="keyword">import</span> preprocess_input</span><br><span class="line"><span class="comment">#import pydot</span></span><br><span class="line"><span class="keyword">from</span> IPython.display <span class="keyword">import</span> SVG</span><br><span class="line"><span class="keyword">from</span> keras.utils.vis_utils <span class="keyword">import</span> model_to_dot</span><br><span class="line"><span class="keyword">from</span> keras.utils <span class="keyword">import</span> plot_model</span><br><span class="line"><span class="keyword">from</span> kt_utils <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> keras.backend <span class="keyword">as</span> K</span><br><span class="line">K.set_image_data_format(<span class="string">'channels_last'</span>)</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">from</span> matplotlib.pyplot <span class="keyword">import</span> imshow</span><br><span class="line"></span><br><span class="line">%matplotlib inline</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">X_train_orig, Y_train_orig, X_test_orig, Y_test_orig, classes = load_dataset()</span><br><span class="line"></span><br><span class="line"><span class="comment"># Normalize image vectors</span></span><br><span class="line">X_train = X_train_orig/<span class="number">255.</span></span><br><span class="line">X_test = X_test_orig/<span class="number">255.</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Reshape</span></span><br><span class="line">Y_train = Y_train_orig.T</span><br><span class="line">Y_test = Y_test_orig.T</span><br><span class="line"></span><br><span class="line"><span class="keyword">print</span> (<span class="string">"number of training examples = "</span> + str(X_train.shape[<span class="number">0</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"number of test examples = "</span> + str(X_test.shape[<span class="number">0</span>]))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"X_train shape: "</span> + str(X_train.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Y_train shape: "</span> + str(Y_train.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"X_test shape: "</span> + str(X_test.shape))</span><br><span class="line"><span class="keyword">print</span> (<span class="string">"Y_test shape: "</span> + str(Y_test.shape))</span><br></pre></td></tr></table></figure>
+<pre><code>number of training examples = 600
+number of test examples = 150
+X_train shape: (600, 64, 64, 3)
+Y_train shape: (600, 1)
+X_test shape: (150, 64, 64, 3)
+Y_test shape: (150, 1)</code></pre>
+<p><strong>&quot;快乐&quot; 数据集的详细信息</strong>:</p>
+<ul>
+<li>图像的大小 (64,64,3)<br>
+</li>
+<li>训练集: 600幅图<br>
+</li>
+<li>测试集: 150幅图</li>
+</ul>
+<h2 id="在keras中建立模型">在Keras中建立模型</h2>
+<p>一个建立学习模型的实例：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">model</span><span class="params">(input_shape)</span>:</span></span><br><span class="line">    <span class="comment"># Define the input placeholder as a tensor with shape input_shape. Think of this as your input image!</span></span><br><span class="line">    X_input = Input(input_shape)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Zero-Padding: pads the border of X_input with zeroes</span></span><br><span class="line">    X = ZeroPadding2D((<span class="number">3</span>, <span class="number">3</span>))(X_input)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># CONV -&gt; BN -&gt; RELU Block applied to X</span></span><br><span class="line">    X = Conv2D(<span class="number">32</span>, (<span class="number">7</span>, <span class="number">7</span>), strides = (<span class="number">1</span>, <span class="number">1</span>), name = <span class="string">'conv0'</span>)(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = <span class="string">'bn0'</span>)(X)</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># MAXPOOL</span></span><br><span class="line">    X = MaxPooling2D((<span class="number">2</span>, <span class="number">2</span>), name=<span class="string">'max_pool'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># FLATTEN X (means convert it to a vector) + FULLYCONNECTED</span></span><br><span class="line">    X = Flatten()(X)</span><br><span class="line">    X = Dense(<span class="number">1</span>, activation=<span class="string">'sigmoid'</span>, name=<span class="string">'fc'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Create model. This creates your Keras model instance, you'll use this instance to train/test the model.</span></span><br><span class="line">    model = Model(inputs = X_input, outputs = X, name=<span class="string">'HappyModel'</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> model</span><br></pre></td></tr></table></figure>
+<p>从上面可以看出，和用numpy、tensorflwo不同，Keras每次都将计算结果覆盖到X输出，只有一个例外，就是X_input，这是因为后面还需要使用这个变量。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># GRADED FUNCTION: HappyModel</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">HappyModel</span><span class="params">(input_shape)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Implementation of the HappyModel.</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    Arguments:</span></span><br><span class="line"><span class="string">    input_shape -- shape of the images of the dataset</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    model -- a Model() instance in Keras</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">### START CODE HERE ###</span></span><br><span class="line">    <span class="comment"># Feel free to use the suggested outline in the text above to get started, and run through the whole</span></span><br><span class="line">    <span class="comment"># exercise (including the later portions of this notebook) once. The come back also try out other</span></span><br><span class="line">    <span class="comment"># network architectures as well.</span></span><br><span class="line">    <span class="comment"># Define the input placeholder as a tensor with shape input_shape. Think of this as your input image!</span></span><br><span class="line">    X_input = Input(input_shape)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Zero-Padding: pads the border of X_input with zeroes</span></span><br><span class="line">    X = ZeroPadding2D((<span class="number">3</span>, <span class="number">3</span>))(X_input)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># CONV -&gt; BN -&gt; RELU Block applied to X</span></span><br><span class="line">    X = Conv2D(<span class="number">32</span>, (<span class="number">7</span>, <span class="number">7</span>), strides = (<span class="number">1</span>, <span class="number">1</span>), name = <span class="string">'conv0'</span>)(X)</span><br><span class="line">    X = BatchNormalization(axis = <span class="number">3</span>, name = <span class="string">'bn0'</span>)(X)</span><br><span class="line">    X = Activation(<span class="string">'relu'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># MAXPOOL</span></span><br><span class="line">    X = MaxPooling2D((<span class="number">2</span>, <span class="number">2</span>), name=<span class="string">'max_pool'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># FLATTEN X (means convert it to a vector) + FULLYCONNECTED</span></span><br><span class="line">    X = Flatten()(X)</span><br><span class="line">    X = Dense(<span class="number">1</span>, activation=<span class="string">'sigmoid'</span>, name=<span class="string">'fc'</span>)(X)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Create model. This creates your Keras model instance, you'll use this instance to train/test the model.</span></span><br><span class="line">    model = Model(inputs = X_input, outputs = X, name=<span class="string">'HappyModel'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> model</span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    <span class="comment">### END CODE HERE ###</span></span><br></pre></td></tr></table></figure>
+<p>在Keras建立学习模型的步骤包括：</p>
+<ol style="list-style-type: decimal">
+<li>利用上面的函数建立模型<br>
+</li>
+<li>调用<code>model.compile(optimizer = &quot;...&quot;, loss = &quot;...&quot;, metrics = [&quot;accuracy&quot;])</code>编译这个模型<br>
+</li>
+<li>调用<code>model.fit(x = ..., y = ..., epochs = ..., batch_size = ...)</code>训练模型<br>
+</li>
+<li>调用<code>model.evaluate(x = ..., y = ...)</code>使用测试数据测试模型</li>
+</ol>
+<p>更多关于上面步骤的信息，请参考<a href="https://keras.io/models/model/" target="_blank" rel="noopener">Keras文档</a>.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">happyModel = HappyModel(X_train.shape[<span class="number">1</span>:])</span><br><span class="line"><span class="comment">### END CODE HERE ###</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">happyModel.compile(optimizer = <span class="string">'adam'</span>, loss = <span class="string">'binary_crossentropy'</span>, metrics= [<span class="string">'accuracy'</span>])</span><br><span class="line"><span class="comment">### END CODE HERE ###</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### START CODE HERE ### (1 line)</span></span><br><span class="line">happyModel.fit(X_train, Y_train, epochs = <span class="number">50</span>, batch_size = <span class="number">50</span>)</span><br><span class="line"><span class="comment">### END CODE HERE ###</span></span><br></pre></td></tr></table></figure>
+<pre><code>Epoch 1/50
+600/600 [==============================] - 8s - loss: 2.9738 - acc: 0.5350     
+Epoch 2/50
+600/600 [==============================] - 8s - loss: 0.8352 - acc: 0.7033     
+Epoch 3/50
+600/600 [==============================] - 8s - loss: 0.3475 - acc: 0.8583     
+Epoch 4/50
+600/600 [==============================] - 8s - loss: 0.2112 - acc: 0.9117     
+Epoch 5/50
+600/600 [==============================] - 8s - loss: 0.1399 - acc: 0.9550     
+Epoch 6/50
+600/600 [==============================] - 8s - loss: 0.1190 - acc: 0.9633     
+Epoch 7/50
+600/600 [==============================] - 9s - loss: 0.1068 - acc: 0.9633     
+Epoch 8/50
+600/600 [==============================] - 8s - loss: 0.0944 - acc: 0.9717     
+Epoch 9/50
+600/600 [==============================] - 8s - loss: 0.0867 - acc: 0.9750     
+Epoch 10/50
+600/600 [==============================] - 8s - loss: 0.0792 - acc: 0.9850     
+Epoch 11/50
+600/600 [==============================] - 8s - loss: 0.0695 - acc: 0.9833     
+Epoch 12/50
+600/600 [==============================] - 8s - loss: 0.0628 - acc: 0.9833     
+Epoch 13/50
+600/600 [==============================] - 8s - loss: 0.0604 - acc: 0.9850     
+Epoch 14/50
+600/600 [==============================] - 8s - loss: 0.0563 - acc: 0.9850     
+Epoch 15/50
+600/600 [==============================] - 8s - loss: 0.0610 - acc: 0.9867     
+Epoch 16/50
+600/600 [==============================] - 8s - loss: 0.0491 - acc: 0.9883     
+Epoch 17/50
+600/600 [==============================] - 8s - loss: 0.0558 - acc: 0.9900     
+Epoch 18/50
+600/600 [==============================] - 8s - loss: 0.0476 - acc: 0.9883     
+Epoch 19/50
+600/600 [==============================] - 8s - loss: 0.0593 - acc: 0.9817     
+Epoch 20/50
+600/600 [==============================] - 8s - loss: 0.0506 - acc: 0.9867     
+Epoch 21/50
+600/600 [==============================] - 8s - loss: 0.0402 - acc: 0.9950     
+Epoch 22/50
+600/600 [==============================] - 8s - loss: 0.0431 - acc: 0.9883     
+Epoch 23/50
+600/600 [==============================] - 8s - loss: 0.0462 - acc: 0.9800     
+Epoch 24/50
+600/600 [==============================] - 8s - loss: 0.0648 - acc: 0.9817     
+Epoch 25/50
+600/600 [==============================] - 8s - loss: 0.0443 - acc: 0.9883     
+Epoch 26/50
+600/600 [==============================] - 8s - loss: 0.0360 - acc: 0.9883     
+Epoch 27/50
+600/600 [==============================] - 8s - loss: 0.0404 - acc: 0.9900     
+Epoch 28/50
+600/600 [==============================] - 8s - loss: 0.0371 - acc: 0.9917     
+Epoch 29/50
+600/600 [==============================] - 8s - loss: 0.0320 - acc: 0.9933     
+Epoch 30/50
+600/600 [==============================] - 8s - loss: 0.0207 - acc: 0.9950     
+Epoch 31/50
+600/600 [==============================] - 8s - loss: 0.0184 - acc: 0.9933     
+Epoch 32/50
+600/600 [==============================] - 8s - loss: 0.0159 - acc: 0.9983     
+Epoch 33/50
+600/600 [==============================] - 8s - loss: 0.0187 - acc: 0.9950     
+Epoch 34/50
+600/600 [==============================] - 8s - loss: 0.0225 - acc: 0.9917     
+Epoch 35/50
+600/600 [==============================] - 8s - loss: 0.0241 - acc: 0.9917     
+Epoch 36/50
+600/600 [==============================] - 8s - loss: 0.0241 - acc: 0.9883     
+Epoch 37/50
+600/600 [==============================] - 8s - loss: 0.0226 - acc: 0.9950     
+Epoch 38/50
+600/600 [==============================] - 8s - loss: 0.0173 - acc: 0.9933     
+Epoch 39/50
+600/600 [==============================] - 8s - loss: 0.0144 - acc: 0.9983     
+Epoch 40/50
+600/600 [==============================] - 8s - loss: 0.0114 - acc: 0.9983     
+Epoch 41/50
+600/600 [==============================] - 8s - loss: 0.0114 - acc: 0.9967     
+Epoch 42/50
+600/600 [==============================] - 8s - loss: 0.0087 - acc: 0.9983     
+Epoch 43/50
+600/600 [==============================] - 8s - loss: 0.0093 - acc: 0.9983     
+Epoch 44/50
+600/600 [==============================] - 8s - loss: 0.0153 - acc: 0.9983     
+Epoch 45/50
+600/600 [==============================] - 8s - loss: 0.0185 - acc: 0.9933     
+Epoch 46/50
+600/600 [==============================] - 8s - loss: 0.0259 - acc: 0.9917     
+Epoch 47/50
+600/600 [==============================] - 8s - loss: 0.0195 - acc: 0.9933     
+Epoch 48/50
+600/600 [==============================] - 8s - loss: 0.0170 - acc: 0.9950     
+Epoch 49/50
+600/600 [==============================] - 8s - loss: 0.0125 - acc: 0.9983     
+Epoch 50/50
+600/600 [==============================] - 8s - loss: 0.0284 - acc: 0.9933     
+
+
+
+
+
+&lt;keras.callbacks.History at 0x7fc206f5c198&gt;</code></pre>
+<p>一些提升学习模型性能的策略：</p>
+<ol style="list-style-type: decimal">
+<li>使用一系列下面的模块CONV-&gt;BATCHNORM-&gt;RELU: <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">X = Conv2D(<span class="number">32</span>, (<span class="number">3</span>, <span class="number">3</span>), strides = (<span class="number">1</span>, <span class="number">1</span>), name = <span class="string">'conv0'</span>)(X)</span><br><span class="line">X = BatchNormalization(axis = <span class="number">3</span>, name = <span class="string">'bn0'</span>)(X)</span><br><span class="line">X = Activation(<span class="string">'relu'</span>)(X)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>直到高、宽很小，深度很大（比如约等于32），这时表明你已经把有用的信息都编码到一个很多通道的数据体里，然后再压扁这个数据体，最后使用全连接层。<br>
+2. 在这些模块后使用MAXPOOL，降低高、宽的大小<br>
+3. 改变优化器，Adam一般都工作很好<br>
+4. 如果模型有内存问题，那么降低batch的大小<br>
+5. 执行更多的迭代次数，知道训练精度几乎不再提升</p>
+<h2 id="测试用户数据">测试用户数据</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### START CODE HERE ###</span></span><br><span class="line">img_path = <span class="string">'images/my_image.jpg'</span></span><br><span class="line"><span class="comment">### END CODE HERE ###</span></span><br><span class="line">img = image.load_img(img_path, target_size=(<span class="number">64</span>, <span class="number">64</span>))</span><br><span class="line">imshow(img)</span><br><span class="line"></span><br><span class="line">x = image.img_to_array(img)</span><br><span class="line">x = np.expand_dims(x, axis=<span class="number">0</span>)</span><br><span class="line">x = preprocess_input(x)</span><br><span class="line"></span><br><span class="line">print(happyModel.predict(x))</span><br></pre></td></tr></table></figure>
+<pre><code>[[ 0.]]</code></pre>
+<div class="figure">
+<img src="/2018/03/10/52_CNNKeras/output_13_1.png" alt="png">
+<p class="caption">png</p>
+</div>
+<h2 id="keras其他一些有用的工具">Keras其他一些有用的工具</h2>
+<ul>
+<li><code>model.summary()</code>: 以表格形式打印每一层的详细信息以及输入输出信息<br>
+</li>
+<li><code>plot_model()</code>: 画出模型</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">happyModel.summary()</span><br></pre></td></tr></table></figure>
+<pre><code>_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+input_1 (InputLayer)         (None, 64, 64, 3)         0         
+_________________________________________________________________
+zero_padding2d_1 (ZeroPaddin (None, 70, 70, 3)         0         
+_________________________________________________________________
+conv0 (Conv2D)               (None, 64, 64, 32)        4736      
+_________________________________________________________________
+bn0 (BatchNormalization)     (None, 64, 64, 32)        128       
+_________________________________________________________________
+activation_1 (Activation)    (None, 64, 64, 32)        0         
+_________________________________________________________________
+max_pool (MaxPooling2D)      (None, 32, 32, 32)        0         
+_________________________________________________________________
+flatten_1 (Flatten)          (None, 32768)             0         
+_________________________________________________________________
+fc (Dense)                   (None, 1)                 32769     
+=================================================================
+Total params: 37,633
+Trainable params: 37,569
+Non-trainable params: 64
+_________________________________________________________________</code></pre>
+<h2 id="结论">结论</h2>
+<ol style="list-style-type: decimal">
+<li>Keras是一种十分方便的深度学习框架，非常适合快速上手<br>
+</li>
+<li>Keras的使用分为4步：建立模型-&gt;编译-&gt;训练-&gt;评估</li>
+</ol>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>吴恩达，<a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">coursera深度学习课程</a></li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.jpg" alt="Seisinv 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.jpg" alt="Seisinv 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/卷积神经网络/" rel="tag"># 卷积神经网络</a>
+          
+            <a href="/tags/Keras/" rel="tag"># Keras</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/10/51_CNNTF/" rel="next" title="Tensorflow搭建卷积神经网络">
+                <i class="fa fa-chevron-left"></i> Tensorflow搭建卷积神经网络
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/10/53_ResNets/" rel="prev" title="剩余网络（ResNets）">
+                剩余网络（ResNets） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="/images/head3.gif"
+                alt="Seisinv" />
+            
+              <p class="site-author-name" itemprop="name">Seisinv</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">51</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">125</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#数据加载"><span class="nav-number">1.</span> <span class="nav-text">数据加载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#在keras中建立模型"><span class="nav-number">2.</span> <span class="nav-text">在Keras中建立模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#测试用户数据"><span class="nav-number">3.</span> <span class="nav-text">测试用户数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#keras其他一些有用的工具"><span class="nav-number">4.</span> <span class="nav-text">Keras其他一些有用的工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结论"><span class="nav-number">5.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Seisinv</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=65040219";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://poster.disqus.com/count.js" async></script>
+    
+
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  <script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('-1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo-inject:begin --><!-- hexo-inject:end -->
+  
+
+
+  
+
+  
+
+</body>
+</html>
